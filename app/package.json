@@ -8,12 +8,13 @@
     "start": "next start",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "node --import tsx --test 'src/**/*.test.ts'"
   },
   "dependencies": {
     "@anchor-lang/core": "^1.0.1",
-    "@pm-amm/sdk": "workspace:*",
     "@base-ui/react": "^1.4.0",
+    "@pm-amm/sdk": "workspace:*",
     "@solana/spl-token": "^0.4.14",
     "@solana/wallet-adapter-base": "^0.9.27",
     "@solana/wallet-adapter-react": "^0.15.39",
@@ -24,6 +25,7 @@
     "@upstash/redis": "^1.37.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "ioredis": "^6.0.0",
     "lucide-react": "^1.8.0",
     "next": "16.2.4",
     "react": "19.2.4",
@@ -42,6 +44,7 @@
     "eslint": "^10.2.1",
     "eslint-plugin-react-hooks": "^7.1.1",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5",
     "typescript-eslint": "^8.59.0"
   }

@@ -23,15 +23,14 @@ export async function POST(req: Request) {
   // Rate limit: skip if last snap < 10s ago (unless forced by trade)
   if (!force) {
     const latest = await redis.zrange(key, -1, -1, { withScores: true });
-    if (latest.length >= 2) {
-      const lastTs = Number(latest[1]);
-      if (timestamp - lastTs < 10) {
+    if (latest.length > 0) {
+      if (timestamp - latest[0]!.score < 10) {
         return NextResponse.json({ ok: true, skipped: true });
       }
     }
   }
 
-  await redis.zadd(key, { score: timestamp, member: JSON.stringify({ t: timestamp, p: price }) });
+  await redis.zadd(key, timestamp, JSON.stringify({ t: timestamp, p: price }));
 
   // Keep max 500 entries per market
   const count = await redis.zcard(key);
