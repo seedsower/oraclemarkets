@@ -1,0 +1,41 @@
+# Local stand-in for the Railway project: web + keeper + Redis against devnet.
+#
+#   docker compose up --build
+#   curl localhost:8080/api/health
+#
+# Mirrors railway/*.json: same Dockerfiles, same variables. The secret below
+# is for this local stack only.
+services:
+  redis:
+    image: redis:7
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_SOLANA_CLUSTER: devnet
+        NEXT_PUBLIC_RPC_URL: https://api.devnet.solana.com
+        NEXT_PUBLIC_SITE_URL: http://localhost:8080
+        NEXT_PUBLIC_FEATURED_AUTHORITIES: ${NEXT_PUBLIC_FEATURED_AUTHORITIES:-}
+    environment:
+      PORT: "8080"
+      REDIS_URL: redis://redis:6379
+      KEEPER_SHARED_SECRET: local-dev-only-secret
+    ports:
+      - "8080:8080"
+    depends_on:
+      - redis
+
+  keeper:
+    build:
+      context: .
+      dockerfile: workers/keeper/Dockerfile
+    environment:
+      REDIS_URL: redis://redis:6379
+      KEEPER_RPC_URL: https://api.devnet.solana.com
+      KEEPER_INTERVAL_SECS: "20"
+    depends_on:
+      - redis
+    restart: unless-stopped

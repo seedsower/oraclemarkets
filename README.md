@@ -1,4 +1,16 @@
-# pm-AMM — Paradigm Dynamic AMM for Prediction Markets on Solana
+# Oracle Markets
+
+**Prediction markets on Solana.** Trade on real-world outcomes with an AMM built for prediction markets. Oracle Markets runs on Paradigm's pm-AMM, live on Solana.
+
+- **Deploy**: [RAILWAY.md](RAILWAY.md) covers `web` + `keeper` + Redis on Railway (primary host; the Vercel config still works).
+- **Engine**: powered by the Paradigm pm-AMM (Moallemi & Robinson, 2024). This is a fork of the MIT-licensed [sparkfun-labs/pm-amm](https://github.com/sparkfun-labs/pm-amm); see [LICENSE](LICENSE).
+- **Resolution**: each market is resolved by its authority (admin-signed). There is no on-chain oracle.
+
+The rest of this README documents the pm-AMM engine (program, SDK, math). Code identifiers such as `@pm-amm/sdk`, `PmAmmClient`, and the `pm_amm` IDL keep the engine's name.
+
+---
+
+## pm-AMM — Paradigm Dynamic AMM for Prediction Markets on Solana
 
 [![CI](https://github.com/mattdgn/pm-amm/actions/workflows/test.yml/badge.svg)](https://github.com/mattdgn/pm-amm/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
