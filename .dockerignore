@@ -1,0 +1,14 @@
+.git
+anchor/
+oracle/
+doc/
+examples/
+idl/
+scripts/
+.surfpool/
+.claude/
+**/node_modules
+**/.next
+packages/*/dist
+**/.env*
+**/*.tsbuildinfo
