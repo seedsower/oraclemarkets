@@ -173,21 +173,9 @@ export function TradePanel({
       });
       const tx = await client.sendIxs([...preIxs, swapIx, ...postIxs]);
 
-      // Refetch markets to get post-trade price, then snap it
-      const data = await queryClient.fetchQuery({ queryKey: ["markets"], staleTime: 0 });
-      const updated = (data as MarketData[])?.find((m) => m.publicKey === market.publicKey);
-      if (updated?.price) {
-        fetch("/api/price-snap", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            marketId: market.publicKey,
-            price: updated.price,
-            timestamp: Math.floor(Date.now() / 1000),
-            force: true,
-          }),
-        }).catch(console.error);
-      }
+      // Refetch so the post-trade price shows now. Chart points come from the
+      // keeper only — browsers never write price history.
+      await queryClient.invalidateQueries({ queryKey: ["markets"] });
 
       const desc =
         mode === "buy"

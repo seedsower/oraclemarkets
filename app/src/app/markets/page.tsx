@@ -8,7 +8,6 @@ import { VaultsSection } from "@/components/vaults-section";
 import { useMarkets } from "@/hooks/use-markets";
 import { useGroups } from "@/hooks/use-groups";
 import { useUserPositions } from "@/hooks/use-user-positions";
-import { usePriceRecorder } from "@/hooks/use-price-recorder";
 import { usePriceHistories } from "@/hooks/use-price-histories";
 import { PortfolioPanel } from "@/components/portfolio-panel";
 import { poolValue } from "@pm-amm/sdk/math";
@@ -21,7 +20,6 @@ export default function Markets() {
   const { data: markets, isLoading, error } = useMarkets();
   const { data: groups } = useGroups(markets);
   const { data: userPositions } = useUserPositions(markets);
-  usePriceRecorder(markets);
   const priceHistories = usePriceHistories(markets);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
