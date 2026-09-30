@@ -5,12 +5,17 @@ import { useVaults } from "@/hooks/use-vaults";
 import { useVaultGroups } from "@/hooks/use-vault-groups";
 import { Countdown } from "@/components/ui/countdown";
 import { formatUsdc } from "@pm-amm/sdk/math";
+import { CommunityBadge } from "@/components/ui/community-badge";
+import type { Curation } from "@/lib/featured";
 
 /** Lightweight section on the home page listing every open vault.
  *  Hidden when nothing is open. */
-export function VaultsSection() {
-  const { data: binaries = [] } = useVaults();
-  const { data: groups = [] } = useVaultGroups();
+export function VaultsSection({ curation }: { curation?: Curation }) {
+  const { data: allBinaries } = useVaults();
+  const { data: allGroups } = useVaultGroups();
+  const binaries = (curation ? curation.curate(allBinaries) : allBinaries) ?? [];
+  const groups = (curation ? curation.curate(allGroups) : allGroups) ?? [];
+  const showCommunity = !!curation?.enabled && curation.showAll;
 
   // Only show vaults that still need user action on the commit/launch flow.
   // Once `launched` (binary) or `fullyLaunched` (multi-outcome), the vault's
@@ -24,6 +29,7 @@ export function VaultsSection() {
         publicKey: v.publicKey,
         vaultId: v.vaultId,
         name: v.name,
+        community: showCommunity && curation!.isCommunity(v),
         total: v.total,
         minTotal: v.minTotal,
         commitEndTs: v.commitEndTs,
@@ -43,6 +49,7 @@ export function VaultsSection() {
         publicKey: v.publicKey,
         vaultId: v.vaultId,
         name: v.name,
+        community: showCommunity && curation!.isCommunity(v),
         total: v.total,
         minTotal: v.minTotal,
         commitEndTs: v.commitEndTs,
@@ -81,7 +88,10 @@ export function VaultsSection() {
           >
             <div className="flex items-start justify-between gap-[8px] mb-[8px]">
               <h3 className="text-[13px] text-text-hi font-medium leading-tight">{it.name}</h3>
-              <Tag kind={it.kind} />
+              <div className="flex items-center gap-[6px] shrink-0">
+                {it.community && <CommunityBadge />}
+                <Tag kind={it.kind} />
+              </div>
             </div>
 
             <div className="flex flex-wrap gap-[6px] mb-[10px]">

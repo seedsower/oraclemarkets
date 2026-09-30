@@ -7,6 +7,9 @@ import { MarketDetailPanel } from "@/components/market-detail-panel";
 import { VaultsSection } from "@/components/vaults-section";
 import { useMarkets } from "@/hooks/use-markets";
 import { useGroups } from "@/hooks/use-groups";
+import { useVaults } from "@/hooks/use-vaults";
+import { useCuration } from "@/lib/featured";
+import { CurationToggle } from "@/components/curation-toggle";
 import { useUserPositions } from "@/hooks/use-user-positions";
 import { usePriceHistories } from "@/hooks/use-price-histories";
 import { PortfolioPanel } from "@/components/portfolio-panel";
@@ -17,12 +20,25 @@ type Filter = "all" | "active" | "expiring" | "resolved" | "positions";
 type Sort = "tvl" | "expiry" | "newest";
 
 export default function Markets() {
-  const { data: markets, isLoading, error } = useMarkets();
-  const { data: groups } = useGroups(markets);
-  const { data: userPositions } = useUserPositions(markets);
+  const { data: allMarkets, isLoading, error } = useMarkets();
+  const { data: allGroups } = useGroups(allMarkets);
+  const { data: vaults } = useVaults();
+  const curation = useCuration(vaults);
+  const [filter, setFilter] = useState<Filter>("all");
+  // Curated view (featured authorities) unless "All markets" is on — except
+  // "My bets", which always shows every market the user holds.
+  const curated = filter !== "positions";
+  const markets = useMemo(
+    () => (curated ? curation.curate(allMarkets) : allMarkets),
+    [curated, curation, allMarkets],
+  );
+  const groups = useMemo(
+    () => (curated ? curation.curate(allGroups) : allGroups),
+    [curated, curation, allGroups],
+  );
+  const { data: userPositions } = useUserPositions(allMarkets);
   const priceHistories = usePriceHistories(markets);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [filter, setFilter] = useState<Filter>("all");
   const [sort, setSort] = useState<Sort>("tvl");
 
   /** Build the unified feed: standalone markets (drop legs) + group rows
@@ -99,7 +115,7 @@ export default function Markets() {
   }, [markets, groups, filter, sort, userPositions]);
 
   const selectedMarket =
-    selectedId === null ? null : (markets?.find((m) => m.publicKey === selectedId) ?? null);
+    selectedId === null ? null : (allMarkets?.find((m) => m.publicKey === selectedId) ?? null);
   const positionCount = userPositions?.size ?? 0;
 
   const standaloneCount = markets?.filter((m) => !m.group).length ?? 0;
@@ -158,6 +174,7 @@ export default function Markets() {
             </div>
 
             <div className="flex gap-[8px] items-center">
+              <CurationToggle curation={curation} />
               <div className="flex gap-[2px] border border-line rounded-sm">
                 {sorts.map((s) => (
                   <button
@@ -192,7 +209,7 @@ export default function Markets() {
           </div>
 
           {/* Open vaults — binary + multi-outcome (hidden when none) */}
-          <VaultsSection />
+          <VaultsSection curation={curation} />
 
           {/* Loading skeleton */}
           {isLoading && (
@@ -225,6 +242,7 @@ export default function Markets() {
               selectedId={selectedId}
               onSelect={setSelectedId}
               priceHistories={priceHistories}
+              isCommunity={curation.enabled && curation.showAll ? curation.isCommunity : undefined}
             />
           )}
 

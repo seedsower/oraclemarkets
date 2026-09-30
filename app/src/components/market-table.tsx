@@ -8,6 +8,7 @@ import { formatAmount, poolValue } from "@pm-amm/sdk/math";
 import { findToken } from "@/lib/tokens";
 import type { MarketData } from "@/hooks/use-markets";
 import type { GroupData } from "@/hooks/use-groups";
+import { CommunityBadge } from "@/components/ui/community-badge";
 
 /** Unified row type for the home feed — a standalone market or a multi-
  *  outcome GroupMarket. Group rows collapse N legs into one entry; clicking
@@ -44,11 +45,19 @@ interface MarketTableProps {
   selectedId: string | null;
   onSelect: (id: string) => void;
   priceHistories?: Map<string, number[]>;
+  /** When set, rows it returns true for get a "community" badge (see lib/featured.ts). */
+  isCommunity?: (item: { authority: string; publicKey: string }) => boolean;
 }
 
 const GRID_COLS = "grid-cols-[1fr_60px_160px_80px_72px_60px]";
 
-export function MarketTable({ items, selectedId, onSelect, priceHistories }: MarketTableProps) {
+export function MarketTable({
+  items,
+  selectedId,
+  onSelect,
+  priceHistories,
+  isCommunity,
+}: MarketTableProps) {
   const router = useRouter();
 
   return (
@@ -99,8 +108,9 @@ export function MarketTable({ items, selectedId, onSelect, priceHistories }: Mar
             >
               {isSelected && <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-accent" />}
 
-              <div className="min-w-0 font-sans text-[13px] text-text-hi tracking-[-0.005em] truncate">
-                {m.name}
+              <div className="min-w-0 font-sans text-[13px] text-text-hi tracking-[-0.005em] truncate flex items-center gap-[6px]">
+                <span className="truncate">{m.name}</span>
+                {isCommunity?.(m) && <CommunityBadge />}
               </div>
 
               <div>
@@ -171,6 +181,7 @@ export function MarketTable({ items, selectedId, onSelect, priceHistories }: Mar
               <span className="text-[9px] px-[5px] py-[1px] border border-yes/40 text-yes font-mono tracking-[0.05em] uppercase shrink-0">
                 {g.legCount}-way
               </span>
+              {isCommunity?.(g) && <CommunityBadge />}
             </div>
 
             {/* No sparkline for groups (no single price) */}
