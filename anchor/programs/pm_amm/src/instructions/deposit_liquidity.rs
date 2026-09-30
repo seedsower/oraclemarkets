@@ -1,0 +1,192 @@
+//! Deposit USDC liquidity into a market. Bootstraps L_0 on first deposit.
+
+use anchor_lang::prelude::*;
+use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
+use fixed::types::I80F48;
+
+use crate::accrual;
+use crate::errors::PmAmmError;
+use crate::pm_math;
+use crate::state::{deposit_excess, shares_for_l_zero_increment, LpPosition, Market};
+
+#[derive(Accounts)]
+pub struct DepositLiquidity<'info> {
+    #[account(mut)]
+    pub signer: Signer<'info>,
+
+    #[account(
+        mut,
+        has_one = collateral_mint,
+        has_one = vault,
+    )]
+    pub market: Box<Account<'info, Market>>,
+
+    pub collateral_mint: Box<Account<'info, Mint>>,
+
+    #[account(mut)]
+    pub vault: Box<Account<'info, TokenAccount>>,
+
+    #[account(
+        mut,
+        constraint = user_collateral.mint == market.collateral_mint,
+        constraint = user_collateral.owner == signer.key(),
+    )]
+    pub user_collateral: Box<Account<'info, TokenAccount>>,
+
+    #[account(
+        init_if_needed,
+        payer = signer,
+        space = LpPosition::LEN,
+        seeds = [LpPosition::SEED, market.key().as_ref(), signer.key().as_ref()],
+        bump,
+    )]
+    pub lp_position: Box<Account<'info, LpPosition>>,
+
+    pub system_program: Program<'info, System>,
+    pub token_program: Program<'info, Token>,
+}
+
+/// Deposit USDC into the pool, receive LP shares.
+pub fn handler(ctx: Context<DepositLiquidity>, amount: u64) -> Result<()> {
+    let clock = Clock::get()?;
+    let now = clock.unix_timestamp;
+
+    /// Minimum deposit in token base units (0.001 USDC = 1000 lamports at 6 decimals).
+    const MIN_DEPOSIT: u64 = 1_000;
+
+    require!(amount >= MIN_DEPOSIT, PmAmmError::InvalidBudget);
+
+    // --- Phase 1: Mutations on market (scoped borrow) ---
+    let new_shares: I80F48;
+    // Entry-side surplus fix: tokens this deposit backs but the pool won't hold.
+    let (excess_yes, excess_no): (u64, u64);
+    {
+        let market = &mut ctx.accounts.market;
+        require!(!market.resolved, PmAmmError::MarketAlreadyResolved);
+        require!(now < market.end_ts, PmAmmError::MarketExpired);
+
+        accrual::accrue_first(market, now)?;
+
+        let amount_fixed = I80F48::from_num(amount);
+        let time_remaining = market.end_ts - now;
+
+        if market.total_lp_shares == 0 {
+            // First deposit: bootstrap L_0 at the seed price encoded in
+            // `Market::initial_price_bps`. 0 = legacy 50/50; otherwise the pool
+            // calibrates so `max(x, y) == amount` — the vault must cover the
+            // bigger side's full token count, since the winning side redeems
+            // 1 USDC each (fix #1: V(P) only covers it at P=0.5).
+            let target_price = market.initial_price_fixed();
+            let l_zero =
+                pm_math::suggest_l_zero_for_max_reserve(amount, time_remaining, target_price)?;
+            let l_eff = pm_math::l_effective(l_zero, time_remaining)?;
+            let (x, y) = pm_math::reserves_from_price(target_price, l_eff)?;
+
+            new_shares = amount_fixed;
+            (excess_yes, excess_no) = deposit_excess(amount, x, y);
+            market.set_l_zero_fixed(l_zero);
+            market.set_reserve_yes_fixed(x);
+            market.set_reserve_no_fixed(y);
+            market.set_total_lp_shares_fixed(amount_fixed);
+        } else {
+            // Follow-up deposit: keep the current price, and add backing for
+            // `amount` USDC at the worst-case side (fix #1). L_0 is linear in the
+            // budget, so the same calibration yields the L_0 *increment*. Shares
+            // are minted in proportion to that increment (see
+            // `shares_for_l_zero_increment`), NOT 1 per USDC — the pool's
+            // backing per share drifts from 1 as soon as trades skew it.
+            let l_eff = market.l_effective(now)?;
+            let price = pm_math::price_from_reserves(
+                market.reserve_yes_fixed(),
+                market.reserve_no_fixed(),
+                l_eff,
+            )?;
+
+            let total_shares = market.total_lp_shares_fixed();
+            let l_zero_increment =
+                pm_math::suggest_l_zero_for_max_reserve(amount, time_remaining, price)?;
+            let new_l_zero = market.l_zero_fixed() + l_zero_increment;
+            let new_l_eff = pm_math::l_effective(new_l_zero, time_remaining)?;
+            let (x, y) = pm_math::reserves_from_price(price, new_l_eff)?;
+
+            new_shares =
+                shares_for_l_zero_increment(total_shares, market.l_zero_fixed(), l_zero_increment)?;
+            let new_total = total_shares + new_shares;
+            (excess_yes, excess_no) = deposit_excess(
+                amount,
+                x - market.reserve_yes_fixed(),
+                y - market.reserve_no_fixed(),
+            );
+
+            market.set_l_zero_fixed(new_l_zero);
+            market.set_reserve_yes_fixed(x);
+            market.set_reserve_no_fixed(y);
+            market.set_total_lp_shares_fixed(new_total);
+        }
+    }
+    // market mutable borrow dropped here
+
+    // --- Phase 2: CPI transfer ---
+    token::transfer(
+        CpiContext::new(
+            ctx.accounts.token_program.key(),
+            Transfer {
+                from: ctx.accounts.user_collateral.to_account_info(),
+                to: ctx.accounts.vault.to_account_info(),
+                authority: ctx.accounts.signer.to_account_info(),
+            },
+        ),
+        amount,
+    )?;
+
+    // --- Phase 3: Update LP position ---
+    let lp = &mut ctx.accounts.lp_position;
+    let is_new = lp.shares == 0 && lp.collateral_deposited == 0;
+    if is_new {
+        // New position — no pending to claim
+        lp.owner = ctx.accounts.signer.key();
+        lp.market = ctx.accounts.market.key();
+        lp.bump = ctx.bumps.lp_position;
+    } else {
+        // Existing position — snapshot pending residuals into shares
+        // (pending will be claimable on next claim/withdraw)
+        // We don't auto-claim here (no mint accounts in deposit context)
+        // but we MUST NOT clobber checkpoints if there are pending residuals.
+        // Solution: only update checkpoints for the NEW shares portion.
+        // The pending from old shares is preserved by not touching checkpoints
+        // until the LP claims.
+        //
+        // Actually the correct approach: DON'T reset checkpoints.
+        // The LP's pending = (cum - checkpoint) * old_shares.
+        // After deposit: pending = (cum - checkpoint) * (old_shares + new_shares)
+        // This overcounts by (cum - checkpoint) * new_shares.
+        // Fix: add new_shares worth of "pre-paid" residuals to checkpoint.
+        // Equivalent: set checkpoint to cum for new shares only.
+        // Formula: new_checkpoint = (old_checkpoint * old_shares + cum * new_shares) / total_shares
+    }
+
+    let old_shares = I80F48::from_bits(lp.shares as i128);
+    let cum_yes = ctx.accounts.market.cum_yes_per_share_fixed();
+    let cum_no = ctx.accounts.market.cum_no_per_share_fixed();
+
+    if !is_new {
+        // Weighted checkpoint: preserve pending for old shares, zero for new
+        let total = old_shares + new_shares;
+        let old_cp_yes = I80F48::from_bits(lp.yes_per_share_checkpoint as i128);
+        let old_cp_no = I80F48::from_bits(lp.no_per_share_checkpoint as i128);
+        let new_cp_yes = (old_cp_yes * old_shares + cum_yes * new_shares) / total;
+        let new_cp_no = (old_cp_no * old_shares + cum_no * new_shares) / total;
+        lp.yes_per_share_checkpoint = new_cp_yes.to_bits() as u128;
+        lp.no_per_share_checkpoint = new_cp_no.to_bits() as u128;
+    } else {
+        // First deposit — set checkpoints to current cum
+        lp.yes_per_share_checkpoint = ctx.accounts.market.cum_yes_per_share;
+        lp.no_per_share_checkpoint = ctx.accounts.market.cum_no_per_share;
+    }
+
+    lp.shares = (old_shares + new_shares).to_bits() as u128;
+    lp.collateral_deposited = lp.collateral_deposited.saturating_add(amount);
+    lp.credit_excess(&mut ctx.accounts.market, excess_yes, excess_no);
+
+    Ok(())
+}

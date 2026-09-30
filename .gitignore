@@ -1,0 +1,33 @@
+.anchor
+.DS_Store
+target
+**/*.rs.bk
+node_modules
+test-ledger
+.yarn
+.env
+.env.local
+app/.next
+design_handoff_pmamm_brand
+doc/sprints
+SPRINT_STATUS.md
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+
+# Coverage
+coverage/
+.nyc_output/
+oracle/.venv
+
+# Workspace / build output / agent state
+.claude/
+packages/*/dist
+packages/*/*.tgz
+.vercel

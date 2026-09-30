@@ -1,0 +1,111 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  rust-tests:
+    name: Rust unit tests + Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            anchor/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('anchor/Cargo.lock') }}
+
+      - name: Install Solana toolchain
+        run: |
+          sh -c "$(curl -sSfL https://release.anza.xyz/v2.2.14/install)"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+
+      - name: Run Rust unit tests
+        working-directory: anchor
+        run: cargo test --package pm_amm --lib
+
+      - name: Run Clippy
+        working-directory: anchor
+        run: cargo clippy --package pm_amm --lib -- -D warnings
+
+      - name: Check Rustfmt
+        working-directory: anchor
+        run: cargo fmt --package pm_amm -- --check
+
+  frontend-build:
+    name: Frontend type-check & build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies (workspace)
+        run: pnpm install
+
+      - name: Build SDK
+        run: pnpm --filter @pm-amm/sdk build
+
+      - name: Type-check
+        working-directory: app
+        run: pnpm tsc --noEmit
+
+      - name: Build
+        working-directory: app
+        run: pnpm build
+
+  python-oracle:
+    name: Python oracle tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install scipy numpy pytest
+
+      - name: Run oracle tests
+        working-directory: oracle
+        run: python -m pytest test_oracle.py test_properties.py -v
+
+  idl-coherence:
+    # Guards against IDL drift: the bundled JSONs (idl/pm_amm.json and
+    # app/src/lib/pm_amm_idl.json) must stay in sync with the Rust struct
+    # definitions in anchor/programs/pm_amm/src/state.rs. Pure stdlib check,
+    # ~5s on a cold runner.
+    name: IDL ↔ struct coherence
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check IDL coherence
+        run: python3 scripts/check_idl_coherence.py

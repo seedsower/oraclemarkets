@@ -1,0 +1,5477 @@
+{
+  "address": "GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y",
+  "metadata": {
+    "name": "pm_amm",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Paradigm dynamic pm-AMM on Solana"
+  },
+  "instructions": [
+    {
+      "name": "accrue",
+      "docs": [
+        "Permissionless dC_t accrual. Anyone can trigger to release tokens",
+        "from the pool as L_eff decreases over time."
+      ],
+      "discriminator": [
+        23,
+        76,
+        128,
+        149,
+        229,
+        247,
+        72,
+        228
+      ],
+      "accounts": [
+        {
+          "name": "market",
+          "writable": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "attach_leg_to_group",
+      "docs": [
+        "Attach an existing binary Market PDA to a leg slot of a GroupMarket.",
+        "Enforces same authority, same end_ts, and seed price = 10_000/N bps."
+      ],
+      "discriminator": [
+        28,
+        153,
+        111,
+        127,
+        89,
+        110,
+        164,
+        253
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true
+        },
+        {
+          "name": "group_market",
+          "writable": true
+        },
+        {
+          "name": "market",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "leg_index",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "bet_commit",
+      "docs": [
+        "Stake on YES or NO until commit_end_ts (allowlist enforced if set)."
+      ],
+      "discriminator": [
+        235,
+        172,
+        63,
+        85,
+        225,
+        13,
+        148,
+        42
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "bet_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  101,
+                  116,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "bet_vault.vault_id",
+                "account": "BetVault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault_collateral",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "bet_vault"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "bet_vault.collateral_mint",
+                "account": "BetVault"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "user_collateral",
+          "writable": true
+        },
+        {
+          "name": "position",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  101,
+                  116,
+                  95,
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "bet_vault"
+              },
+              {
+                "kind": "account",
+                "path": "signer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "side",
+          "type": {
+            "defined": {
+              "name": "Side"
+            }
+          }
+        },
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "cancel_group_market",
+      "docs": [
+        "Cancel an abandoned GroupMarket past expiration. Marks it resolved with",
+        "`NO_WINNING_LEG`, so attached legs can then be finalized as `Side::No`",
+        "via `resolve_group_leg`. Authority-only."
+      ],
+      "discriminator": [
+        165,
+        237,
+        140,
+        189,
+        29,
+        120,
+        203,
+        131
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true
+        },
+        {
+          "name": "group_market",
+          "writable": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "claim_bet",
+      "docs": [
+        "Winners take `pool × stake / winning_total`; losers get 0. Closes the",
+        "position."
+      ],
+      "discriminator": [
+        60,
+        61,
+        185,
+        215,
+        180,
+        119,
+        174,
+        126
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "bet_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  101,
+                  116,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "bet_vault.vault_id",
+                "account": "BetVault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault_collateral",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "bet_vault"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "bet_vault.collateral_mint",
+                "account": "BetVault"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "user_collateral",
+          "writable": true
+        },
+        {
+          "name": "position",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  101,
+                  116,
+                  95,
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "bet_vault"
+              },
+              {
+                "kind": "account",
+                "path": "signer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "claim_committer",
+      "docs": [
+        "Committer claims back their USDC after launch. (v1: returns the commit",
+        "1:1; v2 will distribute LP shares of the launched market pro-rata.)"
+      ],
+      "discriminator": [
+        69,
+        50,
+        5,
+        130,
+        100,
+        35,
+        107,
+        68
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "vault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault.vault_id",
+                "account": "CommitmentVault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "market",
+          "docs": [
+            "The launched binary market — must match `vault.market`."
+          ]
+        },
+        {
+          "name": "commit_position",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  109,
+                  109,
+                  105,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "signer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "lp_position",
+          "docs": [
+            "The committer's LP position — created here with their pro-rata shares.",
+            "`init` (not `init_if_needed`): a committer who already opened a separate",
+            "LpPosition on this market must use `deposit_liquidity` instead."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  112
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "signer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "claim_committer_group",
+      "docs": [
+        "Per-leg claim for multi-outcome vault committers (v2): mints leg",
+        "YES tokens 1:1 with their commit on that leg, and transfers the",
+        "backing USDC from the commitment vault to the leg's market vault.",
+        "Call once per leg the committer has stake in."
+      ],
+      "discriminator": [
+        167,
+        235,
+        88,
+        38,
+        127,
+        145,
+        253,
+        198
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "vault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  103,
+                  114,
+                  111,
+                  117,
+                  112
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault.vault_id",
+                "account": "CommitmentVaultGroup"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault_collateral",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  103,
+                  114,
+                  111,
+                  117,
+                  112,
+                  95,
+                  99,
+                  111,
+                  108,
+                  108,
+                  97,
+                  116,
+                  101,
+                  114,
+                  97,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "collateral_mint"
+        },
+        {
+          "name": "group_market",
+          "docs": [
+            "The wrapping GroupMarket — verified against vault.group_market."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  114,
+                  111,
+                  117,
+                  112
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "group_market.group_id",
+                "account": "GroupMarket"
+              }
+            ]
+          }
+        },
+        {
+          "name": "market",
+          "docs": [
+            "Leg `leg_index`'s binary market — verified against group.legs[i]."
+          ],
+          "writable": true
+        },
+        {
+          "name": "market_vault",
+          "docs": [
+            "Leg market's USDC vault — destination of the backing transfer."
+          ],
+          "writable": true
+        },
+        {
+          "name": "yes_mint",
+          "writable": true
+        },
+        {
+          "name": "user_yes",
+          "docs": [
+            "User's YES ATA for this leg — init if missing."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "signer"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "yes_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "commit_position",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  109,
+                  109,
+                  105,
+                  116,
+                  95,
+                  103,
+                  114,
+                  111,
+                  117,
+                  112
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "signer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "leg_index",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "claim_lp_residuals",
+      "docs": [
+        "Claim pending YES+NO residuals accrued to an LP position.",
+        "Allowed at any time, including after resolution."
+      ],
+      "discriminator": [
+        245,
+        137,
+        197,
+        230,
+        204,
+        93,
+        183,
+        28
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "signer": true
+        },
+        {
+          "name": "market",
+          "writable": true
+        },
+        {
+          "name": "yes_mint",
+          "writable": true,
+          "relations": [
+            "market"
+          ]
+        },
+        {
+          "name": "no_mint",
+          "writable": true,
+          "relations": [
+            "market"
+          ]
+        },
+        {
+          "name": "lp_position",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  112
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "signer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user_yes",
+          "writable": true
+        },
+        {
+          "name": "user_no",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "claim_winnings",
+      "docs": [
+        "Burn all user tokens (winning + losing), pay winning side at 1 USDC each.",
+        "Only callable post-resolution. Burns both sides atomically."
+      ],
+      "discriminator": [
+        161,
+        215,
+        24,
+        59,
+        14,
+        236,
+        242,
+        221
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "market"
+        },
+        {
+          "name": "collateral_mint",
+          "relations": [
+            "market"
+          ]
+        },
+        {
+          "name": "yes_mint",
+          "writable": true,
+          "relations": [
+            "market"
+          ]
+        },
+        {
+          "name": "no_mint",
+          "writable": true,
+          "relations": [
+            "market"
+          ]
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "relations": [
+            "market"
+          ]
+        },
+        {
+          "name": "user_yes",
+          "docs": [
+            "User's YES token account."
+          ],
+          "writable": true
+        },
+        {
+          "name": "user_no",
+          "docs": [
+            "User's NO token account."
+          ],
+          "writable": true
+        },
+        {
+          "name": "user_collateral",
+          "docs": [
+            "User's USDC token account."
+          ],
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "deposit_liquidity",
+      "docs": [
+        "Deposit USDC as liquidity. First deposit bootstraps L_0 at 50/50 price.",
+        "Subsequent deposits scale L_0 proportionally to preserve the current price."
+      ],
+      "discriminator": [
+        245,
+        99,
+        59,
+        25,
+        151,
+        71,
+        233,
+        249
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "market",
+          "writable": true
+        },
+        {
+          "name": "collateral_mint",
+          "relations": [
+            "market"
+          ]
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "relations": [
+            "market"
+          ]
+        },
+        {
+          "name": "user_collateral",
+          "writable": true
+        },
+        {
+          "name": "lp_position",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  112
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "signer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "initialize_bet_vault",
+      "docs": [
+        "Open a bet vault. `lp_bps` = share of the pot deposited as liquidity at",
+        "launch (capped at the favourite's stake share). `resolver` =",
+        "`Pubkey::default()` → the caller. Empty `allowlist` → anyone may commit."
+      ],
+      "discriminator": [
+        50,
+        239,
+        133,
+        55,
+        197,
+        177,
+        13,
+        206
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "bet_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  101,
+                  116,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "vault_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "collateral_mint",
+          "docs": [
+            "Collateral mint — any SPL mint (YES/NO inherit its decimals at launch)."
+          ]
+        },
+        {
+          "name": "vault_collateral",
+          "docs": [
+            "The vault PDA's collateral ATA. An ATA (not a custom PDA) so the swap",
+            "creator-fee account resolves to it like for any market authority."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "bet_vault"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "collateral_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        }
+      ],
+      "args": [
+        {
+          "name": "vault_id",
+          "type": "u64"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "commit_duration_secs",
+          "type": "i64"
+        },
+        {
+          "name": "market_duration_secs",
+          "type": "i64"
+        },
+        {
+          "name": "min_total",
+          "type": "u64"
+        },
+        {
+          "name": "lp_bps",
+          "type": "u16"
+        },
+        {
+          "name": "resolver",
+          "type": "pubkey"
+        },
+        {
+          "name": "allowlist",
+          "type": {
+            "vec": "pubkey"
+          }
+        },
+        {
+          "name": "void_grace_secs",
+          "type": "i64"
+        }
+      ]
+    },
+    {
+      "name": "initialize_group_market",
+      "docs": [
+        "Create a GroupMarket wrapping `leg_count` binary markets as a",
+        "categorical (multi-outcome) prediction market. Legs are attached",
+        "separately via `attach_leg_to_group` and must each be seeded at",
+        "`10_000 / leg_count` bps so Σ p_i = 1 at open."
+      ],
+      "discriminator": [
+        117,
+        158,
+        140,
+        184,
+        36,
+        187,
+        244,
+        215
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "group_market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  114,
+                  111,
+                  117,
+                  112
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "group_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "group_id",
+          "type": "u64"
+        },
+        {
+          "name": "end_ts",
+          "type": "i64"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "leg_count",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "initialize_market",
+      "docs": [
+        "Create a new prediction market with YES/NO mints, a USDC vault,",
+        "and Metaplex token metadata for wallet display.",
+        "",
+        "`initial_price_bps` seeds the YES price at first deposit. Pass `0` for",
+        "the legacy 50/50 default. For multi-outcome groups, pass `10_000 / N`."
+      ],
+      "discriminator": [
+        35,
+        35,
+        189,
+        193,
+        155,
+        48,
+        170,
+        203
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "market_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "collateral_mint",
+          "docs": [
+            "The collateral mint — ANY SPL mint. The YES/NO mints below are created",
+            "with the SAME decimals, so \"1 collateral unit = 1 winning token\" holds",
+            "and the reserves/solvency math stays scale-invariant."
+          ]
+        },
+        {
+          "name": "yes_mint",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  121,
+                  101,
+                  115,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "no_mint",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  110,
+                  111,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "yes_metadata",
+          "writable": true
+        },
+        {
+          "name": "no_metadata",
+          "writable": true
+        },
+        {
+          "name": "token_metadata_program",
+          "address": "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "market_id",
+          "type": "u64"
+        },
+        {
+          "name": "end_ts",
+          "type": "i64"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "initial_price_bps",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "initialize_vault",
+      "docs": [
+        "Open a new Commitment Vault. Anyone can call. Aggregates crowd commits",
+        "before the market exists; the launch price is computed from the",
+        "commit ratio."
+      ],
+      "discriminator": [
+        48,
+        191,
+        163,
+        44,
+        71,
+        129,
+        63,
+        164
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "vault_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "collateral_mint",
+          "docs": [
+            "Collateral mint — any SPL mint. YES/NO mints inherit its decimals at launch."
+          ]
+        },
+        {
+          "name": "vault_collateral",
+          "docs": [
+            "PDA-owned token account that aggregates all commits."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  99,
+                  111,
+                  108,
+                  108,
+                  97,
+                  116,
+                  101,
+                  114,
+                  97,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "vault_id",
+          "type": "u64"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "commit_duration_secs",
+          "type": "i64"
+        },
+        {
+          "name": "market_duration_secs",
+          "type": "i64"
+        },
+        {
+          "name": "min_total",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "initialize_vault_group",
+      "docs": [
+        "Open a multi-outcome Commitment Vault. Authority picks the leg names",
+        "(2..=8). Crowd then commits per-leg with `vault_commit_group`."
+      ],
+      "discriminator": [
+        193,
+        241,
+        71,
+        211,
+        134,
+        166,
+        9,
+        65
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  103,
+                  114,
+                  111,
+                  117,
+                  112
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "vault_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "collateral_mint",
+          "docs": [
+            "Collateral mint — any SPL mint. YES/NO mints inherit its decimals at launch."
+          ]
+        },
+        {
+          "name": "vault_collateral",
+          "docs": [
+            "PDA-owned token account that aggregates all commits."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  103,
+                  114,
+                  111,
+                  117,
+                  112,
+                  95,
+                  99,
+                  111,
+                  108,
+                  108,
+                  97,
+                  116,
+                  101,
+                  114,
+                  97,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "vault_id",
+          "type": "u64"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "leg_names",
+          "type": {
+            "vec": "string"
+          }
+        },
+        {
+          "name": "commit_duration_secs",
+          "type": "i64"
+        },
+        {
+          "name": "market_duration_secs",
+          "type": "i64"
+        },
+        {
+          "name": "min_total",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "launch_bet_vault",
+      "docs": [
+        "Launch the market at the stake-implied odds. Authority or resolver only.",
+        "The vault PDA becomes market.authority (resolution + creator fee)."
+      ],
+      "discriminator": [
+        57,
+        68,
+        247,
+        163,
+        22,
+        165,
+        60,
+        200
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "docs": [
+            "Authority or resolver — pays the rent of the new accounts."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "bet_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  101,
+                  116,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "bet_vault.vault_id",
+                "account": "BetVault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "market_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "collateral_mint"
+        },
+        {
+          "name": "yes_mint",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  121,
+                  101,
+                  115,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "no_mint",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  110,
+                  111,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "market_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault_collateral",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "bet_vault"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "collateral_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "vault_lp_position",
+          "docs": [
+            "The vault PDA's LP position on the new market."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  112
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "bet_vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "yes_metadata",
+          "writable": true
+        },
+        {
+          "name": "no_metadata",
+          "writable": true
+        },
+        {
+          "name": "token_metadata_program",
+          "address": "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "market_id",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "launch_vault_group_leg",
+      "docs": [
+        "Step 2 of launch (run once per leg): create the leg's binary Market +",
+        "mints + vault + Metaplex metadata, then attach it to the GroupMarket.",
+        "Each leg market is seeded at `leg_totals[i] / total` bps."
+      ],
+      "discriminator": [
+        22,
+        177,
+        160,
+        234,
+        146,
+        14,
+        138,
+        22
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  103,
+                  114,
+                  111,
+                  117,
+                  112
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault.vault_id",
+                "account": "CommitmentVaultGroup"
+              }
+            ]
+          }
+        },
+        {
+          "name": "group_market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  114,
+                  111,
+                  117,
+                  112
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "group_market.group_id",
+                "account": "GroupMarket"
+              }
+            ]
+          }
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "market_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "collateral_mint"
+        },
+        {
+          "name": "yes_mint",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  121,
+                  101,
+                  115,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "no_mint",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  110,
+                  111,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "market_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "yes_metadata",
+          "writable": true
+        },
+        {
+          "name": "no_metadata",
+          "writable": true
+        },
+        {
+          "name": "token_metadata_program",
+          "address": "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "leg_index",
+          "type": "u8"
+        },
+        {
+          "name": "market_id",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "launch_vault_group_market",
+      "docs": [
+        "Step 1 of launch: create the wrapping GroupMarket. Permissionless.",
+        "Refuses if any leg has < 100 bps share (the underlying pm-AMM floor)."
+      ],
+      "discriminator": [
+        48,
+        135,
+        81,
+        146,
+        113,
+        91,
+        118,
+        148
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "docs": [
+            "Permissionless caller — pays rent."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  103,
+                  114,
+                  111,
+                  117,
+                  112
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault.vault_id",
+                "account": "CommitmentVaultGroup"
+              }
+            ]
+          }
+        },
+        {
+          "name": "group_market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  114,
+                  111,
+                  117,
+                  112
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "group_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "group_id",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "launch_vault_market",
+      "docs": [
+        "Launch the underlying pm-AMM market once commit_end_ts has passed and",
+        "total ≥ min_total. Permissionless. The caller pays the rent of the",
+        "new Market + mints + vault + Metaplex metadata accounts."
+      ],
+      "discriminator": [
+        1,
+        156,
+        237,
+        172,
+        168,
+        32,
+        92,
+        222
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "docs": [
+            "Permissionless caller — pays the rent for the new Market/mints/vault."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault.vault_id",
+                "account": "CommitmentVault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "market",
+          "docs": [
+            "New Market PDA — derived from `market_id` (typically vault_id reused)."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "market_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "collateral_mint"
+        },
+        {
+          "name": "yes_mint",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  121,
+                  101,
+                  115,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "no_mint",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  110,
+                  111,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "market_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault_collateral",
+          "docs": [
+            "The commitment vault's collateral ATA — its committed USDC is deposited",
+            "into `market_vault` here as the bootstrap liquidity (option C)."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  99,
+                  111,
+                  108,
+                  108,
+                  97,
+                  116,
+                  101,
+                  114,
+                  97,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "yes_metadata",
+          "writable": true
+        },
+        {
+          "name": "no_metadata",
+          "writable": true
+        },
+        {
+          "name": "token_metadata_program",
+          "address": "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "market_id",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "redeem_pair",
+      "docs": [
+        "Burn 1 YES + 1 NO to receive 1 USDC. Always valid, pre- or post-resolution."
+      ],
+      "discriminator": [
+        157,
+        102,
+        125,
+        192,
+        31,
+        48,
+        165,
+        114
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "market"
+        },
+        {
+          "name": "collateral_mint",
+          "relations": [
+            "market"
+          ]
+        },
+        {
+          "name": "yes_mint",
+          "writable": true,
+          "relations": [
+            "market"
+          ]
+        },
+        {
+          "name": "no_mint",
+          "writable": true,
+          "relations": [
+            "market"
+          ]
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "relations": [
+            "market"
+          ]
+        },
+        {
+          "name": "user_yes",
+          "writable": true
+        },
+        {
+          "name": "user_no",
+          "writable": true
+        },
+        {
+          "name": "user_collateral",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "refund_bet",
+      "docs": [
+        "Refund 1:1 when the bet vault can never launch. Closes the position."
+      ],
+      "discriminator": [
+        209,
+        182,
+        226,
+        96,
+        55,
+        121,
+        83,
+        183
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "bet_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  101,
+                  116,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "bet_vault.vault_id",
+                "account": "BetVault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault_collateral",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "bet_vault"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "bet_vault.collateral_mint",
+                "account": "BetVault"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "user_collateral",
+          "writable": true
+        },
+        {
+          "name": "position",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  101,
+                  116,
+                  95,
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "bet_vault"
+              },
+              {
+                "kind": "account",
+                "path": "signer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "refund_commit",
+      "docs": [
+        "Refund a committer 1:1 if the vault never launched."
+      ],
+      "discriminator": [
+        99,
+        40,
+        188,
+        37,
+        189,
+        16,
+        39,
+        175
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "signer": true
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault.vault_id",
+                "account": "CommitmentVault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault_collateral",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  99,
+                  111,
+                  108,
+                  108,
+                  97,
+                  116,
+                  101,
+                  114,
+                  97,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "collateral_mint"
+        },
+        {
+          "name": "user_collateral",
+          "writable": true
+        },
+        {
+          "name": "commit_position",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  109,
+                  109,
+                  105,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "signer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "refund_commit_group",
+      "docs": [
+        "Refund a committer 1:1 if the multi-outcome vault never launched."
+      ],
+      "discriminator": [
+        176,
+        240,
+        56,
+        11,
+        1,
+        70,
+        125,
+        225
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "signer": true
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  103,
+                  114,
+                  111,
+                  117,
+                  112
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault.vault_id",
+                "account": "CommitmentVaultGroup"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault_collateral",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  103,
+                  114,
+                  111,
+                  117,
+                  112,
+                  95,
+                  99,
+                  111,
+                  108,
+                  108,
+                  97,
+                  116,
+                  101,
+                  114,
+                  97,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "collateral_mint"
+        },
+        {
+          "name": "user_collateral",
+          "writable": true
+        },
+        {
+          "name": "commit_position",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  109,
+                  109,
+                  105,
+                  116,
+                  95,
+                  103,
+                  114,
+                  111,
+                  117,
+                  112
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "signer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "resolve_bet_vault",
+      "docs": [
+        "Resolve the bet vault's market after expiration. Resolver only."
+      ],
+      "discriminator": [
+        87,
+        30,
+        92,
+        24,
+        68,
+        181,
+        99,
+        230
+      ],
+      "accounts": [
+        {
+          "name": "resolver",
+          "signer": true
+        },
+        {
+          "name": "bet_vault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  101,
+                  116,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "bet_vault.vault_id",
+                "account": "BetVault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "market",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "winning_side",
+          "type": {
+            "defined": {
+              "name": "Side"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "resolve_group",
+      "docs": [
+        "Resolve a GroupMarket: authority picks the winning leg.",
+        "Must run after expiration and after all legs are attached."
+      ],
+      "discriminator": [
+        61,
+        207,
+        24,
+        75,
+        145,
+        186,
+        16,
+        118
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true
+        },
+        {
+          "name": "group_market",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "winning_leg",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "resolve_group_leg",
+      "docs": [
+        "Cascade-resolve one leg of a resolved GroupMarket. Permissionless:",
+        "the group's `winning_leg` is the source of truth (winning → Yes,",
+        "all others → No)."
+      ],
+      "discriminator": [
+        177,
+        186,
+        101,
+        235,
+        171,
+        48,
+        122,
+        23
+      ],
+      "accounts": [
+        {
+          "name": "group_market"
+        },
+        {
+          "name": "market",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "leg_index",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "resolve_market",
+      "docs": [
+        "Resolve the market after expiration. Authority-only.",
+        "Triggers final accrual and sets the winning side."
+      ],
+      "discriminator": [
+        155,
+        23,
+        80,
+        173,
+        46,
+        74,
+        23,
+        239
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "signer": true
+        },
+        {
+          "name": "market",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "winning_side",
+          "type": {
+            "defined": {
+              "name": "Side"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "settle_bet_vault",
+      "docs": [
+        "Collect the vault's winning claims from the market and freeze the payout",
+        "pool. Permissionless, once, after resolution."
+      ],
+      "discriminator": [
+        65,
+        23,
+        212,
+        137,
+        78,
+        241,
+        94,
+        127
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "signer": true
+        },
+        {
+          "name": "bet_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  101,
+                  116,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "bet_vault.vault_id",
+                "account": "BetVault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "market",
+          "writable": true
+        },
+        {
+          "name": "market_vault",
+          "writable": true
+        },
+        {
+          "name": "vault_collateral",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "bet_vault"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "bet_vault.collateral_mint",
+                "account": "BetVault"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "vault_lp_position",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  112
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "bet_vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "suggest_l_zero",
+      "docs": [
+        "View-only: compute the optimal L_0 for a given USDC budget.",
+        "Emits a `LZeroSuggestion` event. Composable via CPI for auto-LP vaults."
+      ],
+      "discriminator": [
+        145,
+        111,
+        214,
+        80,
+        83,
+        92,
+        179,
+        105
+      ],
+      "accounts": [
+        {
+          "name": "market"
+        }
+      ],
+      "args": [
+        {
+          "name": "budget_usdc",
+          "type": "u64"
+        },
+        {
+          "name": "sigma_bps",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "swap",
+      "docs": [
+        "Swap between USDC, YES, and NO tokens (6 directions).",
+        "Updates reserves and enforces the pm-AMM invariant."
+      ],
+      "discriminator": [
+        248,
+        198,
+        158,
+        145,
+        225,
+        117,
+        135,
+        200
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "market",
+          "writable": true
+        },
+        {
+          "name": "collateral_mint",
+          "relations": [
+            "market"
+          ]
+        },
+        {
+          "name": "yes_mint",
+          "writable": true,
+          "relations": [
+            "market"
+          ]
+        },
+        {
+          "name": "no_mint",
+          "writable": true,
+          "relations": [
+            "market"
+          ]
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "relations": [
+            "market"
+          ]
+        },
+        {
+          "name": "user_collateral",
+          "writable": true
+        },
+        {
+          "name": "user_yes",
+          "writable": true
+        },
+        {
+          "name": "user_no",
+          "writable": true
+        },
+        {
+          "name": "dao_usdc",
+          "docs": [
+            "Protocol DAO's USDC ATA — receives 50% of the swap fee."
+          ],
+          "writable": true
+        },
+        {
+          "name": "creator_usdc",
+          "docs": [
+            "Market creator's USDC ATA — receives 50% of the swap fee. OPTIONAL: pass",
+            "`None` when the swapper IS the creator (they keep their fee share), which",
+            "also avoids a duplicate-mutable-account error with `user_collateral`.",
+            "Validated in the handler when present (owner == market.authority)."
+          ],
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "direction",
+          "type": {
+            "defined": {
+              "name": "SwapDirection"
+            }
+          }
+        },
+        {
+          "name": "amount_in",
+          "type": "u64"
+        },
+        {
+          "name": "min_output",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "vault_commit",
+      "docs": [
+        "Commit USDC on YES or NO. Anyone, any number of times, until",
+        "commit_end_ts. Min commit: 1 USDC."
+      ],
+      "discriminator": [
+        93,
+        97,
+        93,
+        186,
+        110,
+        145,
+        241,
+        119
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault.vault_id",
+                "account": "CommitmentVault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "collateral_mint"
+        },
+        {
+          "name": "vault_collateral",
+          "docs": [
+            "Vault's PDA-owned collateral ATA — receives the transferred USDC."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  99,
+                  111,
+                  108,
+                  108,
+                  97,
+                  116,
+                  101,
+                  114,
+                  97,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user_collateral",
+          "docs": [
+            "User's USDC source."
+          ],
+          "writable": true
+        },
+        {
+          "name": "commit_position",
+          "docs": [
+            "CommitPosition tracks this signer's commits on this vault.",
+            "init_if_needed: first commit creates it, subsequent commits update."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  109,
+                  109,
+                  105,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "signer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "side",
+          "type": {
+            "defined": {
+              "name": "Side"
+            }
+          }
+        },
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "vault_commit_group",
+      "docs": [
+        "Commit USDC on a specific leg of a multi-outcome vault. Same rules as",
+        "`vault_commit`: anyone, any number of times, until commit_end_ts."
+      ],
+      "discriminator": [
+        148,
+        85,
+        199,
+        203,
+        20,
+        165,
+        174,
+        124
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  103,
+                  114,
+                  111,
+                  117,
+                  112
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault.vault_id",
+                "account": "CommitmentVaultGroup"
+              }
+            ]
+          }
+        },
+        {
+          "name": "collateral_mint"
+        },
+        {
+          "name": "vault_collateral",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  103,
+                  114,
+                  111,
+                  117,
+                  112,
+                  95,
+                  99,
+                  111,
+                  108,
+                  108,
+                  97,
+                  116,
+                  101,
+                  114,
+                  97,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user_collateral",
+          "writable": true
+        },
+        {
+          "name": "commit_position",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  109,
+                  109,
+                  105,
+                  116,
+                  95,
+                  103,
+                  114,
+                  111,
+                  117,
+                  112
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "signer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "leg_index",
+          "type": "u8"
+        },
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "void_bet_vault",
+      "docs": [
+        "Fallback when the resolver never resolves: after `market.end_ts +",
+        "void_grace_secs`, anyone can void the vault and `claim_bet` then refunds",
+        "every committer pro-rata to their stake."
+      ],
+      "discriminator": [
+        166,
+        7,
+        212,
+        72,
+        200,
+        96,
+        93,
+        150
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "signer": true
+        },
+        {
+          "name": "bet_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  101,
+                  116,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "bet_vault.vault_id",
+                "account": "BetVault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "market",
+          "writable": true
+        },
+        {
+          "name": "market_vault",
+          "writable": true
+        },
+        {
+          "name": "vault_collateral",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "bet_vault"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "bet_vault.collateral_mint",
+                "account": "BetVault"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "vault_lp_position",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  112
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "bet_vault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "withdraw_liquidity",
+      "docs": [
+        "Withdraw LP shares: auto-claims pending residuals, then mints",
+        "proportional YES+NO tokens from the pool reserves."
+      ],
+      "discriminator": [
+        149,
+        158,
+        33,
+        185,
+        47,
+        243,
+        253,
+        31
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "market",
+          "writable": true
+        },
+        {
+          "name": "collateral_mint",
+          "relations": [
+            "market"
+          ]
+        },
+        {
+          "name": "yes_mint",
+          "writable": true,
+          "relations": [
+            "market"
+          ]
+        },
+        {
+          "name": "no_mint",
+          "writable": true,
+          "relations": [
+            "market"
+          ]
+        },
+        {
+          "name": "lp_position",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  112
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "signer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user_yes",
+          "writable": true
+        },
+        {
+          "name": "user_no",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "shares_to_burn",
+          "type": "u128"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "BetPosition",
+      "discriminator": [
+        29,
+        52,
+        8,
+        132,
+        175,
+        149,
+        65,
+        0
+      ]
+    },
+    {
+      "name": "BetVault",
+      "discriminator": [
+        103,
+        78,
+        21,
+        234,
+        18,
+        250,
+        230,
+        209
+      ]
+    },
+    {
+      "name": "CommitPosition",
+      "discriminator": [
+        144,
+        59,
+        6,
+        201,
+        179,
+        120,
+        138,
+        51
+      ]
+    },
+    {
+      "name": "CommitPositionGroup",
+      "discriminator": [
+        72,
+        88,
+        193,
+        73,
+        54,
+        37,
+        222,
+        238
+      ]
+    },
+    {
+      "name": "CommitmentVault",
+      "discriminator": [
+        14,
+        195,
+        87,
+        111,
+        213,
+        201,
+        5,
+        129
+      ]
+    },
+    {
+      "name": "CommitmentVaultGroup",
+      "discriminator": [
+        54,
+        104,
+        214,
+        215,
+        55,
+        178,
+        183,
+        152
+      ]
+    },
+    {
+      "name": "GroupMarket",
+      "discriminator": [
+        64,
+        120,
+        105,
+        242,
+        92,
+        182,
+        3,
+        113
+      ]
+    },
+    {
+      "name": "LpPosition",
+      "discriminator": [
+        105,
+        241,
+        37,
+        200,
+        224,
+        2,
+        252,
+        90
+      ]
+    },
+    {
+      "name": "Market",
+      "discriminator": [
+        219,
+        190,
+        213,
+        55,
+        0,
+        227,
+        198,
+        154
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "LZeroSuggestion",
+      "discriminator": [
+        177,
+        83,
+        48,
+        170,
+        82,
+        64,
+        221,
+        54
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "MarketAlreadyResolved",
+      "msg": "Market already resolved"
+    },
+    {
+      "code": 6001,
+      "name": "MarketNotResolved",
+      "msg": "Market not yet resolved"
+    },
+    {
+      "code": 6002,
+      "name": "MarketExpired",
+      "msg": "Market has expired"
+    },
+    {
+      "code": 6003,
+      "name": "MarketNotExpired",
+      "msg": "Market has not expired yet"
+    },
+    {
+      "code": 6004,
+      "name": "InsufficientLiquidity",
+      "msg": "Insufficient liquidity or balance"
+    },
+    {
+      "code": 6005,
+      "name": "InsufficientOutput",
+      "msg": "Swap output below minimum"
+    },
+    {
+      "code": 6006,
+      "name": "InsufficientBalance",
+      "msg": "Insufficient user token balance"
+    },
+    {
+      "code": 6007,
+      "name": "SlippageExceeded",
+      "msg": "Slippage tolerance exceeded"
+    },
+    {
+      "code": 6008,
+      "name": "Unauthorized",
+      "msg": "Unauthorized"
+    },
+    {
+      "code": 6009,
+      "name": "InvalidPrice",
+      "msg": "Invalid price: must be in (0, 1)"
+    },
+    {
+      "code": 6010,
+      "name": "MathOverflow",
+      "msg": "Math overflow"
+    },
+    {
+      "code": 6011,
+      "name": "NoResidualsToClaim",
+      "msg": "No residuals to claim"
+    },
+    {
+      "code": 6012,
+      "name": "InvalidDuration",
+      "msg": "Invalid duration"
+    },
+    {
+      "code": 6013,
+      "name": "InvalidBudget",
+      "msg": "Invalid budget or amount"
+    },
+    {
+      "code": 6014,
+      "name": "InvalidWinningMint",
+      "msg": "Invalid winning mint: does not match resolved side"
+    },
+    {
+      "code": 6015,
+      "name": "InsufficientVault",
+      "msg": "Insufficient vault balance"
+    },
+    {
+      "code": 6016,
+      "name": "InvalidName",
+      "msg": "Invalid name: must be 1-64 bytes"
+    },
+    {
+      "code": 6017,
+      "name": "InvalidLegCount",
+      "msg": "Invalid leg count: must be between 2 and MAX_LEGS"
+    },
+    {
+      "code": 6018,
+      "name": "InvalidLegIndex",
+      "msg": "Invalid leg index: out of bounds for this group"
+    },
+    {
+      "code": 6019,
+      "name": "LegAlreadyAttached",
+      "msg": "Leg slot already attached"
+    },
+    {
+      "code": 6020,
+      "name": "LegMismatch",
+      "msg": "Leg market does not match the slot stored on the group"
+    },
+    {
+      "code": 6021,
+      "name": "GroupAlreadyResolved",
+      "msg": "Group market already resolved"
+    },
+    {
+      "code": 6022,
+      "name": "GroupNotResolved",
+      "msg": "Group market not yet resolved"
+    },
+    {
+      "code": 6023,
+      "name": "GroupNotExpired",
+      "msg": "Group market not yet expired"
+    },
+    {
+      "code": 6024,
+      "name": "GroupIncomplete",
+      "msg": "Group market has missing legs (must attach all N legs first)"
+    },
+    {
+      "code": 6025,
+      "name": "LegEndTsMismatch",
+      "msg": "Leg market end_ts does not match group end_ts"
+    },
+    {
+      "code": 6026,
+      "name": "LegMustCascadeResolve",
+      "msg": "Leg attached to a group must resolve via resolve_group_leg"
+    },
+    {
+      "code": 6027,
+      "name": "GroupCancelTooEarly",
+      "msg": "Group can only be cancelled after expiration"
+    },
+    {
+      "code": 6028,
+      "name": "VaultAlreadyLaunched",
+      "msg": "Vault is already launched"
+    },
+    {
+      "code": 6029,
+      "name": "VaultNotLaunched",
+      "msg": "Vault is not yet launched"
+    },
+    {
+      "code": 6030,
+      "name": "CommitPhaseClosed",
+      "msg": "Vault commit phase has not started or already ended"
+    },
+    {
+      "code": 6031,
+      "name": "CommitPhaseNotEnded",
+      "msg": "Vault commit phase has not yet ended"
+    },
+    {
+      "code": 6032,
+      "name": "CommitTooSmall",
+      "msg": "Commit amount below MIN_COMMIT_USDC"
+    },
+    {
+      "code": 6033,
+      "name": "VaultBelowMinTotal",
+      "msg": "Vault total below min_total threshold"
+    },
+    {
+      "code": 6034,
+      "name": "InvalidCommitDuration",
+      "msg": "Invalid commit duration: must be 1 min ≤ d ≤ 7 days"
+    },
+    {
+      "code": 6035,
+      "name": "InvalidMarketDuration",
+      "msg": "Invalid market duration: must be 5 min ≤ d ≤ 30 days"
+    },
+    {
+      "code": 6036,
+      "name": "AlreadyClaimed",
+      "msg": "Commit position already claimed"
+    },
+    {
+      "code": 6037,
+      "name": "RefundNotAvailable",
+      "msg": "Refund only available if vault is unlaunched and either commit ended below threshold OR commit ended without launch"
+    },
+    {
+      "code": 6038,
+      "name": "NoCommitFunds",
+      "msg": "Commit position has no funds to claim or refund"
+    },
+    {
+      "code": 6039,
+      "name": "VaultGroupLegOutOfBounds",
+      "msg": "Vault group leg index out of bounds (>= leg_count)"
+    },
+    {
+      "code": 6040,
+      "name": "VaultGroupLegAlreadyLaunched",
+      "msg": "Vault group leg already launched"
+    },
+    {
+      "code": 6041,
+      "name": "VaultGroupNotAllLegsLaunched",
+      "msg": "Vault group: not all legs launched yet"
+    },
+    {
+      "code": 6042,
+      "name": "VaultGroupInsufficientLegShare",
+      "msg": "Vault group leg has insufficient share (< 100 bps after rounding)"
+    },
+    {
+      "code": 6043,
+      "name": "VaultGroupNotInitialized",
+      "msg": "Vault group: group market not yet created"
+    },
+    {
+      "code": 6044,
+      "name": "InvalidLegName",
+      "msg": "Invalid leg name: must be 1-32 bytes"
+    },
+    {
+      "code": 6045,
+      "name": "InvalidMarket",
+      "msg": "Market account does not match the one stored on the vault"
+    },
+    {
+      "code": 6046,
+      "name": "InvalidVault",
+      "msg": "Market vault token account does not match market.vault"
+    },
+    {
+      "code": 6047,
+      "name": "BetVaultInvalidOdds",
+      "msg": "Bet vault needs stakes on both sides with odds in [1%, 99%]"
+    },
+    {
+      "code": 6048,
+      "name": "NotOnAllowlist",
+      "msg": "Signer is not on this bet vault's allowlist"
+    },
+    {
+      "code": 6049,
+      "name": "AllowlistTooLong",
+      "msg": "Allowlist longer than MAX_BET_ALLOWLIST"
+    },
+    {
+      "code": 6050,
+      "name": "InvalidLpBps",
+      "msg": "lp_bps must be between 0 and 10_000"
+    },
+    {
+      "code": 6051,
+      "name": "BetVaultNotSettled",
+      "msg": "Bet vault not settled yet"
+    },
+    {
+      "code": 6052,
+      "name": "BetVaultAlreadySettled",
+      "msg": "Bet vault already settled"
+    },
+    {
+      "code": 6053,
+      "name": "InvalidVoidGrace",
+      "msg": "void_grace_secs must be between 5 min and 30 days"
+    },
+    {
+      "code": 6054,
+      "name": "VoidTooEarly",
+      "msg": "Void grace period has not elapsed yet"
+    }
+  ],
+  "types": [
+    {
+      "name": "BetPosition",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "yes_amount",
+            "type": "u64"
+          },
+          {
+            "name": "no_amount",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "_reserved",
+            "type": {
+              "array": [
+                "u8",
+                16
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "BetVault",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "resolver",
+            "docs": [
+              "Only key allowed to resolve (defaults to `authority`). Launch is",
+              "allowed to either `authority` or `resolver`."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "vault_id",
+            "type": "u64"
+          },
+          {
+            "name": "collateral_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "name",
+            "docs": [
+              "UTF-8 zero-padded name (becomes the launched market's name)."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                64
+              ]
+            }
+          },
+          {
+            "name": "commit_end_ts",
+            "type": "i64"
+          },
+          {
+            "name": "market_end_ts",
+            "type": "i64"
+          },
+          {
+            "name": "yes_total",
+            "type": "u64"
+          },
+          {
+            "name": "no_total",
+            "type": "u64"
+          },
+          {
+            "name": "commit_count",
+            "type": "u32"
+          },
+          {
+            "name": "min_total",
+            "type": "u64"
+          },
+          {
+            "name": "lp_bps",
+            "docs": [
+              "Requested share of the pot deposited as liquidity, in bps (0..=10_000)."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "effective_lp_bps",
+            "docs": [
+              "Share actually deposited at launch: `min(lp_bps, favourite share)`."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "allowlist_len",
+            "docs": [
+              "Number of used `allowlist` slots. 0 = anyone may commit."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "allowlist",
+            "type": {
+              "array": [
+                "pubkey",
+                8
+              ]
+            }
+          },
+          {
+            "name": "launched",
+            "type": "bool"
+          },
+          {
+            "name": "price_bps",
+            "docs": [
+              "Launch price (bps of YES) = odds implied by the stakes."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "market",
+            "docs": [
+              "The launched Market PDA. `Pubkey::default()` pre-launch."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "winning_side",
+            "docs": [
+              "Set by `settle_bet_vault`: 1 = YES, 2 = NO."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "settled",
+            "type": "bool"
+          },
+          {
+            "name": "payout_pool",
+            "docs": [
+              "Vault collateral balance frozen at settlement — what winners split."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "claimed_stake",
+            "docs": [
+              "Winning-side stake already claimed, and USDC paid for it (dust sweep)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "paid_out",
+            "type": "u64"
+          },
+          {
+            "name": "refunding",
+            "docs": [
+              "Set by the first `refund_bet`: the vault can then never launch, so a",
+              "partial refund can't flip it back to launchable and trap the rest."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "void_grace_secs",
+            "docs": [
+              "Grace period after `market.end_ts` before `void_bet_vault` opens."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "voided",
+            "docs": [
+              "Set by `void_bet_vault`: the resolver never showed up, so `claim_bet`",
+              "refunds every committer pro-rata to their stake instead of paying the",
+              "winning side."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "_reserved",
+            "type": {
+              "array": [
+                "u8",
+                54
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "CommitPosition",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "yes_amount",
+            "type": "u64"
+          },
+          {
+            "name": "no_amount",
+            "type": "u64"
+          },
+          {
+            "name": "claimed",
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "_reserved",
+            "type": {
+              "array": [
+                "u8",
+                16
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "CommitPositionGroup",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "leg_amounts",
+            "type": {
+              "array": [
+                "u64",
+                8
+              ]
+            }
+          },
+          {
+            "name": "claimed",
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "_reserved",
+            "type": {
+              "array": [
+                "u8",
+                16
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "CommitmentVault",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "vault_id",
+            "type": "u64"
+          },
+          {
+            "name": "collateral_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "name",
+            "docs": [
+              "UTF-8 zero-padded vault name (becomes the launched market's name)."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                64
+              ]
+            }
+          },
+          {
+            "name": "commit_end_ts",
+            "docs": [
+              "When the commit phase ends. After this, no more commits, launch",
+              "becomes available, refund becomes available."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "market_end_ts",
+            "docs": [
+              "Duration of the launched market (added to launch time to get end_ts)."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "yes_total",
+            "type": "u64"
+          },
+          {
+            "name": "no_total",
+            "type": "u64"
+          },
+          {
+            "name": "commit_count",
+            "type": "u32"
+          },
+          {
+            "name": "min_total",
+            "docs": [
+              "Below this threshold, launch is refused → committers must refund."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "launched",
+            "type": "bool"
+          },
+          {
+            "name": "winning_price_bps",
+            "docs": [
+              "Set at launch to the initial_price_bps computed from the commit ratio.",
+              "Kept for transparency post-launch."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "market",
+            "docs": [
+              "The launched Market PDA. `Pubkey::default()` pre-launch."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "lp_position",
+            "docs": [
+              "The LpPosition PDA owned by the vault (seeds [b\"lp\", market, vault]).",
+              "Holds the LP shares minted at launch; claim_committer distributes them",
+              "pro-rata. `Pubkey::default()` pre-launch."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "launch_excess_yes",
+            "docs": [
+              "Entry-side surplus of the launch deposit (whole pot). Split pro-rata to",
+              "committers in `claim_committer`. Carved from `_reserved` (was 32 bytes):",
+              "vaults launched before this field existed read 0."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "launch_excess_no",
+            "type": "u64"
+          },
+          {
+            "name": "_reserved",
+            "type": {
+              "array": [
+                "u8",
+                16
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "CommitmentVaultGroup",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "vault_id",
+            "type": "u64"
+          },
+          {
+            "name": "collateral_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "name",
+            "docs": [
+              "UTF-8 zero-padded vault name (becomes the launched GroupMarket name)."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                64
+              ]
+            }
+          },
+          {
+            "name": "leg_count",
+            "docs": [
+              "2..=MAX_VAULT_LEGS."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "leg_names",
+            "docs": [
+              "Per-leg human-readable label (e.g. \"Trump\", \"Biden\", \"Other\"). Used to",
+              "derive the launched market names. UTF-8, zero-padded, max 32 bytes."
+            ],
+            "type": {
+              "array": [
+                {
+                  "array": [
+                    "u8",
+                    32
+                  ]
+                },
+                8
+              ]
+            }
+          },
+          {
+            "name": "leg_totals",
+            "docs": [
+              "Per-leg committed USDC totals (raw u64, 6 decimals)."
+            ],
+            "type": {
+              "array": [
+                "u64",
+                8
+              ]
+            }
+          },
+          {
+            "name": "commit_end_ts",
+            "type": "i64"
+          },
+          {
+            "name": "market_end_ts",
+            "type": "i64"
+          },
+          {
+            "name": "commit_count",
+            "type": "u32"
+          },
+          {
+            "name": "min_total",
+            "type": "u64"
+          },
+          {
+            "name": "group_market_initialized",
+            "docs": [
+              "True iff the wrapping GroupMarket account has been created."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "legs_launched",
+            "docs": [
+              "Number of legs whose underlying Market has been launched + attached.",
+              "Once `legs_launched == leg_count` the vault is fully launched and",
+              "`claim_committer_group` / `refund_commit_group` is gated accordingly."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "group_market",
+            "docs": [
+              "GroupMarket PDA. `Pubkey::default()` until launch_vault_group_market."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "_reserved",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "GroupMarket",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "group_id",
+            "type": "u64"
+          },
+          {
+            "name": "start_ts",
+            "type": "i64"
+          },
+          {
+            "name": "end_ts",
+            "type": "i64"
+          },
+          {
+            "name": "leg_count",
+            "docs": [
+              "Actual number of legs (≤ MAX_LEGS)."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "legs",
+            "docs": [
+              "Pubkeys of attached binary Market PDAs. Slots [0..leg_count) must be",
+              "populated before resolution. Pubkey::default() = empty slot."
+            ],
+            "type": {
+              "array": [
+                "pubkey",
+                32
+              ]
+            }
+          },
+          {
+            "name": "resolved",
+            "type": "bool"
+          },
+          {
+            "name": "winning_leg",
+            "docs": [
+              "Winning leg index (0..leg_count). NO_WINNING_LEG (0xFF) = unresolved."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "name",
+            "docs": [
+              "Human-readable group name (UTF-8, zero-padded)."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                64
+              ]
+            }
+          },
+          {
+            "name": "total_seeded_bps",
+            "docs": [
+              "Cumulative bps seeded across all attached legs. Incremented by",
+              "`attach_leg_to_group`, checked by `resolve_group` so Σ p_i ≈ 1 at",
+              "settlement (paper invariant for categorical markets)."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "_reserved",
+            "docs": [
+              "Reserved for future expansion."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                28
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "LZeroSuggestion",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "suggested_l_zero",
+            "type": "u128"
+          },
+          {
+            "name": "estimated_pool_value",
+            "type": "u64"
+          },
+          {
+            "name": "estimated_daily_lvr",
+            "type": "u64"
+          },
+          {
+            "name": "warning_high_sigma",
+            "type": "bool"
+          },
+          {
+            "name": "warning_short_duration",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "LpPosition",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "shares",
+            "type": "u128"
+          },
+          {
+            "name": "collateral_deposited",
+            "type": "u64"
+          },
+          {
+            "name": "yes_per_share_checkpoint",
+            "type": "u128"
+          },
+          {
+            "name": "no_per_share_checkpoint",
+            "type": "u128"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "excess_yes",
+            "docs": [
+              "Entry-side surplus owed to this LP (see `Market::unclaimed_excess_*`).",
+              "Fits in the former 16-byte tail padding, so LEN is unchanged and",
+              "pre-existing positions read as 0."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "excess_no",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Market",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "market_id",
+            "type": "u64"
+          },
+          {
+            "name": "collateral_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "yes_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "no_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "start_ts",
+            "type": "i64"
+          },
+          {
+            "name": "end_ts",
+            "type": "i64"
+          },
+          {
+            "name": "l_zero",
+            "type": "u128"
+          },
+          {
+            "name": "reserve_yes",
+            "type": "u128"
+          },
+          {
+            "name": "reserve_no",
+            "type": "u128"
+          },
+          {
+            "name": "last_accrual_ts",
+            "type": "i64"
+          },
+          {
+            "name": "cum_yes_per_share",
+            "type": "u128"
+          },
+          {
+            "name": "cum_no_per_share",
+            "type": "u128"
+          },
+          {
+            "name": "total_yes_distributed",
+            "type": "u64"
+          },
+          {
+            "name": "total_no_distributed",
+            "type": "u64"
+          },
+          {
+            "name": "total_lp_shares",
+            "type": "u128"
+          },
+          {
+            "name": "resolved",
+            "type": "bool"
+          },
+          {
+            "name": "winning_side",
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "name",
+            "type": {
+              "array": [
+                "u8",
+                64
+              ]
+            }
+          },
+          {
+            "name": "initial_price_bps",
+            "type": "u16"
+          },
+          {
+            "name": "group",
+            "type": "pubkey"
+          },
+          {
+            "name": "unclaimed_excess_yes",
+            "type": "u64"
+          },
+          {
+            "name": "unclaimed_excess_no",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Side",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Yes"
+          },
+          {
+            "name": "No"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SwapDirection",
+      "docs": [
+        "Direction of a swap. Six combinations covering all USDC/YES/NO pairs."
+      ],
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "UsdcToYes"
+          },
+          {
+            "name": "UsdcToNo"
+          },
+          {
+            "name": "YesToUsdc"
+          },
+          {
+            "name": "NoToUsdc"
+          },
+          {
+            "name": "YesToNo"
+          },
+          {
+            "name": "NoToYes"
+          }
+        ]
+      }
+    }
+  ]
+}
