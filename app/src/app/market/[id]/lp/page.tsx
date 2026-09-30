@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { PriceChart } from "@/components/price-chart";
 import { ResidualsWidget } from "@/components/residuals-widget";
 import { useMarkets } from "@/hooks/use-markets";
+import { useRefetchWhenMissing } from "@/lib/cached-list";
 import { useUserTokens } from "@/hooks/use-user-tokens";
 import { useLpPosition } from "@/hooks/use-lp-position";
 import { useTokenInfo } from "@/hooks/use-token-info";
@@ -33,8 +34,9 @@ import Link from "next/link";
 
 export default function LpPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { data: markets, isLoading } = useMarkets();
+  const { data: markets, isLoading, refetch } = useMarkets();
   const market = markets?.find((m) => m.marketId === Number(id));
+  useRefetchWhenMissing(!!markets && !market, refetch);
 
   const tok = useTokenInfo(market?.collateralMint);
   const decimals = tok.data?.decimals ?? 6;

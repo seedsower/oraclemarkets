@@ -12,6 +12,7 @@
  */
 
 export * from "./math";
+export * from "./views";
 export * from "./constants";
 export * from "./encoding";
 export * from "./pda";

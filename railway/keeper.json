@@ -1,0 +1,16 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "workers/keeper/Dockerfile",
+    "watchPatterns": [
+      "workers/keeper/**",
+      "packages/sdk/**",
+      "pnpm-lock.yaml",
+      "railway/keeper.json"
+    ]
+  },
+  "deploy": {
+    "restartPolicyType": "ALWAYS"
+  }
+}

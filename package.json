@@ -14,12 +14,14 @@
     "dev": "cd app && pnpm dev",
     "deploy": "bash -c 'source app/.env.local 2>/dev/null; solana program deploy anchor/target/deploy/pm_amm.so --keypair ${DEVNET_UPGRADE_KEYPAIR:-~/.config/solana/pm-amm-devnet-upgrade.json} --program-id anchor/target/deploy/pm_amm-keypair.json --url \"${NEXT_PUBLIC_RPC_URL:-https://api.devnet.solana.com}\"'",
     "deploy:mainnet": "bash anchor/scripts/deploy-mainnet.sh",
-    "lint": "prettier --check 'app/src/**/*.{ts,tsx}' 'packages/*/src/**/*.ts' && cd app && pnpm lint",
-    "lint:fix": "prettier --write 'app/src/**/*.{ts,tsx}' 'packages/*/src/**/*.ts' && cd app && pnpm lint:fix",
-    "type-check": "pnpm --filter @pm-amm/sdk type-check && cd app && pnpm tsc --noEmit",
+    "lint": "prettier --check 'app/src/**/*.{ts,tsx}' 'packages/*/src/**/*.ts' 'workers/*/src/**/*.ts' && cd app && pnpm lint",
+    "lint:fix": "prettier --write 'app/src/**/*.{ts,tsx}' 'packages/*/src/**/*.ts' 'workers/*/src/**/*.ts' && cd app && pnpm lint:fix",
+    "type-check": "pnpm --filter @pm-amm/sdk type-check && pnpm --filter @oracle-markets/keeper type-check && cd app && pnpm tsc --noEmit",
     "test:all": "cd anchor && cargo test --package pm_amm && cd ../oracle && python3 -m pytest test_oracle.py test_properties.py -v",
     "musdc": "cd anchor && ANCHOR_PROVIDER_URL=https://api.devnet.solana.com ANCHOR_WALLET=${MINT_AUTHORITY_KEYPAIR:-~/.config/solana/pm-amm-devnet-mint.json} pnpm exec ts-node --transpile-only -P ./tsconfig.json scripts/mint-usdc.ts",
-    "seed": "pnpm run build:sdk && bash -c 'set -a; source app/.env.local 2>/dev/null; set +a; NODE_PATH=\"$PWD/app/node_modules\" node scripts/seed-devnet.cjs'"
+    "seed": "pnpm run build:sdk && bash -c 'set -a; source app/.env.local 2>/dev/null; set +a; NODE_PATH=\"$PWD/app/node_modules\" node scripts/seed-devnet.cjs'",
+    "build:keeper": "pnpm --filter @pm-amm/sdk build && pnpm --filter @oracle-markets/keeper build",
+    "keeper": "pnpm --filter @oracle-markets/keeper dev"
   },
   "devDependencies": {
     "prettier": "^3.5.0"

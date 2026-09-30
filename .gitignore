@@ -29,5 +29,6 @@ oracle/.venv
 # Workspace / build output / agent state
 .claude/
 packages/*/dist
+workers/*/dist
 packages/*/*.tgz
 .vercel

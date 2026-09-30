@@ -15,6 +15,7 @@ import { solscanAccountUrl } from "@/lib/constants";
 import { formatUsdc } from "@pm-amm/sdk/math";
 import { toast } from "sonner";
 import Link from "next/link";
+import { preferDirectRpc } from "@/lib/cached-list";
 
 export default function VaultGroupPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -100,6 +101,7 @@ export default function VaultGroupPage({ params }: { params: Promise<{ id: strin
         setLaunchProgress({ done, total });
       }
       toast.success(`All ${vault.legCount} markets launched`);
+      preferDirectRpc(); // the keeper hasn't seen the launch yet
       await refetch();
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);

@@ -13,6 +13,7 @@ import { ProbabilityBar } from "@/components/ui/probability-bar";
 import { MetaRow } from "@/components/ui/meta-row";
 import { Badge } from "@/components/ui/badge";
 import { useMarkets } from "@/hooks/use-markets";
+import { useRefetchWhenMissing } from "@/lib/cached-list";
 import { useUserTokens } from "@/hooks/use-user-tokens";
 import { useTokenInfo } from "@/hooks/use-token-info";
 import { formatAmount, poolValue } from "@pm-amm/sdk/math";
@@ -25,8 +26,9 @@ import Link from "next/link";
 
 export default function MarketPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { data: markets, isLoading } = useMarkets();
+  const { data: markets, isLoading, refetch } = useMarkets();
   const market = markets?.find((m) => m.marketId === Number(id));
+  useRefetchWhenMissing(!!markets && !market, refetch);
 
   const tok = useTokenInfo(market?.collateralMint);
   const decimals = tok.data?.decimals ?? 6;
