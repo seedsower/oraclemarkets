@@ -47,32 +47,48 @@ resolution key, or a mainnet mint authority.
 
 ## One-time setup
 
+Railway no longer accepts a `railway.json` config-file path on new services
+(config-as-code is deprecated in favour of `.railway/railway.ts`). The files in
+`railway/*.json` remain as a reference for the values below, which you set
+directly in each service's *Settings*.
+
 1. **Create the project.** In Railway, choose *New Project → Deploy from GitHub
-   repo* and pick your fork. Rename the service it creates to `web`.
-2. **Point `web` at its config.** Go to *web → Settings*, set *Config-as-code /
-   Railway Config File* to `/railway/web.json`, and leave *Root Directory*
-   empty. The config file path is absolute from the repo root, and Railway does
-   not resolve it relative to the Root Directory. The config selects the root
-   `Dockerfile`, the `/api/health` healthcheck, and watch patterns so that
-   anchor-only commits don't trigger a redeploy.
-3. **Add Redis.** Choose *+ New → Database → Redis*. Keep the service name
+   repo* and pick your fork. Railway detects the pnpm workspace and may create
+   one service per package (`app`, `@pm-amm/sdk`, `@oracle-markets/keeper`), each
+   with a `pnpm --filter … start` start command. **Those start commands fail**:
+   the Docker images contain no pnpm. Keep `app` (the web service) and
+   `@oracle-markets/keeper`, and delete `@pm-amm/sdk` (it's a library, not a
+   service).
+2. **Configure the web service** (`app`) under *Settings*:
+   - *Root Directory*: empty (repo root)
+   - *Dockerfile path*: `Dockerfile`
+   - *Custom Start Command*: `node app/server.js`
+   - *Healthcheck Path*: `/api/health` (timeout 60 s)
+   - *Watch Paths*: `app/**`, `packages/sdk/**`, `pnpm-lock.yaml`, `Dockerfile`
+3. **Configure the keeper** (`@oracle-markets/keeper`) under *Settings*:
+   - *Dockerfile path*: `workers/keeper/Dockerfile`
+   - *Custom Start Command*: `node dist/index.js`
+   - *Restart Policy*: Always; no healthcheck and no domain (it serves no HTTP)
+   - *Watch Paths*: `workers/keeper/**`, `packages/sdk/**`, `pnpm-lock.yaml`
+
+   Without the Dockerfile path, the keeper builds the root (web) Dockerfile and
+   crashes on start.
+4. **Add Redis.** Choose *+ New → Database → Redis*. Keep the service name
    `Redis`, so the `${{Redis.REDIS_URL}}` references below resolve.
-4. **Add the keeper.** Choose *+ New → GitHub Repo*, pick the same fork, rename
-   the service to `keeper`, and set its config file to `/railway/keeper.json`.
-   Don't give it a domain; it serves no HTTP.
 5. **Variables.** Paste a template into each service's *Variables → Raw Editor*
    and fill in the blanks:
-   - `web`: [`railway/.env.web.devnet.example`](railway/.env.web.devnet.example)
+   - web: [`railway/.env.web.devnet.example`](railway/.env.web.devnet.example)
      or [`railway/.env.web.mainnet.example`](railway/.env.web.mainnet.example)
-   - `keeper`: [`railway/.env.keeper.example`](railway/.env.keeper.example)
+   - keeper: [`railway/.env.keeper.example`](railway/.env.keeper.example)
 
    Railway resolves `REDIS_URL=${{Redis.REDIS_URL}}` to Redis's private URL
    (`*.railway.internal`, reachable over IPv6; both Redis clients set `family: 0`).
 6. **Domain.** Go to *web → Settings → Networking → Generate Domain*. Once a
    custom domain is attached (*+ Custom Domain*, then add the CNAME record Railway
    shows at your DNS provider), set `NEXT_PUBLIC_SITE_URL` to it and **redeploy**.
-7. Deploy both services. Railway builds the root `Dockerfile` for `web` and
-   `workers/keeper/Dockerfile` for `keeper`.
+7. **Deploy from the latest commit** (*Deploy → Deploy latest commit*, or push).
+   *Redeploy* on an old failed deployment reuses that deployment's settings,
+   including the broken start command.
 
 ### Build-time vs runtime variables
 
