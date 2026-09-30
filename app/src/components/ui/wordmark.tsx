@@ -1,4 +1,4 @@
-/** pm/amm wordmark — bracketed [p] + lockup. Port of shared/logo.js. */
+/** Oracle Markets wordmark — bracketed [O] glyph + oracle/markets lockup. */
 export function Wordmark({
   size = 16,
   tone = "light",
@@ -12,6 +12,7 @@ export function Wordmark({
   return (
     <div
       className="inline-flex items-center"
+      aria-label="Oracle Markets"
       style={{
         gap: size * 0.4,
         color,
@@ -23,6 +24,7 @@ export function Wordmark({
       }}
     >
       <span
+        aria-hidden
         className="inline-flex items-center justify-center"
         style={{
           width: size * 0.9,
@@ -35,10 +37,17 @@ export function Wordmark({
           letterSpacing: 0,
         }}
       >
-        p
+        <span
+          style={{
+            width: size * 0.34,
+            height: size * 0.34,
+            border: `${Math.max(1, size * 0.08)}px solid var(--accent)`,
+            borderRadius: "50%",
+          }}
+        />
       </span>
-      <span>
-        pm<span style={{ color: dim }}>/</span>amm
+      <span aria-hidden>
+        oracle<span style={{ color: dim }}>/</span>markets
       </span>
     </div>
   );

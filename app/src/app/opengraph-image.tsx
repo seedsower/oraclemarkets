@@ -1,7 +1,8 @@
 import { ImageResponse } from "next/og";
+import { BRAND, ENGINE } from "@/lib/brand";
 
 export const runtime = "edge";
-export const alt = "pm-AMM — Prediction Markets on Solana";
+export const alt = `${BRAND.name} — ${BRAND.tagline}`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -23,14 +24,20 @@ export default function OgImage() {
         style={{
           display: "flex",
           alignItems: "baseline",
-          gap: "6px",
+          gap: "2px",
           marginBottom: "24px",
         }}
       >
         <span
           style={{ fontSize: "72px", fontWeight: 500, color: "#e5e5e5", letterSpacing: "-0.02em" }}
         >
-          pm-AMM
+          oracle
+        </span>
+        <span style={{ fontSize: "72px", fontWeight: 500, color: "#737373" }}>/</span>
+        <span
+          style={{ fontSize: "72px", fontWeight: 500, color: "#e5e5e5", letterSpacing: "-0.02em" }}
+        >
+          markets
         </span>
       </div>
       <div
@@ -41,7 +48,7 @@ export default function OgImage() {
           textTransform: "uppercase" as const,
         }}
       >
-        Prediction Markets on Solana
+        {BRAND.tagline}
       </div>
       <div
         style={{
@@ -90,7 +97,7 @@ export default function OgImage() {
           letterSpacing: "0.05em",
         }}
       >
-        Paradigm pm-AMM (Moallemi & Robinson, 2024)
+        {ENGINE.credit}
       </div>
     </div>,
     { ...size },

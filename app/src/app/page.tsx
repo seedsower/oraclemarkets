@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { LandingNav } from "@/components/layout/landing-nav";
 import { CopyCommand } from "@/components/ui/copy-command";
+import { BRAND, ENGINE } from "@/lib/brand";
+import { CLUSTER } from "@/lib/constants";
+
+const CLUSTER_LABEL =
+  CLUSTER === "mainnet-beta" ? "Mainnet" : CLUSTER === "devnet" ? "Devnet" : "Localnet";
 
 /**
  * Marketing landing. Intentionally static — no wallet, no chain reads — so it
@@ -15,7 +20,7 @@ export default function Home() {
       <section className="px-[24px] md:px-[48px] pt-[72px] md:pt-[112px] pb-[64px] max-w-[1100px] mx-auto w-full">
         <div className="inline-flex items-center gap-[8px] font-mono text-[10px] tracking-[0.12em] uppercase text-muted border border-line rounded-full px-[12px] py-[5px] mb-[28px]">
           <span className="w-[6px] h-[6px] rounded-full bg-yes" />
-          Paradigm pm-AMM · Solana · Devnet
+          {BRAND.name} · Solana · {CLUSTER_LABEL}
         </div>
 
         <h1 className="text-[40px] md:text-[64px] leading-[1.02] tracking-[-0.03em] text-text-hi font-medium max-w-[18ch]">
@@ -24,10 +29,19 @@ export default function Home() {
         </h1>
 
         <p className="mt-[24px] text-[15px] md:text-[17px] leading-[1.6] text-text-dim max-w-[64ch]">
-          A faithful implementation of the Paradigm pm-AMM (Moallemi &amp; Robinson, 2024).
-          Time-decaying liquidity <span className="font-mono text-text-hi">L_eff = L₀·√(T−t)</span>{" "}
-          delivers uniform LVR across price <em>and</em> time, with continuous LP yield via the dC_t
-          mechanism — plus permissionless crowd-bootstrapped markets through Commitment Vaults.
+          {BRAND.description} Under the hood: a faithful implementation of the{" "}
+          <a
+            href={ENGINE.paperUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-text-hi underline underline-offset-2 hover:text-accent"
+          >
+            Paradigm pm-AMM
+          </a>{" "}
+          (Moallemi &amp; Robinson, 2024). Time-decaying liquidity{" "}
+          <span className="font-mono text-text-hi">L_eff = L₀·√(T−t)</span> delivers uniform LVR
+          across price <em>and</em> time, with continuous LP yield via the dC_t mechanism — plus
+          permissionless crowd-bootstrapped markets through Commitment Vaults.
         </p>
 
         <div className="mt-[36px] flex flex-wrap items-center gap-[12px]">
@@ -115,7 +129,17 @@ export default function Home() {
       {/* Footer */}
       <footer className="mt-auto border-t border-line px-[24px] md:px-[48px] py-[24px]">
         <div className="max-w-[1100px] mx-auto w-full flex flex-wrap items-center justify-between gap-[12px] font-mono text-[11px] text-muted tracking-[0.03em]">
-          <span>pm-AMM · built for $PREDICT</span>
+          <span>
+            {BRAND.name} · {ENGINE.credit} ·{" "}
+            <a
+              href={ENGINE.upstreamRepoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-2 hover:text-text-hi"
+            >
+              upstream (MIT)
+            </a>
+          </span>
           <div className="flex items-center gap-[18px]">
             <Link href="/markets" className="hover:text-text-hi transition-all duration-[120ms]">
               Markets
@@ -124,7 +148,7 @@ export default function Home() {
               Docs
             </Link>
             <a
-              href="https://github.com/EwanBorgPad/pm-amm"
+              href={ENGINE.upstreamRepoUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-text-hi transition-all duration-[120ms]"

@@ -208,7 +208,7 @@ export default function LpPage({ params }: { params: Promise<{ id: string }> }) 
 
             {/* LP Economics */}
             <div className="border border-line p-[16px] space-y-[12px]">
-              <div className="text-caption">LP ECONOMICS — pm-AMM</div>
+              <div className="text-caption">LP ECONOMICS — pm-AMM ENGINE</div>
               <div className="space-y-[6px] text-[12px] text-muted font-mono">
                 <p>
                   LPs earn YES+NO tokens over time via the{" "}

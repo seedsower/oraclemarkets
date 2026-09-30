@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Wordmark } from "@/components/ui/wordmark";
+import { ENGINE } from "@/lib/brand";
 
 /** Lightweight header for the marketing landing — no wallet, no data hooks. */
 export function LandingNav() {
@@ -16,7 +17,7 @@ export function LandingNav() {
           Docs
         </Link>
         <a
-          href="https://github.com/EwanBorgPad/pm-amm"
+          href={ENGINE.upstreamRepoUrl}
           target="_blank"
           rel="noopener noreferrer"
           className="hidden sm:inline hover:text-text-hi transition-all duration-[120ms]"

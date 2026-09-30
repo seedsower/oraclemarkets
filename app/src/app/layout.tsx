@@ -3,6 +3,7 @@ import { Inter_Tight, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { Toaster } from "sonner";
+import { BRAND } from "@/lib/brand";
 
 const interTight = Inter_Tight({
   subsets: ["latin"],
@@ -18,18 +19,26 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
+const defaultTitle = `${BRAND.name} — ${BRAND.tagline}`;
+
+// favicon.ico + icon.svg in this folder are picked up by Next's file conventions.
 export const metadata: Metadata = {
-  metadataBase: new URL("https://pm-amm.xyz"),
-  title: "pm-amm — Prediction Markets on Solana",
-  description:
-    "Paradigm pm-AMM: the first production prediction market AMM with uniform LVR and continuous LP yield.",
+  metadataBase: new URL(BRAND.siteUrl),
+  applicationName: BRAND.name,
+  title: { default: defaultTitle, template: `%s · ${BRAND.name}` },
+  description: BRAND.description,
   openGraph: {
-    title: "pm-amm — Prediction Markets on Solana",
-    description:
-      "Paradigm pm-AMM: the first production prediction market AMM with uniform LVR and continuous LP yield.",
+    title: defaultTitle,
+    description: BRAND.description,
+    siteName: BRAND.name,
     type: "website",
   },
-  icons: { icon: "/favicon.ico" },
+  twitter: {
+    card: "summary_large_image",
+    title: defaultTitle,
+    description: BRAND.description,
+    ...(BRAND.xHandle ? { site: BRAND.xHandle, creator: BRAND.xHandle } : {}),
+  },
 };
 
 export default function RootLayout({

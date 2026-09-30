@@ -1,6 +1,7 @@
-# pm-AMM — Full API Reference
+# Oracle Markets — Full API Reference (pm-AMM engine)
 
-A deep, per-function reference for the pm-AMM program and the `@pm-amm/sdk`.
+A deep, per-function reference for the on-chain program behind Oracle Markets
+(the Paradigm pm-AMM engine, program `pm_amm`) and its TypeScript SDK `@pm-amm/sdk`.
 This complements the quickstart in [`packages/sdk/README.md`](../packages/sdk/README.md)
 (get-started-in-5-minutes) — here every on-chain instruction and every SDK
 function is documented individually.
@@ -322,4 +323,4 @@ Paper formulas, no RPC. Numbers are plain `number` (USDC in whole tokens unless 
 
 ---
 
-*Generated for the pm-AMM $PREDICT submission. Math is the Paradigm pm-AMM paper; never deviate from `doc/wp-para.md` without explicit approval.*
+*Oracle Markets is powered by the Paradigm pm-AMM (Moallemi & Robinson, 2024), built on the MIT-licensed upstream https://github.com/sparkfun-labs/pm-amm. Math is the Paradigm pm-AMM paper; never deviate from `doc/wp-para.md` without explicit approval.*

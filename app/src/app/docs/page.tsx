@@ -5,6 +5,7 @@ import Link from "next/link";
 import { LandingNav } from "@/components/layout/landing-nav";
 import { CopyCommand } from "@/components/ui/copy-command";
 import { CodeBlock } from "@/components/ui/code-block";
+import { BRAND, ENGINE } from "@/lib/brand";
 
 type Tab = "simple" | "detailed";
 
@@ -18,13 +19,13 @@ export default function DocsPage() {
       <LandingNav />
 
       <main className="px-[24px] md:px-[48px] py-[48px] max-w-[860px] mx-auto w-full">
-        <div className="text-caption mb-[10px]">Docs · pm-AMM</div>
+        <div className="text-caption mb-[10px]">Docs · {BRAND.name}</div>
         <h1 className="text-[34px] md:text-[44px] tracking-[-0.03em] text-text-hi leading-[1.05]">
-          {tab === "simple" ? "How it works" : "Integrate pm-AMM"}
+          {tab === "simple" ? "How it works" : `Integrate ${BRAND.name}`}
         </h1>
         <p className="mt-[16px] text-[15px] leading-[1.6] text-text-dim">
           {tab === "simple"
-            ? "A plain-language guide to prediction markets on the pm-AMM — what they are, the three ways to take part, and why the design is different."
+            ? `A plain-language guide to prediction markets on ${BRAND.name} — what they are, the three ways to take part, and why the design is different. ${ENGINE.credit}.`
             : "Every on-chain instruction and every @pm-amm/sdk function, explained one by one. The full written reference is doc/api-reference.md."}
         </p>
 
@@ -42,7 +43,7 @@ export default function DocsPage() {
 
         <div className="mt-[40px] pt-[24px] border-t border-line flex flex-wrap gap-[18px] font-mono text-[12px] text-muted">
           <a
-            href="https://github.com/EwanBorgPad/pm-amm/blob/main/doc/api-reference.md"
+            href="/api-reference.md"
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-text-hi transition-all duration-[120ms]"
@@ -103,7 +104,7 @@ function SimpleTab() {
         </div>
       </Section>
 
-      <Section title="Why pm-AMM is different">
+      <Section title="Why the pm-AMM engine is different">
         <ul className="space-y-[10px] text-[14px] leading-[1.65] text-text-dim list-disc pl-[18px] marker:text-line-2">
           <li>
             <b className="text-text-hi">Liquidity decays as √(time left).</b> The LP&rsquo;s risk is

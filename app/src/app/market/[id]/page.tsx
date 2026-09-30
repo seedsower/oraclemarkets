@@ -7,6 +7,7 @@ import { RecentTrades } from "@/components/recent-trades";
 import { PositionCard } from "@/components/position-card";
 import { MarketProjections } from "@/components/market-projections";
 import { PriceChart } from "@/components/price-chart";
+import { ResolverInfo } from "@/components/resolver-info";
 import { Figure } from "@/components/ui/figure";
 import { ProbabilityBar } from "@/components/ui/probability-bar";
 import { MetaRow } from "@/components/ui/meta-row";
@@ -131,6 +132,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                     </div>
 
                     <PriceChart marketId={market.publicKey} currentPrice={market.price} />
+                    <ResolverInfo market={market} />
                     <PositionCard market={market} tokens={tokens ?? null} />
 
                     <Link
@@ -186,6 +188,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                     </div>
 
                     <PriceChart marketId={market.publicKey} currentPrice={market.price} />
+                    <ResolverInfo market={market} />
                     <PositionCard market={market} tokens={tokens ?? null} />
 
                     <Link
@@ -229,6 +232,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                     </div>
 
                     <MarketProjections market={market} />
+                    <ResolverInfo market={market} />
                     <PositionCard market={market} tokens={tokens ?? null} />
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-[16px]">
