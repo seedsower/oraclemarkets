@@ -49,7 +49,10 @@ is rule-based. Re-check the current rules before setting `XBOT_DRY_RUN=false`:
    X_CLIENT_ID=… X_CLIENT_SECRET=… pnpm --filter @oracle-markets/xbot auth
    ```
    Open the printed link and approve. The terminal prints `X_BOT_USER_ID` and
-   `X_REFRESH_TOKEN`.
+   `X_REFRESH_TOKEN`. If the browser then says `127.0.0.1` can't be reached
+   (common when the terminal is on another machine, e.g. VS Code Remote), copy
+   the full URL from the address bar, paste it into the terminal and press Enter.
+   Do it quickly: the code expires in about 30 seconds.
 3. **Railway `xbot` service variables** (template:
    [`railway/.env.xbot.example`](../../railway/.env.xbot.example)): `REDIS_URL`,
    `X_CLIENT_ID`, `X_CLIENT_SECRET`, `X_BOT_USER_ID`, `X_REFRESH_TOKEN`, and keep

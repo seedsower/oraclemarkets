@@ -10,6 +10,7 @@
  */
 import { createHash, randomBytes } from "node:crypto";
 import { createServer } from "node:http";
+import { createInterface } from "node:readline";
 
 const PORT = Number(process.env.XBOT_AUTH_PORT || 3333);
 const REDIRECT = `http://127.0.0.1:${PORT}/callback`;
@@ -78,34 +79,80 @@ function main() {
   const verifier = b64url(randomBytes(48));
   const challenge = b64url(createHash("sha256").update(verifier).digest());
   const state = b64url(randomBytes(16));
+  let done = false;
+
+  /** Finish from the redirect URL — via the local server OR pasted by hand. */
+  async function complete(redirected: URL): Promise<string> {
+    if (done) return "Already completed.";
+    const err = redirected.searchParams.get("error");
+    if (err)
+      throw new Error(
+        `X returned "${err}": ${redirected.searchParams.get("error_description") ?? ""}`,
+      );
+    if (redirected.searchParams.get("state") !== state)
+      throw new Error("state mismatch — use the link from THIS run");
+    const code = redirected.searchParams.get("code");
+    if (!code) throw new Error("no ?code= in that URL");
+    done = true;
+    const tok = await exchange(code, verifier, id!, secret!);
+    const user = await me(tok.access_token);
+    console.log(`\nAuthorized as @${user.username} (scopes: ${tok.scope ?? SCOPES})\n`);
+    console.log("Set these on the Railway xbot service (keep them secret):\n");
+    console.log(`X_BOT_USER_ID=${user.id}`);
+    console.log(`X_REFRESH_TOKEN=${tok.refresh_token}\n`);
+    console.log("The bot rotates this token on first use and stores the new one in Redis.");
+    return `Authorized @${user.username}. You can close this tab and return to the terminal.`;
+  }
+
+  const finish = (ok: boolean) => {
+    server.close();
+    rl.close();
+    process.exitCode = ok ? 0 : 1;
+  };
 
   const server = createServer(async (req, res) => {
     const url = new URL(req.url ?? "/", REDIRECT);
     if (url.pathname !== "/callback") return void res.writeHead(404).end();
     try {
-      if (url.searchParams.get("state") !== state) throw new Error("state mismatch");
-      const code = url.searchParams.get("code");
-      if (!code) throw new Error(url.searchParams.get("error") ?? "no code");
-      const tok = await exchange(code, verifier, id, secret);
-      const user = await me(tok.access_token);
-      res.end(`Authorized @${user.username}. You can close this tab and return to the terminal.`);
-      console.log(`\nAuthorized as @${user.username} (scopes: ${tok.scope ?? SCOPES})\n`);
-      console.log("Set these on the Railway xbot service (keep them secret):\n");
-      console.log(`X_BOT_USER_ID=${user.id}`);
-      console.log(`X_REFRESH_TOKEN=${tok.refresh_token}\n`);
-      console.log("The bot rotates this token on first use and stores the new one in Redis.");
+      res.end(await complete(url));
+      finish(true);
     } catch (e) {
       res.writeHead(400).end(`Auth failed: ${(e as Error).message}`);
       console.error(`Auth failed: ${(e as Error).message}`);
-    } finally {
-      server.close();
+      if (done) finish(false);
     }
   });
-  server.listen(PORT, "127.0.0.1", () => {
-    console.log("Log into the BOT account on x.com, then open this URL and approve:\n");
-    console.log(authorizeUrl(id, challenge, state));
-    console.log(`\nWaiting for the callback on ${REDIRECT} …`);
+
+  // Fallback when the browser can't reach this machine's 127.0.0.1 (remote
+  // shells, VS Code Remote, another device): paste the address-bar URL.
+  const rl = createInterface({ input: process.stdin });
+  rl.on("line", async (line) => {
+    const text = line.trim();
+    if (!text) return;
+    try {
+      await complete(
+        new URL(text.startsWith("http") ? text : `${REDIRECT}?${text.replace(/^\?/, "")}`),
+      );
+      finish(true);
+    } catch (e) {
+      console.error(`Couldn't use that: ${(e as Error).message}`);
+      if (done) finish(false);
+    }
   });
+
+  server.on("error", (e) =>
+    console.warn(`(local callback server unavailable: ${e.message} — paste the URL instead)`),
+  );
+  server.listen(PORT, "127.0.0.1");
+  console.log(
+    "1. In a browser logged into the BOT account on x.com, open this URL and click Authorize:\n",
+  );
+  console.log(authorizeUrl(id, challenge, state));
+  console.log(`\n2. You'll be sent to ${REDIRECT}?state=…&code=…`);
+  console.log("   If that page says it can't be reached, that's fine: copy the FULL URL from the");
+  console.log(
+    "   address bar, paste it here and press Enter. (The code expires in about 30 seconds.)\n",
+  );
 }
 
 main();
