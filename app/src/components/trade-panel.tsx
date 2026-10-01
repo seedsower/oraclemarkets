@@ -23,6 +23,8 @@ import {
 } from "@solana/spl-token";
 import { solscanTxUrl } from "@/lib/constants";
 import { toast } from "sonner";
+import { ShareOnX } from "@/components/share-on-x";
+import { marketPath, tradeShareText } from "@/lib/share";
 
 const SLIPPAGE_BPS = 100;
 
@@ -43,6 +45,8 @@ export function TradePanel({
   const [side, setSide] = useState<"yes" | "no">("yes");
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
+  // Opt-in: include the trade size in the "Share on X" copy (off by default).
+  const [shareAmount, setShareAmount] = useState(false);
 
   // External "Buy YES/NO" triggers set the side + force buy mode + clear amount.
   useEffect(() => {
@@ -181,8 +185,23 @@ export function TradePanel({
         mode === "buy"
           ? `${formatAmount(quote.output, decimals)} ${side.toUpperCase()} for ${amountNum} ${symbol}`
           : `${amountNum} ${side.toUpperCase()} for ${formatAmount(quote.output, decimals)} ${symbol}`;
+      const shareText = tradeShareText({
+        mode,
+        side,
+        price: market.price,
+        question: market.name,
+        amount: shareAmount
+          ? { value: amountNum, symbol: mode === "buy" ? symbol : side.toUpperCase() }
+          : undefined,
+      });
       toast.success(`${mode === "buy" ? "Bought" : "Sold"} ${side.toUpperCase()}`, {
-        description: desc,
+        description: (
+          <span className="flex flex-col gap-[4px]">
+            <span>{desc}</span>
+            <ShareOnX text={shareText} path={marketPath(market.marketId)} className="text-[11px]" />
+          </span>
+        ),
+        duration: 10_000,
         action: { label: "Solscan ↗", onClick: () => window.open(solscanTxUrl(tx), "_blank") },
       });
       setAmount("");
@@ -370,6 +389,15 @@ export function TradePanel({
       >
         {loading ? "TRADING..." : `${mode.toUpperCase()} ${side.toUpperCase()}`}
       </Button>
+      <label className="flex items-center gap-[6px] text-[10px] text-muted font-mono cursor-pointer select-none">
+        <input
+          type="checkbox"
+          checked={shareAmount}
+          onChange={(e) => setShareAmount(e.target.checked)}
+          className="accent-[var(--accent)]"
+        />
+        Show amount when sharing on X
+      </label>
     </div>
   );
 }

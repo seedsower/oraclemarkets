@@ -117,6 +117,7 @@ Server-only secrets (`MINT_AUTHORITY_KEY`, `KEEPER_SHARED_SECRET`,
 | `NEXT_PUBLIC_X_HANDLE` | optional | optional | build-time; Twitter card |
 | `NEXT_PUBLIC_FEATURED_AUTHORITIES` | optional | recommended | build-time; comma-separated pubkeys |
 | `REDIS_URL` | `${{Redis.REDIS_URL}}` | `${{Redis.REDIS_URL}}` | runtime |
+| `SERVER_RPC_URL` | provider or empty | **dedicated provider** | runtime; server reads for share cards / metadata / Blinks, never sent to browsers |
 | `KEEPER_SHARED_SECRET` | `openssl rand -hex 32` | `openssl rand -hex 32` | runtime; guards `POST /api/price-snap` |
 | `MINT_AUTHORITY_KEY` | base64 mint key (`EftrgEw3…`) | **never set** | runtime; faucet only, see [DEVNET.md](DEVNET.md) |
 | `FAUCET_*` | optional | n/a | runtime; see [DEVNET.md](DEVNET.md) |
