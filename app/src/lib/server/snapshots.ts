@@ -8,7 +8,8 @@ import {
   type GroupView,
   type MarketView,
 } from "@pm-amm/sdk";
-import { PROGRAM_ID } from "@/lib/constants";
+import { PROGRAM_ID, USDC_MINT } from "@/lib/constants";
+import { FEATURED_AUTHORITIES } from "@/lib/featured-list";
 import { LIST_CACHE } from "@/lib/list-cache";
 import { redis } from "@/lib/redis";
 import { serverClient } from "@/lib/server/chain";
@@ -102,4 +103,27 @@ export async function priceChange24h(m: MarketView): Promise<number | null> {
   } catch {
     return null;
   }
+}
+
+/**
+ * Showcase market for the landing page: an active, liquid, standalone USDC
+ * market — preferring featured authorities, then the deepest pool. Cache only
+ * (no RPC on the landing page); null when the keeper hasn't written yet.
+ */
+export async function getShowcaseMarket(): Promise<MarketView | null> {
+  const rows = await cachedRows<MarketView>("markets");
+  if (!rows) return null;
+  const now = nowSecs();
+  const live = rows.filter(
+    (m) =>
+      !m.resolved &&
+      !m.group &&
+      m.endTs > now + 3_600 &&
+      m.lEff > 0 &&
+      m.reserveYes > 0 &&
+      m.collateralMint === USDC_MINT.toBase58(),
+  );
+  const featured = live.filter((m) => FEATURED_AUTHORITIES.has(m.authority));
+  const pool = (featured.length ? featured : live).sort((a, b) => b.lZero - a.lZero);
+  return pool[0] ? refreshMarketView(pool[0], now) : null;
 }
