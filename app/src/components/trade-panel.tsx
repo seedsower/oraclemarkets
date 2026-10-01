@@ -11,7 +11,7 @@ import { useSwapQuote, type SwapMode } from "@/hooks/use-swap-quote";
 import { useTokenInfo } from "@/hooks/use-token-info";
 import { formatAmount } from "@pm-amm/sdk/math";
 import type { SwapDirection } from "@pm-amm/sdk";
-import { PROTOCOL_DAO } from "@pm-amm/sdk";
+import { PROTOCOL_DAO, quoteReserves } from "@pm-amm/sdk";
 import type { MarketData } from "@/hooks/use-markets";
 import type { UserTokens } from "@/hooks/use-user-tokens";
 import { PublicKey, ComputeBudgetProgram, type TransactionInstruction } from "@solana/web3.js";
@@ -79,7 +79,8 @@ export function TradePanel({
     side,
     mode,
     sellExceeds ? 0 : rawAmount,
-    { reserveYes: market.reserveYes, reserveNo: market.reserveNo, lEff: market.lEff },
+    // Reserves pair with L_eff at the last accrual, not now (see quoteReserves).
+    quoteReserves(market),
     market.collateralMint,
   );
 

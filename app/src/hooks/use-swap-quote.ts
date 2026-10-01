@@ -12,7 +12,7 @@ import { getAssociatedTokenAddress } from "@solana/spl-token";
 import { USDC_MINT } from "@/lib/constants";
 import { getClient } from "@/lib/pm-amm-client";
 import { creatorFeeAtaIxs, marketAuthority } from "@/lib/swap-fees";
-import { estimateSwapOutput } from "@pm-amm/sdk/math";
+import { quoteSwap } from "@pm-amm/sdk/math";
 import type { SwapDirection } from "@pm-amm/sdk";
 import { PROTOCOL_DAO, SWAP_FEE_BPS } from "@pm-amm/sdk";
 
@@ -83,35 +83,9 @@ function clientSideQuote(
   amount: number,
 ): SwapQuote {
   // `amount` is already raw base units (collateral / YES / NO share decimals).
-  const lamports = Math.floor(amount);
-  // 2% protocol fee on the USDC leg: skimmed off the INPUT on a buy (only the
-  // net trades the curve) and off the OUTPUT on a sell. Must match the program
-  // so the slippage `minOutput` derived from this quote isn't over-stated.
-  const netNum = 10_000 - SWAP_FEE_BPS;
-  if (mode === "sell") {
-    // Sell YES/NO → USDC: mirror the buy math with reversed sides
-    const sellSide = side === "yes" ? "no" : "yes";
-    const est = estimateSwapOutput(
-      reserves.reserveYes,
-      reserves.reserveNo,
-      reserves.lEff,
-      lamports,
-      sellSide,
-    );
-    // Output is USDC (reserves freed by removing tokens) minus the 2% fee.
-    const net = Math.floor((est.output * netNum) / 10_000);
-    return { output: Math.max(0, net), error: null, estimated: true };
-  }
-  // Buy: only the post-fee USDC trades on the curve.
-  const netIn = Math.floor((lamports * netNum) / 10_000);
-  const est = estimateSwapOutput(
-    reserves.reserveYes,
-    reserves.reserveNo,
-    reserves.lEff,
-    netIn,
-    side,
-  );
-  return { output: Math.max(0, Math.floor(est.output)), error: null, estimated: true };
+  // Shared with the SDK's buildSwapTx (Blinks) so both quote identically.
+  const { output } = quoteSwap(reserves, mode, side, amount, SWAP_FEE_BPS);
+  return { output, error: null, estimated: true };
 }
 
 /** Try on-chain simulation. Returns null if simulation can't run. */

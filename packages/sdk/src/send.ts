@@ -10,10 +10,11 @@ import type { PublicKey, TransactionInstruction } from "@solana/web3.js";
 import type { BN } from "@anchor-lang/core";
 import { getMint } from "@solana/spl-token";
 import type { PmAmmClient } from "./client";
-import { CU, PROTOCOL_DAO } from "./constants";
+import { CU } from "./constants";
 import { toRaw } from "./math";
 import { randomU48 } from "./encoding";
 import { ensureAtaIx, computeBudgetIx } from "./util/ata";
+import { buildSwapIxs } from "./flows/swapTx";
 import type {
   Side,
   SwapDirection,
@@ -88,45 +89,14 @@ export function makeSend(client: PmAmmClient) {
       amountInMicro: number | BN,
       minOutputMicro: number | BN,
     ) {
-      const signer = client.walletPubkey();
-      const m = await client.fetchMarket(market);
-      if (!m) throw new Error("swap: market not found");
-      const authority = m.authority as PublicKey;
-      const collateralMint = m.collateralMint as PublicKey;
-      const pre = await ataPreIxs([client.yesMint(market), client.noMint(market), collateralMint]);
-      // Ensure the fee-recipient ATAs exist (2% fee → 50% DAO, 50% creator), in
-      // the MARKET's collateral. Idempotent; payer is the swapper. DAO is off-curve.
-      const { ix: daoAta } = await ensureAtaIx(
-        client.connection,
-        signer,
-        PROTOCOL_DAO,
-        collateralMint,
-        true,
-      );
-      if (daoAta) pre.push(daoAta);
-      // Creator ATA only when the swapper is NOT the creator (otherwise the
-      // creator keeps their share and `creatorUsdc` is passed as null).
-      if (!authority.equals(signer)) {
-        // Off-curve allowed: a bet vault's authority is its PDA.
-        const { ix: creatorAta } = await ensureAtaIx(
-          client.connection,
-          signer,
-          authority,
-          collateralMint,
-          true,
-        );
-        if (creatorAta) pre.push(creatorAta);
-      }
-      const ix = await client.ix.swap({
-        signer,
+      const ixs = await buildSwapIxs(client, {
+        signer: client.walletPubkey(),
         market,
         direction,
         amountIn: amountInMicro,
         minOutput: minOutputMicro,
-        creatorAuthority: authority,
-        collateralMint,
       });
-      return client.sendIxs([computeBudgetIx(CU.HEAVY), ...pre, ix]);
+      return client.sendIxs(ixs);
     },
 
     async depositLiquidity(market: PublicKey, amountUsdc: number) {

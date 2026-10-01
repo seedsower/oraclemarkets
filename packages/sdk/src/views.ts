@@ -66,6 +66,10 @@ export interface MarketView {
    *  vault launch path). 0 = legacy 50/50. Used as the display price for
    *  freshly-launched markets with zero reserves. */
   initialPriceBps: number;
+  /** When reserves were last rebased (`accrue`). Optional: rows cached by an
+   *  older keeper lack it. Pair the reserves with L_eff at THIS time — see
+   *  `quoteReserves`. */
+  lastAccrualTs?: number;
 }
 
 /** Price when reserves are empty: seed price, else residual ratio, else 0.5. */
@@ -123,6 +127,7 @@ export function marketView(publicKey: string, m: MarketAccount, now: number): Ma
   const cumNoPerShare = i80f48ToNumber(m.cumNoPerShare);
   const initialPriceBps: number = m.initialPriceBps ?? 0;
   const marketId = bnToNum(m.marketId);
+  const lastAccrualTs = bnToNum(m.lastAccrualTs);
 
   const price = displayPrice({
     resolved: m.resolved,
@@ -130,7 +135,7 @@ export function marketView(publicKey: string, m: MarketAccount, now: number): Ma
     expired: now >= endTs,
     x,
     y,
-    lEffAtLastAccrual: lEffAt(lZero, endTs, bnToNum(m.lastAccrualTs)),
+    lEffAtLastAccrual: lEffAt(lZero, endTs, lastAccrualTs),
     initialPriceBps,
     cumYes: cumYesPerShare,
     cumNo: cumNoPerShare,
@@ -157,7 +162,24 @@ export function marketView(publicKey: string, m: MarketAccount, now: number): Ma
     // Pubkey::default() → "" so callers can test attachment with a truthy check.
     group: pkOrEmpty(m.group),
     initialPriceBps,
+    lastAccrualTs,
   };
+}
+
+/**
+ * Curve state for swap quotes. The stored reserves (x, y) sit on the curve for
+ * L_eff at `last_accrual_ts`, so quotes must use that L_eff — pairing them with
+ * L_eff(now) puts the point off-curve and overstates outputs badly (11× on a
+ * market idle for ~2 days). The program accrues before swapping; the residual
+ * error is tiny and covered by slippage. Falls back to `lEff` for old rows.
+ */
+export function quoteReserves(m: MarketView): {
+  reserveYes: number;
+  reserveNo: number;
+  lEff: number;
+} {
+  const lEff = m.lastAccrualTs === undefined ? m.lEff : lEffAt(m.lZero, m.endTs, m.lastAccrualTs);
+  return { reserveYes: m.reserveYes, reserveNo: m.reserveNo, lEff };
 }
 
 /** Recompute the time-dependent fields of a (possibly cached) market row. */

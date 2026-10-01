@@ -4,6 +4,7 @@
 import type { Connection, PublicKey, TransactionInstruction } from "@solana/web3.js";
 import { ComputeBudgetProgram } from "@solana/web3.js";
 import {
+  createAssociatedTokenAccountIdempotentInstruction,
   createAssociatedTokenAccountInstruction,
   getAssociatedTokenAddress,
 } from "@solana/spl-token";
@@ -22,6 +23,26 @@ export async function ensureAtaIx(
   const ata = await getAssociatedTokenAddress(mint, owner, allowOwnerOffCurve);
   const info = await connection.getAccountInfo(ata);
   const ix = info ? null : createAssociatedTokenAccountInstruction(payer, ata, owner, mint);
+  return { ata, ix };
+}
+
+/**
+ * Like `ensureAtaIx`, but the create is IDEMPOTENT — safe for transactions
+ * built now and signed later (e.g. Solana Actions), where the ATA may appear
+ * in between. Still only emitted when the ATA is missing (keeps txs small).
+ */
+export async function ensureAtaIdempotentIx(
+  connection: Connection,
+  payer: PublicKey,
+  owner: PublicKey,
+  mint: PublicKey,
+  allowOwnerOffCurve = false,
+): Promise<{ ata: PublicKey; ix: TransactionInstruction | null }> {
+  const ata = await getAssociatedTokenAddress(mint, owner, allowOwnerOffCurve);
+  const info = await connection.getAccountInfo(ata);
+  const ix = info
+    ? null
+    : createAssociatedTokenAccountIdempotentInstruction(payer, ata, owner, mint);
   return { ata, ix };
 }
 

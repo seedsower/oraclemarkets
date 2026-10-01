@@ -170,6 +170,43 @@ export function estimateSwapOutput(
   }
 }
 
+export type SwapMode = "buy" | "sell";
+
+/**
+ * Fee-aware swap quote in RAW base units (collateral, YES and NO share
+ * decimals). The 2% protocol fee is skimmed off the INPUT on a buy (only the
+ * net trades the curve) and off the OUTPUT on a sell — matching the program,
+ * so a `minOutput` derived from this isn't over-stated. Pass `SWAP_FEE_BPS`.
+ */
+export function quoteSwap(
+  reserves: { reserveYes: number; reserveNo: number; lEff: number },
+  mode: SwapMode,
+  side: "yes" | "no",
+  rawAmount: number,
+  feeBps: number,
+): { output: number; priceAfter: number } {
+  const amount = Math.floor(rawAmount);
+  const netNum = 10_000 - feeBps;
+  const { reserveYes, reserveNo, lEff } = reserves;
+  if (mode === "sell") {
+    // Sell YES/NO → collateral mirrors the buy math with the sides reversed.
+    const est = estimateSwapOutput(
+      reserveYes,
+      reserveNo,
+      lEff,
+      amount,
+      side === "yes" ? "no" : "yes",
+    );
+    return {
+      output: Math.max(0, Math.floor((est.output * netNum) / 10_000)),
+      priceAfter: est.priceAfter,
+    };
+  }
+  const netIn = Math.floor((amount * netNum) / 10_000);
+  const est = estimateSwapOutput(reserveYes, reserveNo, lEff, netIn, side);
+  return { output: Math.max(0, Math.floor(est.output)), priceAfter: est.priceAfter };
+}
+
 function findXFromY(yTarget: number, lEff: number): number {
   let lo = -6,
     hi = 6;

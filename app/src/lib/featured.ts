@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { PublicKey } from "@solana/web3.js";
+import { FEATURED_AUTHORITIES, HAS_FEATURED } from "@/lib/featured-list";
 import type { VaultData } from "@/hooks/use-vaults";
 
 /**
@@ -10,22 +10,7 @@ import type { VaultData } from "@/hooks/use-vaults";
  * lists default to rows created by those authorities; "All markets" shows the
  * rest with a "community" badge. Unset → everything is shown, as before.
  */
-function parseAuthorities(raw: string | undefined): ReadonlySet<string> {
-  const out = new Set<string>();
-  for (const part of (raw ?? "").split(",")) {
-    const s = part.trim();
-    if (!s) continue;
-    try {
-      out.add(new PublicKey(s).toBase58());
-    } catch {
-      // Ignore malformed entries rather than breaking the page.
-    }
-  }
-  return out;
-}
-
-export const FEATURED_AUTHORITIES = parseAuthorities(process.env.NEXT_PUBLIC_FEATURED_AUTHORITIES);
-export const HAS_FEATURED = FEATURED_AUTHORITIES.size > 0;
+export { FEATURED_AUTHORITIES, HAS_FEATURED };
 
 const STORAGE_KEY = "oracle:showAllMarkets";
 

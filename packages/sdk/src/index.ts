@@ -23,3 +23,10 @@ export * from "./errors";
 export { PmAmmClient, type PmAmmConfig } from "./client";
 export { type SendApi } from "./send";
 export { type FlowsApi, type GroupCreateResult, type ClaimableLeg } from "./flows";
+export {
+  buildSwapIxs,
+  buildSwapTx,
+  type SwapIxsInput,
+  type BuildSwapTxInput,
+  type BuiltSwap,
+} from "./flows/swapTx";
