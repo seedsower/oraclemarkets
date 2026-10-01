@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
-import type { XbotConfig } from "./config";
+import type { XAuth } from "./config";
+import { oauth1Header } from "./oauth1";
 import { log } from "./log";
 import type { Store } from "./store";
 
@@ -30,58 +31,90 @@ interface RawPage {
   meta?: { newest_id?: string; next_token?: string };
 }
 
-/** OAuth 2.0 user-context client for the bot account. */
+/** Builds the Authorization header for one request (OAuth 1.0a or 2.0). */
+type Authorizer = (method: string, url: string) => Promise<string>;
+
+/** OAuth 2.0: refresh-token grant; rotated refresh tokens are persisted first. */
+function oauth2Authorizer(a: Extract<XAuth, { kind: "oauth2" }>, store: Store): Authorizer {
+  let access: { token: string; exp: number } | null = null;
+  return async () => {
+    if (!access || Date.now() >= access.exp - 60_000) {
+      const refresh = (await store.getRefreshToken()) || a.refreshToken;
+      if (!refresh)
+        throw new Error("no refresh token — run the auth script, or use OAuth 1.0a keys");
+      const basic = Buffer.from(`${a.clientId}:${a.clientSecret}`).toString("base64");
+      const res = await fetch(`${API}/oauth2/token`, {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${basic}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          grant_type: "refresh_token",
+          refresh_token: refresh,
+          client_id: a.clientId,
+        }),
+      });
+      const body = (await res.json().catch(() => ({}))) as {
+        access_token?: string;
+        refresh_token?: string;
+        expires_in?: number;
+        error_description?: string;
+      };
+      if (!res.ok || !body.access_token) {
+        throw new Error(
+          `token refresh failed (${res.status}): ${body.error_description ?? "re-run auth"}`,
+        );
+      }
+      if (body.refresh_token) await store.setRefreshToken(body.refresh_token);
+      access = { token: body.access_token, exp: Date.now() + (body.expires_in ?? 7200) * 1000 };
+      await store.usage("token_refresh");
+    }
+    return `Bearer ${access.token}`;
+  };
+}
+
+export function makeAuthorizer(auth: XAuth, store: Store): Authorizer {
+  if (auth.kind === "oauth1") {
+    return async (method, url) => oauth1Header({ method, url, keys: auth });
+  }
+  return oauth2Authorizer(auth, store);
+}
+
+/** GET /2/users/me — the authenticated account (used to find the bot's user id). */
+export async function whoAmI(authorize: Authorizer): Promise<{ id: string; username: string }> {
+  const url = `${API}/users/me`;
+  const res = await fetch(url, { headers: { Authorization: await authorize("GET", url) } });
+  const body = (await res.json().catch(() => ({}))) as {
+    data?: { id: string; username: string };
+    detail?: string;
+    title?: string;
+  };
+  if (!res.ok || !body.data) {
+    throw new Error(
+      `users/me ${res.status}: ${body.detail ?? body.title ?? JSON.stringify(body).slice(0, 200)}`,
+    );
+  }
+  return body.data;
+}
+
+/** X API v2 client for the bot account (mentions in, replies out). */
 export class XApi implements MentionSource {
-  private access: { token: string; exp: number } | null = null;
   /** X renamed `tweet.fields` → `post.fields` in its docs; use whichever it accepts. */
   private fieldsParam = "tweet.fields";
 
   constructor(
-    private readonly cfg: NonNullable<XbotConfig["x"]>,
+    private readonly authorize: Authorizer,
+    private readonly botUserId: string,
     private readonly store: Store,
   ) {}
 
-  private async token(): Promise<string> {
-    if (this.access && Date.now() < this.access.exp - 60_000) return this.access.token;
-    const refresh = (await this.store.getRefreshToken()) || this.cfg.refreshToken;
-    if (!refresh)
-      throw new Error("no refresh token — run `pnpm --filter @oracle-markets/xbot auth`");
-    const basic = Buffer.from(`${this.cfg.clientId}:${this.cfg.clientSecret}`).toString("base64");
-    const res = await fetch(`${API}/oauth2/token`, {
-      method: "POST",
-      headers: {
-        Authorization: `Basic ${basic}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: new URLSearchParams({
-        grant_type: "refresh_token",
-        refresh_token: refresh,
-        client_id: this.cfg.clientId,
-      }),
-    });
-    const body = (await res.json().catch(() => ({}))) as {
-      access_token?: string;
-      refresh_token?: string;
-      expires_in?: number;
-      error_description?: string;
-    };
-    if (!res.ok || !body.access_token) {
-      throw new Error(
-        `token refresh failed (${res.status}): ${body.error_description ?? "re-run auth"}`,
-      );
-    }
-    // Refresh tokens rotate: persist the new one BEFORE using the access token.
-    if (body.refresh_token) await this.store.setRefreshToken(body.refresh_token);
-    this.access = { token: body.access_token, exp: Date.now() + (body.expires_in ?? 7200) * 1000 };
-    await this.store.usage("token_refresh");
-    return this.access.token;
-  }
-
   private async call(path: string, init: RequestInit = {}): Promise<Response> {
-    const res = await fetch(`${API}${path}`, {
+    const url = `${API}${path}`;
+    const res = await fetch(url, {
       ...init,
       headers: {
-        Authorization: `Bearer ${await this.token()}`,
+        Authorization: await this.authorize(init.method ?? "GET", url),
         "Content-Type": "application/json",
         ...init.headers,
       },
@@ -102,7 +135,7 @@ export class XApi implements MentionSource {
     });
     if (sinceId) q.set("since_id", sinceId);
     if (next) q.set("pagination_token", next);
-    const res = await this.call(`/users/${this.cfg.botUserId}/mentions?${q}`);
+    const res = await this.call(`/users/${this.botUserId}/mentions?${q}`);
     const body = (await res.json().catch(() => ({}))) as RawPage & {
       errors?: unknown;
       detail?: string;

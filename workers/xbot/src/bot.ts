@@ -9,6 +9,8 @@ export interface BotCtx {
   cfg: XbotConfig;
   store: Store;
   source: MentionSource;
+  /** The bot account's user id (never reply to ourselves); null in fixture runs. */
+  botUserId: string | null;
 }
 
 export type Outcome =

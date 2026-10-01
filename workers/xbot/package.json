@@ -11,7 +11,8 @@
     "dev": "tsx src/index.ts",
     "auth": "tsx src/auth.ts",
     "test": "node --import tsx --test 'src/**/*.test.ts'",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "check": "tsx src/check.ts"
   },
   "dependencies": {
     "@pm-amm/sdk": "workspace:*",

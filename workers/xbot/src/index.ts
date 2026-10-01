@@ -10,7 +10,14 @@ import { handleMention, type BotCtx } from "./bot";
 import { loadConfig } from "./config";
 import { log, errMsg } from "./log";
 import { Store } from "./store";
-import { FixtureSource, RateLimited, XApi, type MentionSource } from "./xapi";
+import {
+  FixtureSource,
+  RateLimited,
+  XApi,
+  makeAuthorizer,
+  whoAmI,
+  type MentionSource,
+} from "./xapi";
 import { logUsage } from "./usage";
 
 const maxId = (a: string | null, b: string | null) =>
@@ -43,25 +50,42 @@ async function tick(ctx: BotCtx): Promise<void> {
   if (mentions.length) log.info("tick", { mentions: mentions.length });
 }
 
-function makeSource(cfg: BotCtx["cfg"], store: Store): MentionSource | null {
-  if (cfg.fixture) return new FixtureSource(cfg.fixture);
-  return cfg.x ? new XApi(cfg.x, store) : null;
+/** Real X client (resolving the bot's user id if unset), a fixture, or null. */
+async function makeSource(
+  cfg: BotCtx["cfg"],
+  store: Store,
+): Promise<{ source: MentionSource; botUserId: string | null } | null> {
+  if (cfg.fixture) return { source: new FixtureSource(cfg.fixture), botUserId: null };
+  if (!cfg.x) return null;
+  const authorize = makeAuthorizer(cfg.x.auth, store);
+  let botUserId = cfg.x.botUserId;
+  if (!botUserId) {
+    const me = await whoAmI(authorize);
+    botUserId = me.id;
+    log.info("authenticated as", { username: me.username, id: me.id, auth: cfg.x.auth.kind });
+  }
+  return { source: new XApi(authorize, botUserId, store), botUserId };
 }
 
 async function main(): Promise<void> {
   const cfg = loadConfig();
   const store = Store.connect(cfg.redisUrl);
-  const source = makeSource(cfg, store);
+  const made = await makeSource(cfg, store).catch((e) => {
+    log.error("X auth check failed — check the X_* variables", { error: errMsg(e) });
+    return null;
+  });
   log.info("xbot starting", {
     dryRun: cfg.dryRun,
     fixture: cfg.fixture,
     pollSecs: cfg.pollMs / 1000,
     dailyCap: cfg.dailyReplyCap,
   });
-  if (!source) {
-    log.warn("X credentials not set (X_CLIENT_ID / X_CLIENT_SECRET / X_BOT_USER_ID); idling");
+  if (!made && !cfg.x) {
+    log.warn(
+      "X credentials not set (X_API_KEY/SECRET + X_ACCESS_TOKEN/SECRET, or OAuth 2.0); idling",
+    );
   }
-  const ctx = source ? { cfg, store, source } : null;
+  const ctx: BotCtx | null = made ? { cfg, store, ...made } : null;
   let stopping = false;
   let wake: (() => void) | null = null;
   const stop = () => {

@@ -40,6 +40,27 @@ is rule-based. Re-check the current rules before setting `XBOT_DRY_RUN=false`:
 
 ## Setup
 
+There are two ways to connect the bot account. **Option A is simpler.**
+
+### Option A: OAuth 1.0a keys (no browser step)
+
+The bot posts as the account that **owns the developer app**.
+
+1. In the developer portal, open your app and set *User authentication settings* → permissions to **Read and write**.
+2. Under **Keys and tokens**, copy the **API Key and Secret**, then
+   **generate the Access Token and Secret**. Generate them *after* step 1, because
+   tokens keep the permissions they were created with.
+3. Check them locally. This only reads, nothing is posted:
+   ```bash
+   cd workers/xbot
+   X_API_KEY=… X_API_SECRET=… X_ACCESS_TOKEN=… X_ACCESS_SECRET=… npx tsx src/check.ts
+   ```
+4. Put the same four values on the Railway `xbot` service, keeping
+   `XBOT_DRY_RUN=true`. `X_BOT_USER_ID` is optional; it's looked up automatically.
+
+### Option B: OAuth 2.0 (any account)
+
+
 1. **X app settings** (developer portal → your app → *User authentication
    settings*): permissions **Read and write**, type **Web App, Automated App or
    Bot**, callback URI `http://127.0.0.1:3333/callback`, and website
