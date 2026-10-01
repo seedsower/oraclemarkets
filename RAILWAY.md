@@ -90,6 +90,17 @@ directly in each service's *Settings*.
    *Redeploy* on an old failed deployment reuses that deployment's settings,
    including the broken start command.
 
+### Optional: the `xbot` mention bot
+
+A third worker answers `@mentions` on X with market links (see
+[`workers/xbot/README.md`](workers/xbot/README.md)). It's a separate service from
+the same repo, set up like the keeper:
+*Dockerfile path* `workers/xbot/Dockerfile`, *Custom Start Command*
+`node dist/index.js`, *Restart Policy* Always, no domain, and *Watch Paths*
+`workers/xbot/**`, `packages/sdk/**`, `pnpm-lock.yaml`. Variables:
+[`railway/.env.xbot.example`](railway/.env.xbot.example). It idles until the X
+credentials are set, and stays in dry run until `XBOT_DRY_RUN=false`.
+
 ### Build-time vs runtime variables
 
 `NEXT_PUBLIC_*` values are compiled into the browser bundle. The root

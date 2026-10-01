@@ -5,21 +5,9 @@ import { BRAND } from "@/lib/brand";
  * server (OG images, generateMetadata) and client (buttons, toasts).
  */
 
-/** Probability → cents label: 0.342 → "34¢". */
-export function cents(p: number): string {
-  if (p > 0 && p < 0.005) return "<1¢";
-  if (p < 1 && p > 0.995) return ">99¢";
-  return `${Math.round(p * 100)}¢`;
-}
-
-/** "closes in 3d" / "closes in 5h" / "closes in 12m" / "closed". */
-export function closesIn(endTs: number, now = Math.floor(Date.now() / 1000)): string {
-  const left = endTs - now;
-  if (left <= 0) return "closed";
-  if (left >= 86_400) return `closes in ${Math.floor(left / 86_400)}d`;
-  if (left >= 3_600) return `closes in ${Math.floor(left / 3_600)}h`;
-  return `closes in ${Math.max(1, Math.floor(left / 60))}m`;
-}
+// Shared with the X bot (workers/xbot) so replies and cards read the same.
+export { formatCents as cents, formatClosesIn as closesIn, legLabel } from "@pm-amm/sdk/math";
+import { formatCents as cents, formatClosesIn as closesIn } from "@pm-amm/sdk/math";
 
 export function resolvedLabel(winningSide: number): string {
   return winningSide === 1 ? "Resolved: YES" : winningSide === 2 ? "Resolved: NO" : "Resolved";
@@ -72,9 +60,4 @@ export function tradeShareText(t: TradeShare): string {
     : t.side.toUpperCase();
   const verb = t.mode === "buy" ? "I'm buying" : "I'm selling";
   return clip(`${verb} ${what} at ${sidePrice} on: ${t.question}`);
-}
-
-/** Leg markets are named "<group question> - <outcome>"; show just the outcome. */
-export function legLabel(name: string): string {
-  return name.split(" - ").slice(-1)[0] || name;
 }

@@ -1,0 +1,26 @@
+{
+  "name": "@oracle-markets/xbot",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Oracle Markets mention bot: replies to @mentions with market links (which unfurl as Blinks). Never trades.",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsup",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "auth": "tsx src/auth.ts",
+    "test": "node --import tsx --test 'src/**/*.test.ts'",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@pm-amm/sdk": "workspace:*",
+    "ioredis": "^6.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.4",
+    "tsup": "^8.5.1",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3"
+  }
+}

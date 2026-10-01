@@ -13,6 +13,7 @@ import { formatTimeRemaining } from "@pm-amm/sdk/math";
 import { PublicKey } from "@solana/web3.js";
 import { toast } from "sonner";
 import Link from "next/link";
+import { XProposals } from "@/components/x-proposals";
 import { seriesColor } from "@/components/multi-line-chart";
 
 type MarketStatus = "active" | "expired" | "resolved";
@@ -347,6 +348,13 @@ export default function AdminPage() {
             </div>
           </>
         )}
+
+        <div className="text-caption mt-[32px] mb-[12px]">PROPOSALS FROM X</div>
+        <p className="text-[11px] text-muted font-mono mb-[12px]">
+          Market ideas from people who mentioned the bot. Creating one is your call. When you list
+          it, tag the proposer.
+        </p>
+        <XProposals />
       </main>
     </>
   );

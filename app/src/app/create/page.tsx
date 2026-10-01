@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { StatusBar } from "@/components/layout/status-bar";
@@ -26,6 +26,18 @@ export default function CreateMarketPage() {
   const [initialPricePct, setInitialPricePct] = useState("50");
   const [collateralMint, setCollateralMint] = useState(USDC_MINT.toBase58());
   const [loading, setLoading] = useState(false);
+
+  // Prefill from an X proposal (/admin → "Create market": ?name=…&days=…).
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    const n = q.get("name");
+    const days = Number(q.get("days"));
+    if (n) setName(n.slice(0, 64));
+    if (Number.isFinite(days) && days >= 1) {
+      setDurationUnit("days");
+      setDurationValue(String(Math.floor(days)));
+    }
+  }, []);
   const client = useClient();
   const { publicKey } = useWallet();
   const router = useRouter();

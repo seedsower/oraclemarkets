@@ -1,0 +1,184 @@
+import { readFileSync } from "node:fs";
+import type { XbotConfig } from "./config";
+import { log } from "./log";
+import type { Store } from "./store";
+
+const API = "https://api.x.com/2";
+
+export interface Mention {
+  id: string;
+  text: string;
+  authorId: string;
+  username: string;
+}
+
+/** Where mentions come from and where replies go (real X API, or a fixture). */
+export interface MentionSource {
+  fetchMentions(sinceId: string | null): Promise<{ mentions: Mention[]; newestId: string | null }>;
+  reply(text: string, inReplyTo: string): Promise<string>;
+}
+
+export class RateLimited extends Error {
+  constructor(readonly resetAt: number) {
+    super(`X API rate limited until ${new Date(resetAt).toISOString()}`);
+  }
+}
+
+interface RawPage {
+  data?: { id: string; text: string; author_id?: string }[];
+  includes?: { users?: { id: string; username: string }[] };
+  meta?: { newest_id?: string; next_token?: string };
+}
+
+/** OAuth 2.0 user-context client for the bot account. */
+export class XApi implements MentionSource {
+  private access: { token: string; exp: number } | null = null;
+  /** X renamed `tweet.fields` → `post.fields` in its docs; use whichever it accepts. */
+  private fieldsParam = "tweet.fields";
+
+  constructor(
+    private readonly cfg: NonNullable<XbotConfig["x"]>,
+    private readonly store: Store,
+  ) {}
+
+  private async token(): Promise<string> {
+    if (this.access && Date.now() < this.access.exp - 60_000) return this.access.token;
+    const refresh = (await this.store.getRefreshToken()) || this.cfg.refreshToken;
+    if (!refresh)
+      throw new Error("no refresh token — run `pnpm --filter @oracle-markets/xbot auth`");
+    const basic = Buffer.from(`${this.cfg.clientId}:${this.cfg.clientSecret}`).toString("base64");
+    const res = await fetch(`${API}/oauth2/token`, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${basic}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        grant_type: "refresh_token",
+        refresh_token: refresh,
+        client_id: this.cfg.clientId,
+      }),
+    });
+    const body = (await res.json().catch(() => ({}))) as {
+      access_token?: string;
+      refresh_token?: string;
+      expires_in?: number;
+      error_description?: string;
+    };
+    if (!res.ok || !body.access_token) {
+      throw new Error(
+        `token refresh failed (${res.status}): ${body.error_description ?? "re-run auth"}`,
+      );
+    }
+    // Refresh tokens rotate: persist the new one BEFORE using the access token.
+    if (body.refresh_token) await this.store.setRefreshToken(body.refresh_token);
+    this.access = { token: body.access_token, exp: Date.now() + (body.expires_in ?? 7200) * 1000 };
+    await this.store.usage("token_refresh");
+    return this.access.token;
+  }
+
+  private async call(path: string, init: RequestInit = {}): Promise<Response> {
+    const res = await fetch(`${API}${path}`, {
+      ...init,
+      headers: {
+        Authorization: `Bearer ${await this.token()}`,
+        "Content-Type": "application/json",
+        ...init.headers,
+      },
+    });
+    if (res.status === 429) {
+      const reset = Number(res.headers.get("x-rate-limit-reset")) * 1000;
+      throw new RateLimited(Number.isFinite(reset) && reset > 0 ? reset : Date.now() + 15 * 60_000);
+    }
+    return res;
+  }
+
+  private async page(sinceId: string | null, next?: string): Promise<RawPage> {
+    const q = new URLSearchParams({
+      max_results: "100",
+      expansions: "author_id",
+      "user.fields": "username",
+      [this.fieldsParam]: "author_id,created_at",
+    });
+    if (sinceId) q.set("since_id", sinceId);
+    if (next) q.set("pagination_token", next);
+    const res = await this.call(`/users/${this.cfg.botUserId}/mentions?${q}`);
+    const body = (await res.json().catch(() => ({}))) as RawPage & {
+      errors?: unknown;
+      detail?: string;
+    };
+    if (
+      res.status === 400 &&
+      this.fieldsParam === "tweet.fields" &&
+      /fields/i.test(JSON.stringify(body))
+    ) {
+      this.fieldsParam = "post.fields";
+      log.warn("X rejected tweet.fields; retrying with post.fields");
+      return this.page(sinceId, next);
+    }
+    if (!res.ok) throw new Error(`mentions ${res.status}: ${JSON.stringify(body).slice(0, 200)}`);
+    return body;
+  }
+
+  async fetchMentions(sinceId: string | null) {
+    const mentions: Mention[] = [];
+    let newestId: string | null = null;
+    let next: string | undefined;
+    for (let i = 0; i < 3; i++) {
+      const p = await this.page(sinceId, next);
+      const users = new Map((p.includes?.users ?? []).map((u) => [u.id, u.username]));
+      for (const t of p.data ?? []) {
+        mentions.push({
+          id: t.id,
+          text: t.text,
+          authorId: t.author_id ?? "",
+          username: users.get(t.author_id ?? "") ?? "",
+        });
+      }
+      newestId ??= p.meta?.newest_id ?? null;
+      await this.store.usage("posts_read", p.data?.length ?? 0);
+      next = p.meta?.next_token;
+      if (!next) break;
+    }
+    return { mentions, newestId };
+  }
+
+  async reply(text: string, inReplyTo: string): Promise<string> {
+    const res = await this.call("/tweets", {
+      method: "POST",
+      body: JSON.stringify({ text, reply: { in_reply_to_tweet_id: inReplyTo } }),
+    });
+    const body = (await res.json().catch(() => ({}))) as { data?: { id: string }; detail?: string };
+    if (!res.ok || !body.data) throw new Error(`reply ${res.status}: ${body.detail ?? "failed"}`);
+    await this.store.usage(/https?:\/\//.test(text) ? "posts_with_url" : "posts");
+    return body.data.id;
+  }
+}
+
+/** Scripted mentions from a JSON file — for dry-run tests. Never touches X. */
+export class FixtureSource implements MentionSource {
+  private served = false;
+  constructor(private readonly path: string) {}
+
+  async fetchMentions() {
+    if (this.served) return { mentions: [], newestId: null };
+    this.served = true;
+    const raw = JSON.parse(readFileSync(this.path, "utf8")) as {
+      id: string;
+      text: string;
+      author_id: string;
+      username: string;
+    }[];
+    const mentions = raw.map((r) => ({
+      id: r.id,
+      text: r.text,
+      authorId: r.author_id,
+      username: r.username,
+    }));
+    return { mentions, newestId: mentions.at(-1)?.id ?? null };
+  }
+
+  async reply(): Promise<string> {
+    throw new Error("FixtureSource never posts (dry run only)");
+  }
+}

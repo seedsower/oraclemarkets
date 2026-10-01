@@ -471,6 +471,27 @@ export function expectedDriftAfterBet(
   return Math.abs(after - before);
 }
 
+/** Probability → cents label: 0.342 → "34¢" (clamped labels at the extremes). */
+export function formatCents(p: number): string {
+  if (p > 0 && p < 0.005) return "<1¢";
+  if (p < 1 && p > 0.995) return ">99¢";
+  return `${Math.round(p * 100)}¢`;
+}
+
+/** "closes in 3d" / "closes in 5h" / "closes in 12m" / "closed". */
+export function formatClosesIn(endTs: number, now = Math.floor(Date.now() / 1000)): string {
+  const left = endTs - now;
+  if (left <= 0) return "closed";
+  if (left >= 86_400) return `closes in ${Math.floor(left / 86_400)}d`;
+  if (left >= 3_600) return `closes in ${Math.floor(left / 3_600)}h`;
+  return `closes in ${Math.max(1, Math.floor(left / 60))}m`;
+}
+
+/** Group legs are named "<group question> - <outcome>"; keep just the outcome. */
+export function legLabel(name: string): string {
+  return name.split(" - ").slice(-1)[0] || name;
+}
+
 /** Format time remaining */
 export function formatTimeRemaining(endTs: number): string {
   const now = Math.floor(Date.now() / 1000);
