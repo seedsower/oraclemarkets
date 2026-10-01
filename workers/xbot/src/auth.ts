@@ -28,7 +28,8 @@ function authorizeUrl(clientId: string, challenge: string, state: string): strin
     code_challenge: challenge,
     code_challenge_method: "S256",
   });
-  return `https://x.com/i/oauth2/authorize?${q}`;
+  // X's docs encode the scope list with %20; URLSearchParams would use "+".
+  return `https://x.com/i/oauth2/authorize?${q.toString().replace(/\+/g, "%20")}`;
 }
 
 async function exchange(code: string, verifier: string, id: string, secret: string) {
@@ -67,6 +68,19 @@ async function me(accessToken: string): Promise<{ id: string; username: string }
   return body.data;
 }
 
+/**
+ * OAuth 2.0 Client IDs base64-decode to "<id>:1:ci". The API Key (consumer
+ * key) from the same page doesn't — and using it makes X's consent page say
+ * "You weren't able to give access to the App".
+ */
+export function looksLikeOAuth2ClientId(id: string): boolean {
+  try {
+    return Buffer.from(id, "base64").toString("utf8").endsWith(":1:ci");
+  } catch {
+    return false;
+  }
+}
+
 function main() {
   const id = process.env.X_CLIENT_ID;
   const secret = process.env.X_CLIENT_SECRET;
@@ -75,6 +89,12 @@ function main() {
       "Set X_CLIENT_ID and X_CLIENT_SECRET (OAuth 2.0 keys from the X developer portal).",
     );
     process.exit(1);
+  }
+  if (!looksLikeOAuth2ClientId(id)) {
+    console.warn(
+      "⚠ X_CLIENT_ID doesn't look like an OAuth 2.0 Client ID. In the developer portal, use\n" +
+        "  Keys and tokens → OAuth 2.0 Client ID and Client Secret, NOT the API Key / API Key Secret.\n",
+    );
   }
   const verifier = b64url(randomBytes(48));
   const challenge = b64url(createHash("sha256").update(verifier).digest());
