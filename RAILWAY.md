@@ -131,6 +131,7 @@ Server-only secrets (`MINT_AUTHORITY_KEY`, `KEEPER_SHARED_SECRET`,
 | `SERVER_RPC_URL` | provider or empty | **dedicated provider** | runtime; server reads for share cards / metadata / Blinks, never sent to browsers |
 | `ACTIONS_MAX_USDC` / `ACTIONS_SLIPPAGE_BPS` / `ACTIONS_FEATURED_ONLY` | `250` / `200` / `false` | same / same / `true` recommended | runtime; Blinks, see [BLINKS.md](BLINKS.md) |
 | `KEEPER_SHARED_SECRET` | `openssl rand -hex 32` | `openssl rand -hex 32` | runtime; guards `POST /api/price-snap` |
+| `NEXT_PUBLIC_FAUCET_URL` | empty (own faucet) or `https://pm-amm-devnet.vercel.app/api/faucet` | n/a | build-time; the browser calls it directly so per-IP limits apply per visitor |
 | `MINT_AUTHORITY_KEY` | base64 mint key (`EftrgEw3…`) | **never set** | runtime; faucet only, see [DEVNET.md](DEVNET.md) |
 | `FAUCET_*` | optional | n/a | runtime; see [DEVNET.md](DEVNET.md) |
 

@@ -21,7 +21,8 @@ import {
   createCloseAccountInstruction,
   getAccount,
 } from "@solana/spl-token";
-import { solscanTxUrl } from "@/lib/constants";
+import { IS_MAINNET, USDC_MINT, solscanTxUrl } from "@/lib/constants";
+import { useFaucet } from "@/lib/faucet";
 import { toast } from "sonner";
 import { ShareOnX } from "@/components/share-on-x";
 import { buyPath, marketPath, tradeShareText } from "@/lib/share";
@@ -86,6 +87,16 @@ export function TradePanel({
     quoteReserves(market),
     market.collateralMint,
   );
+
+  // Devnet only: the user is short of the market's (mock) USDC for this buy.
+  const faucet = useFaucet();
+  const needsTestUsdc =
+    !IS_MAINNET &&
+    !!publicKey &&
+    mode === "buy" &&
+    market.collateralMint === USDC_MINT.toBase58() &&
+    tokens !== null &&
+    tokens.usdc < Math.max(rawAmount, 1);
 
   const minOutput = quote?.output ? Math.floor(quote.output * (1 - SLIPPAGE_BPS / 10000)) : 0;
 
@@ -383,6 +394,20 @@ export function TradePanel({
               })()}
             </>
           ) : null}
+        </div>
+      )}
+
+      {/* Devnet: not enough test USDC for this buy → offer the faucet right here. */}
+      {needsTestUsdc && (
+        <div className="flex items-center justify-between gap-[10px] border border-line-2 rounded-md px-[12px] py-[10px]">
+          <span className="text-[12px] text-text-dim">Not enough test USDC for this trade.</span>
+          <button
+            onClick={() => publicKey && faucet.request(publicKey.toBase58())}
+            disabled={faucet.busy}
+            className="shrink-0 px-[10px] py-[5px] bg-yes text-bg rounded-sm font-mono text-[11px] font-medium cursor-pointer disabled:opacity-50"
+          >
+            {faucet.busy ? "Sending…" : "Get 1,000 free"}
+          </button>
         </div>
       )}
 

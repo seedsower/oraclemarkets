@@ -3,7 +3,8 @@ import { createPostResponse, type CompletedAction } from "@solana/actions";
 import { PublicKey, Transaction, VersionedTransaction, type Connection } from "@solana/web3.js";
 import { getAssociatedTokenAddress } from "@solana/spl-token";
 import { buildSwapTx, type MarketView } from "@pm-amm/sdk";
-import { USDC_MINT } from "@/lib/constants";
+import { IS_MAINNET, USDC_MINT } from "@/lib/constants";
+import { absoluteUrl } from "@/lib/share";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { serverClient } from "@/lib/server/chain";
 import {
@@ -82,7 +83,9 @@ export async function buildBuyResponse(req: Request, b: BuyRequest): Promise<Nex
   const marketPk = new PublicKey(b.market.publicKey);
   const usdcAta = await getAssociatedTokenAddress(USDC_MINT, account);
   if ((await rawTokenBalance(conn, usdcAta)) < Math.round(b.amount * 1e6)) {
-    return actionError(`You need ${b.amount} USDC in this wallet.`);
+    // On devnet, say where to get test USDC (the site's faucet button).
+    const hint = IS_MAINNET ? "" : ` Get free test USDC at ${absoluteUrl("/markets")}`;
+    return actionError(`You need ${b.amount} USDC in this wallet.${hint}`);
   }
 
   const built = await buildSwapTx(client, {

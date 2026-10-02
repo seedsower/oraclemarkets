@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useWallet } from "@solana/wallet-adapter-react";
@@ -10,7 +9,7 @@ import { useMarkets } from "@/hooks/use-markets";
 import { poolValue } from "@pm-amm/sdk/math";
 import { findToken } from "@/lib/tokens";
 import { CLUSTER, IS_MAINNET } from "@/lib/constants";
-import { toast } from "sonner";
+import { useFaucet } from "@/lib/faucet";
 
 const WalletMultiButton = dynamic(
   () => import("@solana/wallet-adapter-react-ui").then((m) => m.WalletMultiButton),
@@ -31,28 +30,10 @@ function Stat({ label, value, delta }: { label: string; value: string; delta?: s
 export function StatusBar() {
   const { publicKey } = useWallet();
   const { data: markets } = useMarkets();
-  const [minting, setMinting] = useState(false);
 
-  const handleFaucet = async () => {
-    if (!publicKey || minting) return;
-    setMinting(true);
-    try {
-      const res = await fetch("/api/faucet", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ wallet: publicKey.toBase58() }),
-      });
-      const data = await res.json();
-      if (data.ok) {
-        toast.success(`+${data.amount} mUSDC`, { description: "Faucet sent to your wallet" });
-      } else {
-        toast.error("Faucet failed", { description: data.error });
-      }
-    } catch {
-      toast.error("Faucet unavailable");
-    } finally {
-      setMinting(false);
-    }
+  const faucet = useFaucet();
+  const handleFaucet = () => {
+    if (publicKey) void faucet.request(publicKey.toBase58());
   };
 
   const activeCount = markets?.filter((m) => !m.resolved).length ?? 0;
@@ -124,10 +105,10 @@ export function StatusBar() {
             {!IS_MAINNET && (
               <button
                 onClick={handleFaucet}
-                disabled={minting}
+                disabled={faucet.busy}
                 className="text-yes hover:text-text-hi transition-all duration-[120ms] cursor-pointer disabled:opacity-50"
               >
-                {minting ? "..." : "$FAUCET_mUSDC"}
+                {faucet.busy ? "..." : "$FAUCET_mUSDC"}
               </button>
             )}
             <Link
