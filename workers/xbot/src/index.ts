@@ -39,7 +39,16 @@ async function tick(ctx: BotCtx): Promise<void> {
   for (const m of ordered) {
     try {
       const out = await handleMention(ctx, m);
-      if (out.action === "skipped") log.debug("skipped", { id: m.id, reason: out.reason });
+      if (out.action === "skipped") {
+        // A recognised command that got no reply is worth seeing in the logs;
+        // duplicates and chit-chat stay at debug.
+        const quiet = out.reason === "already handled" || out.reason === "no command";
+        (quiet ? log.debug : log.info)("skipped", {
+          id: m.id,
+          from: m.username,
+          reason: out.reason,
+        });
+      }
     } catch (e) {
       if (e instanceof RateLimited) throw e;
       log.error("mention failed", { id: m.id, error: errMsg(e) });
