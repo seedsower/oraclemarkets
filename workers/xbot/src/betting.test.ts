@@ -14,7 +14,7 @@ const cfg: BetsConfig = {
   rpcUrl: "x",
   programId: new PublicKey("11111111111111111111111111111111"),
   collateralMint: new PublicKey("11111111111111111111111111111111"),
-  stakeWindowSecs: 24 * 3600,
+  stakeWindowSecs: 24 * 3600, // tests pin a 24h default; production default is 1h
   minTotalUsdc: 2,
   lpBps: 5000,
   perDay: 10,
@@ -98,4 +98,19 @@ test("staking window label", async () => {
   assert.equal(windowLabel(24 * 3600), "24h");
   assert.equal(windowLabel(72), "1m");
   assert.equal(windowLabel(1800), "30m");
+});
+
+test("per-bet window: used for staking and the deadline math; bounded 15m..7d", () => {
+  const p = planBet(bet("@daotao23 bet? by Oct 20 in 1h"), mention("x"), cfg, now);
+  assert.equal(p.action === "open" && p.windowSecs, 3600);
+  assert.equal(
+    p.action === "open" && p.marketDurationSecs,
+    p.action === "open" && Math.floor(p.deadline.getTime() / 1000) - (now + 3600),
+  );
+  const tooShort = planBet(bet("@daotao23 bet? by Oct 20 in 5m"), mention("x"), cfg, now);
+  assert.match(tooShort.action === "reply" ? tooShort.text : "", /15m to 7d/);
+  const tooLong = planBet(bet("@daotao23 bet? by Oct 20 in 9d"), mention("x"), cfg, now);
+  assert.equal(tooLong.action, "reply");
+  const dflt = planBet(bet("@daotao23 bet? by Oct 20"), mention("x"), cfg, now);
+  assert.equal(dflt.action === "open" && dflt.windowSecs, 24 * 3600);
 });

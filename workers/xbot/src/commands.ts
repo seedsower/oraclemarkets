@@ -18,7 +18,14 @@ export type Command =
    * "bet? by <date>" (the take is the post being replied to / quoted) or
    * "bet <question> by <date>". Missing pieces are null — the bot asks for them.
    */
-  | { kind: "bet"; question: string | null; by: string | null; deadline: Date | null };
+  | {
+      kind: "bet";
+      question: string | null;
+      by: string | null;
+      deadline: Date | null;
+      /** Optional staking window ("in 30m", "in 2h", "in 1d"); null → the default. */
+      windowSecs: number | null;
+    };
 
 const ODDS = new Set([
   "odds",
@@ -148,9 +155,25 @@ function parsePropose(rest: string, now: Date): Command | null {
   return { kind: "propose", question, by, deadline: parseDeadline(by, now) };
 }
 
-/** "? by Dec 31" | "Will X happen by Dec 31" | "" → question and deadline parts. */
+const UNIT_SECS: Record<string, number> = { m: 60, h: 3600, d: 86_400 };
+
+/**
+ * Trailing "in <N><unit>" staking window: "in 30m", "in 2 hours", "in 1d".
+ * Only a number + time unit at the END counts, so "in the top 3" never does.
+ */
+export function splitWindow(body: string): { rest: string; windowSecs: number | null } {
+  const m = body.match(
+    /\s+in\s+(\d+(?:\.\d+)?)\s*(m|mins?|minutes?|h|hrs?|hours?|d|days?)[.!?]*$/i,
+  );
+  if (!m) return { rest: body, windowSecs: null };
+  const secs = Math.round(Number(m[1]) * UNIT_SECS[m[2]![0]!.toLowerCase()]!);
+  return { rest: body.slice(0, m.index).trim(), windowSecs: secs };
+}
+
+/** "? by Dec 31 [in 1h]" | "Will X happen by Dec 31" | "" → question, deadline, window. */
 function parseBet(rest: string, now: Date): Command {
-  const body = rest.replace(/^[?!.\s]+/, "").trim();
+  const { rest: withoutWindow, windowSecs } = splitWindow(" " + rest.trim());
+  const body = withoutWindow.replace(/^[?!.\s]+/, "").trim();
   let question: string | null = body || null;
   let by: string | null = null;
   if (/^by\s+/i.test(body)) {
@@ -165,7 +188,7 @@ function parseBet(rest: string, now: Date): Command {
   }
   // "bet? on it" / "bet ser" carry no question of their own.
   if (question && !hasTopic(question)) question = null;
-  return { kind: "bet", question, by, deadline: by ? parseDeadline(by, now) : null };
+  return { kind: "bet", question, by, deadline: by ? parseDeadline(by, now) : null, windowSecs };
 }
 
 export function parseCommand(text: string, now = new Date()): Command | null {

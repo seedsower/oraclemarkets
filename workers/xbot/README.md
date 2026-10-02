@@ -28,7 +28,7 @@ always preferred over resolved ones.
 | `@bot odds <market id or words>` | Question, `YES 34¢ · NO 66¢ · closes in 3d`, and the market link. Groups show the top 3 outcomes. No match gets a link to the market list. |
 | `@bot markets` / `@bot trending` | Top 3 live featured markets with YES prices, plus one link to `/markets?ref=x` |
 | `@bot propose <question> by <date>` | "Noted — if we list it, we'll tag you." The proposal is stored and shown in `/admin` → **Proposals from X**. Listing it is your decision. |
-| `@bot bet? by <date>` (as a reply to a take) or `@bot bet <question> by <date>` | Opens a **Bet Vault** on the take: 24h to stake YES/NO (the pot sets the odds), then the bot launches a market anyone can trade until the deadline. You resolve it in `/admin`. Winners split the pot; unfilled or unresolved bets refund everyone. |
+| `@bot bet? by <date>` (as a reply to a take) or `@bot bet <question> by <date>` | Opens a **Bet Vault** on the take: 1h to stake YES/NO (or choose: `… in 30m`, `… in 1d`; 15m–7d) (the pot sets the odds), then the bot launches a market anyone can trade until the deadline. You resolve it in `/admin`. Winners split the pot; unfilled or unresolved bets refund everyone. |
 
 "Trending" is ranked by pool depth, because the keeper doesn't track 24h volume yet.
 
@@ -114,7 +114,9 @@ run the keeper against the same Redis.
 
 ## Bets from X (`bet?`)
 
-Someone posts a take; someone else replies "@bot bet? by Oct 20". The bot:
+Someone posts a take; someone else replies "@bot bet? by Oct 20" (optionally
+"… in 30m" / "… in 1d" to choose how long staking stays open; default
+`XBOT_BET_STAKE_HOURS`, 1h). The bot:
 
 1. Opens a Bet Vault on the take (question = the post's text, clipped to 64
    bytes on-chain; the full text and a link to the post are stored as

@@ -68,7 +68,7 @@ async function openBetFor(ctx: BetCtx, m: Mention, cmd: BetCmd): Promise<string>
   const busy = await capacity(ctx, b, m.authorId);
   if (busy) return busy;
 
-  const stakeWindow = windowLabel(b.stakeWindowSecs);
+  const stakeWindow = windowLabel(plan.windowSecs);
   if (ctx.cfg.dryRun) {
     log.info("DRY RUN — would open bet", {
       name: plan.name,
@@ -78,7 +78,7 @@ async function openBetFor(ctx: BetCtx, m: Mention, cmd: BetCmd): Promise<string>
   }
   const { vaultId, signature } = await ctx.betClient.send.createBetVault({
     name: plan.name,
-    commitDurationSecs: b.stakeWindowSecs,
+    commitDurationSecs: plan.windowSecs,
     marketDurationSecs: plan.marketDurationSecs,
     minTotal: b.minTotalUsdc,
     lpBps: b.lpBps,

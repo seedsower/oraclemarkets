@@ -14,6 +14,9 @@ const MAX_MARKET_SECS = 30 * DAY;
 /** Leave at least an hour of trading after staking closes. */
 const MIN_MARKET_SECS = 3600;
 export const STAKE_USDC = 10;
+/** Per-bet staking windows ("in 30m"): 15 minutes to the program's 7-day max. */
+export const MIN_WINDOW_SECS = 15 * 60;
+export const MAX_WINDOW_SECS = 7 * DAY;
 
 /** UTF-8 safe clip to `max` BYTES (on-chain names are ≤ 64 bytes). */
 export function clipBytes(s: string, max = 64): string {
@@ -45,6 +48,8 @@ export type BetPlan =
       question: string;
       name: string;
       deadline: Date;
+      /** How long staking stays open (the default or the bet's "in 1h"). */
+      windowSecs: number;
       marketDurationSecs: number;
       /** Dedupe key: the take's post id (or the mention itself for inline questions). */
       sourceId: string;
@@ -60,7 +65,14 @@ export function planBet(cmd: BetCmd, m: Mention, cfg: BetsConfig, now: number): 
       text: `Reply "bet? by <date>" under the take you want to bet on, or write it out: "bet <question> by <date>".`,
     };
   }
-  const closes = now + cfg.stakeWindowSecs;
+  const windowSecs = cmd.windowSecs ?? cfg.stakeWindowSecs;
+  if (windowSecs < MIN_WINDOW_SECS || windowSecs > MAX_WINDOW_SECS) {
+    return {
+      action: "reply",
+      text: `Staking can stay open from 15m to 7d, e.g. "bet? by <date> in 1h".`,
+    };
+  }
+  const closes = now + windowSecs;
   const earliest = new Date((closes + MIN_MARKET_SECS) * 1000);
   const latest = new Date((closes + MAX_MARKET_SECS) * 1000);
   if (!cmd.deadline) {
@@ -86,6 +98,7 @@ export function planBet(cmd: BetCmd, m: Mention, cfg: BetsConfig, now: number): 
     question,
     name: clipBytes(question),
     deadline,
+    windowSecs,
     marketDurationSecs: secs,
     sourceId: fromParent ? m.parent!.id : m.id,
     sourceUrl: fromParent
