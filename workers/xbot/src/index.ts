@@ -40,13 +40,14 @@ async function tick(ctx: BotCtx): Promise<void> {
     try {
       const out = await handleMention(ctx, m);
       if (out.action === "skipped") {
-        // A recognised command that got no reply is worth seeing in the logs;
-        // duplicates and chit-chat stay at debug.
-        const quiet = out.reason === "already handled" || out.reason === "no command";
+        // Show why a mention got no reply; only duplicates stay at debug.
+        // "no command" includes the (public) text so the wording can be checked.
+        const quiet = out.reason === "already handled";
         (quiet ? log.debug : log.info)("skipped", {
           id: m.id,
           from: m.username,
           reason: out.reason,
+          ...(out.reason === "no command" ? { text: m.text.slice(0, 80) } : {}),
         });
       }
     } catch (e) {
