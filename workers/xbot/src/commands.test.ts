@@ -86,3 +86,20 @@ test("small talk and empty mentions → no reply", () => {
     assert.equal(parseCommand(t, now), null, t);
   }
 });
+
+test("bet: reply form, inline question, and missing pieces", () => {
+  const r = parseCommand("@takeguy @daotao23 bet? by Oct 20", now);
+  assert.equal(r?.kind, "bet");
+  if (r?.kind !== "bet") return;
+  assert.equal(r.question, null, "question comes from the parent post");
+  assert.equal(r.by, "Oct 20");
+  assert.equal(r.deadline?.toISOString().slice(0, 10), "2026-10-20");
+
+  const inline = parseCommand("@daotao23 bet Will SOL flip ETH by Oct 25", now);
+  assert.equal(inline?.kind === "bet" && inline.question, "Will SOL flip ETH");
+
+  const bare = parseCommand("@daotao23 bet?", now);
+  assert.deepEqual(bare, { kind: "bet", question: null, by: null, deadline: null });
+  const vague = parseCommand("@daotao23 bet on it", now);
+  assert.equal(vague?.kind === "bet" && vague.question, null);
+});

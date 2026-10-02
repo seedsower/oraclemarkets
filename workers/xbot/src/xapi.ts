@@ -6,11 +6,19 @@ import type { Store } from "./store";
 
 const API = "https://api.x.com/2";
 
+/** The post a mention replies to or quotes — "the take" for `bet?`. */
+export interface ParentPost {
+  id: string;
+  text: string;
+  username: string;
+}
+
 export interface Mention {
   id: string;
   text: string;
   authorId: string;
   username: string;
+  parent: ParentPost | null;
 }
 
 /** Where mentions come from and where replies go (real X API, or a fixture). */
@@ -25,10 +33,30 @@ export class RateLimited extends Error {
   }
 }
 
+interface RawTweet {
+  id: string;
+  text: string;
+  author_id?: string;
+  referenced_tweets?: { type: string; id: string }[];
+}
+
 interface RawPage {
-  data?: { id: string; text: string; author_id?: string }[];
-  includes?: { users?: { id: string; username: string }[] };
+  data?: RawTweet[];
+  includes?: { users?: { id: string; username: string }[]; tweets?: RawTweet[] };
   meta?: { newest_id?: string; next_token?: string };
+}
+
+/** The replied-to (or else quoted) post, with its author's username. */
+function parentOf(
+  t: RawTweet,
+  tweets: Map<string, RawTweet>,
+  users: Map<string, string>,
+): ParentPost | null {
+  const ref =
+    t.referenced_tweets?.find((r) => r.type === "replied_to") ??
+    t.referenced_tweets?.find((r) => r.type === "quoted");
+  const p = ref ? tweets.get(ref.id) : undefined;
+  return p ? { id: p.id, text: p.text, username: users.get(p.author_id ?? "") ?? "" } : null;
 }
 
 /** Builds the Authorization header for one request (OAuth 1.0a or 2.0). */
@@ -129,9 +157,10 @@ export class XApi implements MentionSource {
   private async page(sinceId: string | null, next?: string): Promise<RawPage> {
     const q = new URLSearchParams({
       max_results: "100",
-      expansions: "author_id",
+      // Also return the post each mention replies to / quotes (the take for `bet?`).
+      expansions: "author_id,referenced_tweets.id,referenced_tweets.id.author_id",
       "user.fields": "username",
-      [this.fieldsParam]: "author_id,created_at",
+      [this.fieldsParam]: "author_id,created_at,referenced_tweets",
     });
     if (sinceId) q.set("since_id", sinceId);
     if (next) q.set("pagination_token", next);
@@ -160,12 +189,14 @@ export class XApi implements MentionSource {
     for (let i = 0; i < 3; i++) {
       const p = await this.page(sinceId, next);
       const users = new Map((p.includes?.users ?? []).map((u) => [u.id, u.username]));
+      const tweets = new Map((p.includes?.tweets ?? []).map((t) => [t.id, t]));
       for (const t of p.data ?? []) {
         mentions.push({
           id: t.id,
           text: t.text,
           authorId: t.author_id ?? "",
           username: users.get(t.author_id ?? "") ?? "",
+          parent: parentOf(t, tweets, users),
         });
       }
       newestId ??= p.meta?.newest_id ?? null;
@@ -201,12 +232,14 @@ export class FixtureSource implements MentionSource {
       text: string;
       author_id: string;
       username: string;
+      parent?: ParentPost;
     }[];
     const mentions = raw.map((r) => ({
       id: r.id,
       text: r.text,
       authorId: r.author_id,
       username: r.username,
+      parent: r.parent ?? null,
     }));
     return { mentions, newestId: mentions.at(-1)?.id ?? null };
   }

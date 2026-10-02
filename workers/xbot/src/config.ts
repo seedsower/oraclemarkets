@@ -18,7 +18,47 @@ function price(name: string): number | null {
   return process.env[name] && Number.isFinite(n) && n >= 0 ? n : null;
 }
 
+import { Keypair, PublicKey } from "@solana/web3.js";
 import type { OAuth1Keys } from "./oauth1";
+
+/** Opening bets from X (Bet Vault v2). null → `bet?` replies "not enabled". */
+export interface BetsConfig {
+  /** Dedicated low-balance hot wallet: pays rent, opens + launches bets. */
+  wallet: Keypair;
+  /** The ONLY key that can resolve these bets (your admin wallet; never on Railway). */
+  resolver: PublicKey;
+  rpcUrl: string;
+  programId: PublicKey;
+  collateralMint: PublicKey;
+  stakeWindowSecs: number;
+  /** Minimum total stake (USDC) for a bet to launch. */
+  minTotalUsdc: number;
+  /** Share of the pot seeded as liquidity at launch (capped on-chain). */
+  lpBps: number;
+  perDay: number;
+  perUserPerDay: number;
+  /** Stop opening bets below this wallet balance. */
+  minLamports: number;
+}
+
+function betsConfig(e: NodeJS.ProcessEnv): BetsConfig | null {
+  if (!e.XBOT_WALLET || !e.XBOT_BET_RESOLVER) return null;
+  const secret = Buffer.from(e.XBOT_WALLET, "base64");
+  if (secret.length !== 64) throw new Error("XBOT_WALLET must be base64 of a 64-byte secret key");
+  return {
+    wallet: Keypair.fromSecretKey(secret),
+    resolver: new PublicKey(e.XBOT_BET_RESOLVER),
+    rpcUrl: e.XBOT_RPC_URL || "https://api.devnet.solana.com",
+    programId: new PublicKey(e.PROGRAM_ID || "GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y"),
+    collateralMint: new PublicKey(e.USDC_MINT || "3WQ8hCqTNwjrh8WzE2XyoZoUrd1miPcwWfMkmFPUMEWZ"),
+    stakeWindowSecs: num("XBOT_BET_STAKE_HOURS", 24) * 3600,
+    minTotalUsdc: num("XBOT_BET_MIN_TOTAL_USDC", 2),
+    lpBps: Math.floor(num("XBOT_BET_LP_BPS", 5000)),
+    perDay: Math.floor(num("XBOT_BETS_PER_DAY", 10)),
+    perUserPerDay: Math.floor(num("XBOT_BETS_PER_USER_PER_DAY", 2)),
+    minLamports: Math.floor(num("XBOT_MIN_SOL", 0.05) * 1e9),
+  };
+}
 
 export type XAuth =
   /** Access Token + Secret generated in the developer portal (no browser step). */
@@ -72,6 +112,7 @@ export interface XbotConfig {
   /** null = no X credentials (the bot idles). */
   x: XCreds | null;
   prices: { read: number | null; post: number | null; postWithUrl: number | null };
+  bets: BetsConfig | null;
 }
 
 export function loadConfig(): XbotConfig {
@@ -90,6 +131,7 @@ export function loadConfig(): XbotConfig {
       process.env.XBOT_FEATURED_AUTHORITIES || process.env.NEXT_PUBLIC_FEATURED_AUTHORITIES,
     ),
     x,
+    bets: betsConfig(process.env),
     prices: {
       read: price("XBOT_COST_PER_READ_USD"),
       post: price("XBOT_COST_PER_POST_USD"),

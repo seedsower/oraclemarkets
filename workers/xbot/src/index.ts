@@ -19,6 +19,8 @@ import {
   type MentionSource,
 } from "./xapi";
 import { logUsage } from "./usage";
+import { advanceBets } from "./bet-actions";
+import { makeBetClient } from "./chain";
 
 const maxId = (a: string | null, b: string | null) =>
   !a ? b : !b ? a : BigInt(a) >= BigInt(b) ? a : b;
@@ -95,7 +97,15 @@ async function main(): Promise<void> {
       "X credentials not set (X_API_KEY/SECRET + X_ACCESS_TOKEN/SECRET, or OAuth 2.0); idling",
     );
   }
-  const ctx: BotCtx | null = made ? { cfg, store, ...made } : null;
+  const betClient = cfg.bets ? makeBetClient(cfg.bets) : null;
+  if (cfg.bets) {
+    log.info("bets enabled", {
+      botWallet: cfg.bets.wallet.publicKey.toBase58(),
+      resolver: cfg.bets.resolver.toBase58(),
+      stakeHours: cfg.bets.stakeWindowSecs / 3600,
+    });
+  }
+  const ctx: BotCtx | null = made ? { cfg, store, betClient, ...made } : null;
   let stopping = false;
   let wake: (() => void) | null = null;
   const stop = () => {
@@ -111,6 +121,8 @@ async function main(): Promise<void> {
     if (ctx) {
       try {
         await tick(ctx);
+        // Launch / settle the bot's bets (cache-driven; no-op in dry run).
+        await advanceBets(ctx).catch((e) => log.warn("advanceBets failed", { error: errMsg(e) }));
         await logUsage(store, cfg);
       } catch (e) {
         if (e instanceof RateLimited) waitMs = Math.max(cfg.pollMs, e.resetAt - Date.now());

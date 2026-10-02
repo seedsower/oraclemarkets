@@ -13,7 +13,12 @@ export type Command =
   | { kind: "markets" }
   | { kind: "propose"; question: string; by: string; deadline: Date | null }
   /** Free text: answer with a matching market, else a hint (or save a "will … by <date>"). */
-  | { kind: "question"; query: string; isWill: boolean };
+  | { kind: "question"; query: string; isWill: boolean }
+  /**
+   * "bet? by <date>" (the take is the post being replied to / quoted) or
+   * "bet <question> by <date>". Missing pieces are null — the bot asks for them.
+   */
+  | { kind: "bet"; question: string | null; by: string | null; deadline: Date | null };
 
 const ODDS = new Set([
   "odds",
@@ -143,6 +148,26 @@ function parsePropose(rest: string, now: Date): Command | null {
   return { kind: "propose", question, by, deadline: parseDeadline(by, now) };
 }
 
+/** "? by Dec 31" | "Will X happen by Dec 31" | "" → question and deadline parts. */
+function parseBet(rest: string, now: Date): Command {
+  const body = rest.replace(/^[?!.\s]+/, "").trim();
+  let question: string | null = body || null;
+  let by: string | null = null;
+  if (/^by\s+/i.test(body)) {
+    question = null;
+    by = body.replace(/^by\s+/i, "");
+  } else {
+    const i = body.toLowerCase().lastIndexOf(" by ");
+    if (i > 0) {
+      question = body.slice(0, i).trim() || null;
+      by = body.slice(i + 4).trim() || null;
+    }
+  }
+  // "bet? on it" / "bet ser" carry no question of their own.
+  if (question && !hasTopic(question)) question = null;
+  return { kind: "bet", question, by, deadline: by ? parseDeadline(by, now) : null };
+}
+
 export function parseCommand(text: string, now = new Date()): Command | null {
   const body = stripMentions(text);
   const m = body.match(/^([a-z']+)\b\s*([\s\S]*)$/i);
@@ -152,6 +177,7 @@ export function parseCommand(text: string, now = new Date()): Command | null {
   if (ODDS.has(verb) && hasTopic(rest)) return { kind: "odds", query: rest.slice(0, 100) };
   if (MARKETS.has(verb) && rest.length < 40) return { kind: "markets" };
   if (PROPOSE.has(verb)) return parsePropose(rest, now);
+  if (verb === "bet" || verb === "bets") return parseBet(rest, now);
   // "what are the odds on sol?" → treat the whole thing as a question.
   if (!hasTopic(body)) return null;
   const isWill =

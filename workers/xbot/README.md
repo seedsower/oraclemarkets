@@ -28,6 +28,7 @@ always preferred over resolved ones.
 | `@bot odds <market id or words>` | Question, `YES 34¢ · NO 66¢ · closes in 3d`, and the market link. Groups show the top 3 outcomes. No match gets a link to the market list. |
 | `@bot markets` / `@bot trending` | Top 3 live featured markets with YES prices, plus one link to `/markets?ref=x` |
 | `@bot propose <question> by <date>` | "Noted — if we list it, we'll tag you." The proposal is stored and shown in `/admin` → **Proposals from X**. Listing it is your decision. |
+| `@bot bet? by <date>` (as a reply to a take) or `@bot bet <question> by <date>` | Opens a **Bet Vault** on the take: 24h to stake YES/NO (the pot sets the odds), then the bot launches a market anyone can trade until the deadline. You resolve it in `/admin`. Winners split the pot; unfilled or unresolved bets refund everyone. |
 
 "Trending" is ranked by pool depth, because the keeper doesn't track 24h volume yet.
 
@@ -110,3 +111,30 @@ REDIS_URL=redis://localhost:6379 XBOT_FIXTURE=workers/xbot/fixtures/mentions.sam
 
 Replies read the keeper's Redis snapshot (`cache:markets`, `cache:groups`), so
 run the keeper against the same Redis.
+
+## Bets from X (`bet?`)
+
+Someone posts a take; someone else replies "@bot bet? by Oct 20". The bot:
+
+1. Opens a Bet Vault on the take (question = the post's text, clipped to 64
+   bytes on-chain; the full text and a link to the post are stored as
+   `bets:meta:<id>` for the `/bet/<id>` page). It's one bet per take: a second
+   `bet?` gets the existing links.
+2. Replies once, only to the person who tagged it, with stake links
+   (`/bet/<id>?buy=yes&amount=10`). It never tags the rest of the thread.
+3. Launches the market when staking closes (`advanceBets`, every poll). Launch
+   requires stakes on both sides, odds between 1% and 99%, and the minimum total;
+   otherwise stakers refund 1:1 on the bet page.
+4. After the deadline, **you** resolve in `/admin` → *Bets to resolve*. The bot
+   (or anyone) settles, and winners claim on the bet page. If you never resolve,
+   anyone can void it after 7 days and everyone is refunded.
+
+Deadlines must be 1 hour to 30 days after staking closes (the program's limit).
+The bot wallet (`XBOT_WALLET`) can open and launch bets but can never resolve
+them; only `XBOT_BET_RESOLVER` can. Limits: `XBOT_BETS_PER_DAY`,
+`XBOT_BETS_PER_USER_PER_DAY`, and a SOL floor (`XBOT_MIN_SOL`). Bets are off
+unless both `XBOT_WALLET` and `XBOT_BET_RESOLVER` are set. **Devnet only**: on
+mainnet this is peer-to-peer wagering with real money, so get legal advice first.
+
+End-to-end test (devnet, about 8 minutes): `scripts/e2e-bets.ts` (see its header).
+

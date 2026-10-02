@@ -10,12 +10,16 @@ import {
   PROPOSE_REPLY,
 } from "./replies";
 import type { Store } from "./store";
+import type { PmAmmClient } from "@pm-amm/sdk";
+import { handleBet } from "./bet-actions";
 import type { Mention, MentionSource } from "./xapi";
 
 export interface BotCtx {
   cfg: XbotConfig;
   store: Store;
   source: MentionSource;
+  /** Signing client for the bot wallet (bets); null when bets are off. */
+  betClient: PmAmmClient | null;
   /** The bot account's user id (never reply to ourselves); null in fixture runs. */
   botUserId: string | null;
 }
@@ -33,7 +37,7 @@ interface Plan {
 }
 
 /** Decide the reply (and whether to store a proposal) for a parsed command. */
-async function plan(ctx: BotCtx, cmd: Command): Promise<Plan> {
+async function plan(ctx: BotCtx, cmd: Exclude<Command, { kind: "bet" }>): Promise<Plan> {
   if (cmd.kind === "propose") return { text: PROPOSE_REPLY, propose: cmd };
   const { markets, groups } = await ctx.store.snapshot();
   const featured = (a: string) => ctx.cfg.featured.has(a);
@@ -80,14 +84,14 @@ export async function handleMention(ctx: BotCtx, m: Mention): Promise<Outcome> {
   if (!cmd) return { action: "skipped", reason: "no command" };
   if (!(await ctx.store.takeCooldown(m.authorId)))
     return { action: "skipped", reason: "user cooldown" };
-  const p = await plan(ctx, cmd);
+  const p: Plan = cmd.kind === "bet" ? { text: "" } : await plan(ctx, cmd);
   if (p.propose) await saveProposal(ctx, m, p.propose);
 
   const dry = ctx.cfg.dryRun;
   if ((await ctx.store.repliesToday(dry)) >= ctx.cfg.dailyReplyCap) {
     return { action: "skipped", reason: "daily reply cap" };
   }
-  const text = p.text;
+  const text = cmd.kind === "bet" ? await handleBet(ctx, m, cmd) : p.text;
   await ctx.store.countReply(dry);
   if (dry) {
     log.info("DRY RUN — would reply", { to: m.username, inReplyTo: m.id, command: cmd.kind, text });

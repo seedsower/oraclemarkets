@@ -25,6 +25,37 @@ export interface Proposal {
   createdAt: number;
 }
 
+/** Same shape the web reads (app/src/lib/bets.ts `BetMeta`). */
+export interface BetMetaRecord {
+  vaultId: number;
+  question: string;
+  sourceUrl: string | null;
+  openedBy: string | null;
+  deadline: string | null;
+  createdAt: number;
+}
+
+/** Fields of the SDK's BetVaultView the bot's lifecycle needs. */
+export interface BetVaultRow {
+  publicKey: string;
+  vaultId: number;
+  authority: string;
+  market: string;
+  launched: boolean;
+  settled: boolean;
+  voided: boolean;
+  refunding: boolean;
+  commitEndTs: number;
+  marketEndTs: number;
+  yesTotal: number;
+  noTotal: number;
+  total: number;
+  minTotal: number;
+  voidGraceSecs: number;
+  // remaining BetVaultView fields are present but unused here
+  [k: string]: unknown;
+}
+
 export const today = (d = new Date()) => d.toISOString().slice(0, 10);
 
 export class Store {
@@ -86,6 +117,33 @@ export class Store {
       .zadd("proposals:index", p.createdAt, p.id)
       .exec();
   }
+
+  /** Increment a per-day counter (bets opened, globally or per user). */
+  async bump(key: string): Promise<number> {
+    const k = `${key}:${today()}`;
+    const [[, n]] = (await this.redis
+      .multi()
+      .incr(k)
+      .expire(k, 2 * DAY_SECS)
+      .exec()) as [[unknown, number]];
+    return n;
+  }
+
+  async count(key: string): Promise<number> {
+    return Number((await this.redis.get(`${key}:${today()}`)) ?? 0);
+  }
+
+  /** One bet per take: the vault already opened for this source post. */
+  betForPost = (postId: string) => this.redis.get(`bets:by_post:${postId}`);
+
+  async saveBet(meta: BetMetaRecord, sourcePostId: string | null): Promise<void> {
+    const m = this.redis.multi().set(`bets:meta:${meta.vaultId}`, JSON.stringify(meta));
+    if (sourcePostId) m.set(`bets:by_post:${sourcePostId}`, String(meta.vaultId));
+    await m.exec();
+  }
+
+  /** Keeper snapshot of bet vaults (`cache:bet_vaults`). */
+  betVaults = () => this.rows<BetVaultRow>("cache:bet_vaults");
 
   private async rows<T>(key: string): Promise<T[]> {
     const raw = await this.redis.get(key);
