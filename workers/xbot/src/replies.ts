@@ -48,6 +48,27 @@ const STOP = new Set([
   "at",
   "for",
   "odds",
+  // Question words and command synonyms carry no topic.
+  "odd",
+  "what",
+  "are",
+  "how",
+  "much",
+  "does",
+  "do",
+  "can",
+  "price",
+  "prices",
+  "chance",
+  "chances",
+  "it",
+  "there",
+  "any",
+  "market",
+  "this",
+  "that",
+  "and",
+  "or",
 ]);
 
 function tokens(s: string): string[] {
@@ -80,19 +101,24 @@ export function findMarket(
   }
   const q = tokens(query);
   const live = (end: number, resolved: boolean) => (!resolved && end > now ? 1 : 0);
+  // Word searches skip markets that are closed but not yet resolved: they
+  // can't be traded and have no answer yet — a useless reply.
+  const answerable = (end: number, resolved: boolean) => resolved || end > now;
   const candidates: { f: Found; s: number; rank: number[] }[] = [
     ...markets
-      .filter((m) => !m.group)
+      .filter((m) => !m.group && answerable(m.endTs, m.resolved))
       .map((m) => ({
         f: { kind: "market" as const, m },
         s: score(m.name, q),
         rank: [live(m.endTs, m.resolved), +isFeatured(m.authority), m.lZero],
       })),
-    ...groups.map((g) => ({
-      f: { kind: "group" as const, g },
-      s: score(g.name, q),
-      rank: [live(g.endTs, g.resolved), +isFeatured(g.authority), 0],
-    })),
+    ...groups
+      .filter((g) => answerable(g.endTs, g.resolved))
+      .map((g) => ({
+        f: { kind: "group" as const, g },
+        s: score(g.name, q),
+        rank: [live(g.endTs, g.resolved), +isFeatured(g.authority), 0],
+      })),
   ].filter((c) => c.s >= 0.5);
   candidates.sort(
     (a, b) =>
@@ -152,3 +178,8 @@ export function marketsReply(
 }
 
 export const PROPOSE_REPLY = "Noted — if we list it, we'll tag you.";
+
+/** A "will …?" question with no matching market: say how to propose it. */
+export function proposeHintReply(site: string): string {
+  return `No market on that yet. Want it listed? Reply "propose <question> by <date>" — or browse what's live: ${site}/markets?ref=x`;
+}

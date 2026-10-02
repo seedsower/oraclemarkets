@@ -107,3 +107,10 @@ test("not found reply links the market list", () => {
     "No market matches \"unicorns\" yet. Here's what's live: https://oraclemarkets.app/markets?ref=x",
   );
 });
+
+test("real posts: 'sol price today' finds the SOL market; 'odd btc'-style topics too", () => {
+  const sol = findMarket("sol price today", markets, groups, featured, now);
+  assert.equal(sol?.kind, "market");
+  const flip = findMarket("will sol flip btc in volume", markets, groups, featured, now);
+  assert.equal(flip, null, "no market about SOL/BTC volume");
+});

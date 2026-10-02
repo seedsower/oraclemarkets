@@ -39,16 +39,47 @@ test("propose: a past month/day rolls to next year; junk dates stay null", () =>
   assert.equal(c?.kind === "propose" && c.deadline?.toISOString().slice(0, 10), "2027-01-05");
   assert.equal(parseDeadline("whenever", now), null);
   assert.equal(parseDeadline("2027", now), null);
+  assert.equal(parseDeadline("december", now)?.toISOString().slice(0, 10), "2026-12-31");
+  assert.equal(parseDeadline("Feb 2027", now)?.toISOString().slice(0, 10), "2027-02-28");
   assert.equal(parseDeadline("2026-12-31", now)?.toISOString().slice(0, 10), "2026-12-31");
   assert.equal(parseDeadline("December 31, 2026", now)?.toISOString().slice(0, 10), "2026-12-31");
 });
 
-test("anything else → no reply", () => {
+test("typos and synonyms of the commands", () => {
+  assert.deepEqual(parseCommand("@daotao23 odd btc", now), { kind: "odds", query: "btc" });
+  assert.deepEqual(parseCommand("@daotao23 price sol", now), { kind: "odds", query: "sol" });
+  assert.deepEqual(parseCommand("@daotao23 trending", now), { kind: "markets" });
+  assert.deepEqual(parseCommand("@daotao23 top", now), { kind: "markets" });
+  assert.equal(parseCommand("@daotao23 suggest Will SOL hit $500 by Jan 5", now)?.kind, "propose");
+});
+
+test("plain questions and topics (the real posts that got no reply)", () => {
+  assert.deepEqual(parseCommand("@daotao23 sol price today", now), {
+    kind: "question",
+    query: "sol price today",
+    isWill: false,
+  });
+  assert.deepEqual(parseCommand("@daotao23 will sol flip btc in volume", now), {
+    kind: "question",
+    query: "will sol flip btc in volume",
+    isWill: true,
+  });
+  assert.deepEqual(parseCommand("@daotao23 will btc reach 100k by december", now), {
+    kind: "question",
+    query: "will btc reach 100k by december",
+    isWill: true,
+  });
+  assert.equal(parseCommand("@daotao23 what are the odds on sol?", now)?.kind, "question");
+});
+
+test("small talk and empty mentions → no reply", () => {
   for (const t of [
     "@daotao23 gm",
-    "@daotao23 bet 10 YES on sol",
-    "@daotao23 propose short by",
+    "@daotao23 gm ser",
+    "@daotao23 thanks!",
+    "@daotao23 love this",
     "@daotao23 what are the odds?",
+    "@daotao23 propose short by",
     "@daotao23",
     "",
   ]) {

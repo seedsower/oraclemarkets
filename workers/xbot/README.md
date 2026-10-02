@@ -7,7 +7,14 @@ and never creates markets.
 
 ## Commands
 
-Commands are parsed by fixed rules, with no AI. Anything else gets no reply.
+Commands are parsed by fixed rules, with no AI. Typos and synonyms work
+(`odd`, `price`, `chance` → odds; `market`, `top`, `hot` → markets; `suggest`,
+`idea` → propose), and so do **plain questions**:
+
+- "sol price today" → the best-matching **live** market (closed-but-unresolved markets are skipped)
+- "will btc reach 100k by december" with no matching market → saved as a proposal ("Noted…")
+- "will sol flip btc in volume" (no date, no market) → a hint on how to `propose`
+- small talk ("gm", "thanks", "love this") → no reply
 
 | Post | Reply |
 |---|---|
