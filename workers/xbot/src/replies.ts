@@ -120,9 +120,10 @@ export function findMarket(
         rank: [live(g.endTs, g.resolved), +isFeatured(g.authority), 0],
       })),
   ].filter((c) => c.s >= 0.5);
+  // Live (tradable) markets first, then best word match, then featured, then depth.
   candidates.sort(
     (a, b) =>
-      b.s - a.s || b.rank[0]! - a.rank[0]! || b.rank[1]! - a.rank[1]! || b.rank[2]! - a.rank[2]!,
+      b.rank[0]! - a.rank[0]! || b.s - a.s || b.rank[1]! - a.rank[1]! || b.rank[2]! - a.rank[2]!,
   );
   return candidates[0]?.f ?? null;
 }
@@ -146,10 +147,22 @@ function groupLine(g: GroupRow, now: number): string {
   return [...top, g.resolved ? "resolved" : formatClosesIn(g.endTs, now)].join(" · ");
 }
 
+/** X counts every link as 23 characters, whatever its length. */
+const LINK = 23;
+const LIMIT = 280;
+
 export function oddsReply(f: Found, site: string, now: number): string {
   if (f.kind === "market") {
     const line = marketLine(f.m, now);
-    return `${clip(f.m.name, MAX_TEXT - line.length - 2)}\n${line}\n${site}/market/${f.m.marketId}`;
+    const url = `${site}/market/${f.m.marketId}`;
+    // Tradable → one-tap buy links (open the market with the trade pre-filled).
+    if (!f.m.resolved && f.m.endTs > now) {
+      const tail = `Buy YES: ${url}?buy=yes&amount=5\nBuy NO: ${url}?buy=no&amount=5`;
+      const tailWeight = "Buy YES: ".length + LINK + 1 + "Buy NO: ".length + LINK;
+      const room = LIMIT - tailWeight - line.length - 4;
+      return `${clip(f.m.name, room)}\n${line}\n${tail}`;
+    }
+    return `${clip(f.m.name, MAX_TEXT - line.length - 2)}\n${line}\n${url}`;
   }
   const line = groupLine(f.g, now);
   return `${clip(f.g.name, MAX_TEXT - line.length - 2)}\n${line}\n${site}/group/${f.g.groupId}`;

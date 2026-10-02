@@ -80,17 +80,25 @@ test("odds reply: question, prices, close time, link", () => {
   const f = findMarket("12", markets, groups, featured, now)!;
   assert.equal(
     oddsReply(f, site, now),
-    "Will the Fed cut rates in December 2026?\nYES 47¢ · NO 53¢ · closes in 3d\nhttps://oraclemarkets.app/market/12",
+    "Will the Fed cut rates in December 2026?\nYES 47¢ · NO 53¢ · closes in 3d\n" +
+      "Buy YES: https://oraclemarkets.app/market/12?buy=yes&amount=5\n" +
+      "Buy NO: https://oraclemarkets.app/market/12?buy=no&amount=5",
   );
+  const resolved = oddsReply({ kind: "market", m: markets[4]! }, site, now);
+  assert.equal(resolved, "Old SOL market\nResolved: YES\nhttps://oraclemarkets.app/market/15");
   const g = oddsReply(findMarket("77", markets, groups, featured, now)!, site, now);
   assert.match(g, /SOL 34¢ · BTC 33¢ · closes in 91d\nhttps:\/\/oraclemarkets\.app\/group\/77$/);
 });
 
-test("replies stay under X's 280 limit (URL counts as 23)", () => {
+/** X's weighted length: every URL counts as 23 characters. */
+const weighted = (s: string) => s.replace(/https?:\/\/\S+/g, "x".repeat(23)).length;
+
+test("replies stay under X's 280 limit (each URL counts as 23)", () => {
   const long = mk({ marketId: 20, name: "Will ".padEnd(400, "x") + "?" });
   const r = oddsReply({ kind: "market", m: long }, site, now);
-  const [textPart] = r.split(site);
-  assert.ok(textPart!.length + 23 <= 280, `len ${textPart!.length}`);
+  assert.ok(weighted(r) <= 280, `weighted ${weighted(r)}`);
+  assert.match(r, /Buy YES: .*\nBuy NO: /);
+  for (const m of markets) assert.ok(weighted(oddsReply({ kind: "market", m }, site, now)) <= 280);
 });
 
 test("markets reply: top featured live markets + one link", () => {
@@ -113,4 +121,21 @@ test("real posts: 'sol price today' finds the SOL market; 'odd btc'-style topics
   assert.equal(sol?.kind, "market");
   const flip = findMarket("will sol flip btc in volume", markets, groups, featured, now);
   assert.equal(flip, null, "no market about SOL/BTC volume");
+});
+
+test("a live market beats a resolved one with more matching words", () => {
+  const resolvedToday = mk({
+    marketId: 30,
+    name: "Will sol hit 120 today",
+    resolved: true,
+    winningSide: 1,
+  });
+  const f = findMarket("sol price today", [...markets, resolvedToday], groups, featured, now);
+  assert.equal(f?.kind === "market" && f.m.marketId, 11);
+  const only = findMarket("sol price today", [resolvedToday], [], featured, now);
+  assert.equal(
+    only?.kind === "market" && only.m.marketId,
+    30,
+    "resolved still answers when nothing live matches",
+  );
 });

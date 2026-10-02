@@ -23,7 +23,39 @@ import { PublicKey } from "@solana/web3.js";
 import { toast } from "sonner";
 import Link from "next/link";
 import { ShareOnX } from "@/components/share-on-x";
-import { marketPath, marketSummary } from "@/lib/share";
+import { marketPath, marketSummary, parseBuyIntent, type BuySide } from "@/lib/share";
+import { OpenInWallet } from "@/components/open-in-wallet";
+import { needsWalletApp } from "@/lib/wallet-links";
+import { useEffect, useRef, useState } from "react";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { useWalletModal } from "@solana/wallet-adapter-react-ui";
+
+/**
+ * One-tap buy links (`?buy=yes&amount=5`, used by the X bot and shares):
+ * pre-fill the trade panel, scroll to it, and prompt for a wallet if none is
+ * connected. Nothing is submitted — the user reviews and signs.
+ */
+function useBuyIntent(ready: boolean) {
+  const [intent, setIntent] = useState<{ side: BuySide; amount: number } | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const { connected } = useWallet();
+  const { setVisible } = useWalletModal();
+
+  useEffect(() => {
+    setIntent(parseBuyIntent(window.location.search));
+  }, []);
+
+  useEffect(() => {
+    if (!intent || !ready) return;
+    panelRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    // Phones without an in-browser wallet get the "Open in Phantom" card instead.
+    if (!connected && !needsWalletApp()) setVisible(true);
+    // Only on arrival: don't reopen the modal if the user dismisses it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [intent, ready]);
+
+  return { intent, panelRef };
+}
 
 export function MarketPage({ id }: { id: string }) {
   const { data: markets, isLoading, refetch } = useMarkets();
@@ -40,6 +72,7 @@ export function MarketPage({ id }: { id: string }) {
 
   const { data: tokens } = useUserTokens(yesMint, noMint, market?.collateralMint);
   const name = market?.name ?? `Market #${id}`;
+  const { intent, panelRef } = useBuyIntent(!!market);
 
   return (
     <>
@@ -237,7 +270,15 @@ export function MarketPage({ id }: { id: string }) {
                     <PositionCard market={market} tokens={tokens ?? null} />
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-[16px]">
-                      <TradePanel market={market} tokens={tokens ?? null} />
+                      <div ref={panelRef} className="space-y-[12px]">
+                        <OpenInWallet />
+                        <TradePanel
+                          market={market}
+                          tokens={tokens ?? null}
+                          presetSide={intent?.side}
+                          presetAmount={intent ? String(intent.amount) : undefined}
+                        />
+                      </div>
                       <div className="space-y-[16px]">
                         <Link
                           href={`/market/${id}/lp`}

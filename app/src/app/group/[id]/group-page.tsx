@@ -22,6 +22,7 @@ import { deriveYesMint, deriveNoMint } from "@pm-amm/sdk";
 import { PROGRAM_ID, USDC_MINT, solscanAccountUrl } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { ShareOnX } from "@/components/share-on-x";
+import { OpenInWallet } from "@/components/open-in-wallet";
 import { cents, groupPath, legLabel } from "@/lib/share";
 
 export function GroupPage({ id }: { id: string }) {
@@ -414,6 +415,7 @@ function SideTradePanel({ group, selectedIdx, legs, trade }: SideTradePanelProps
         </div>
       </div>
 
+      <OpenInWallet />
       <TradePanel
         market={market}
         tokens={tokens ?? null}

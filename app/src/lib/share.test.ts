@@ -53,3 +53,33 @@ test("legLabel keeps only the outcome", () => {
   assert.equal(legLabel("Best performer in Q4 2026 - SOL"), "SOL");
   assert.equal(legLabel("Plain name"), "Plain name");
 });
+
+test("buy links: build and parse", async () => {
+  const { buyPath, parseBuyIntent } = await import("./share");
+  assert.equal(buyPath(42, "yes"), "/market/42?buy=yes&amount=5");
+  assert.equal(buyPath("42", "no", 25), "/market/42?buy=no&amount=25");
+  assert.deepEqual(parseBuyIntent("?buy=yes&amount=5"), { side: "yes", amount: 5 });
+  assert.deepEqual(parseBuyIntent("?buy=NO&amount=12.5"), { side: "no", amount: 12.5 });
+  assert.deepEqual(parseBuyIntent("?buy=yes"), { side: "yes", amount: 5 });
+  assert.deepEqual(parseBuyIntent("?buy=yes&amount=-3"), { side: "yes", amount: 5 });
+  assert.deepEqual(parseBuyIntent("?buy=yes&amount=1e9"), { side: "yes", amount: 5 });
+  assert.equal(parseBuyIntent("?buy=maybe&amount=5"), null);
+  assert.equal(parseBuyIntent(""), null);
+});
+
+test("wallet browse deeplinks match the documented format", async () => {
+  const { walletBrowseLinks } = await import("./wallet-links");
+  const l = walletBrowseLinks(
+    "https://oraclemarkets.app/market/1?buy=yes&amount=5",
+    "https://oraclemarkets.app",
+  );
+  assert.equal(
+    l.phantom,
+    "https://phantom.app/ul/browse/https%3A%2F%2Foraclemarkets.app%2Fmarket%2F1%3Fbuy%3Dyes%26amount%3D5?ref=https%3A%2F%2Foraclemarkets.app",
+  );
+  assert.ok(
+    l.solflare.startsWith(
+      "https://solflare.com/ul/v1/browse/https%3A%2F%2Foraclemarkets.app%2Fmarket%2F1%3Fbuy%3Dyes",
+    ),
+  );
+});

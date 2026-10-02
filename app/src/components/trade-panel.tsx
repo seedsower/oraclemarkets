@@ -24,7 +24,7 @@ import {
 import { solscanTxUrl } from "@/lib/constants";
 import { toast } from "sonner";
 import { ShareOnX } from "@/components/share-on-x";
-import { marketPath, tradeShareText } from "@/lib/share";
+import { buyPath, marketPath, tradeShareText } from "@/lib/share";
 
 const SLIPPAGE_BPS = 100;
 
@@ -33,6 +33,7 @@ export function TradePanel({
   tokens,
   presetSide,
   presetNonce,
+  presetAmount,
 }: {
   market: MarketData;
   tokens: UserTokens | null;
@@ -40,6 +41,8 @@ export function TradePanel({
   presetSide?: "yes" | "no";
   /** Bump to re-apply `presetSide` even when its value is unchanged (re-click). */
   presetNonce?: number;
+  /** Pre-filled buy amount (one-tap buy links: ?buy=yes&amount=5). */
+  presetAmount?: string;
 }) {
   const [mode, setMode] = useState<SwapMode>("buy");
   const [side, setSide] = useState<"yes" | "no">("yes");
@@ -53,8 +56,8 @@ export function TradePanel({
     if (!presetSide) return;
     setSide(presetSide);
     setMode("buy");
-    setAmount("");
-  }, [presetSide, presetNonce]);
+    setAmount(presetAmount ?? "");
+  }, [presetSide, presetNonce, presetAmount]);
 
   const queryClient = useQueryClient();
   const client = useClient();
@@ -199,7 +202,11 @@ export function TradePanel({
         description: (
           <span className="flex flex-col gap-[4px]">
             <span>{desc}</span>
-            <ShareOnX text={shareText} path={marketPath(market.marketId)} className="text-[11px]" />
+            <ShareOnX
+              text={shareText}
+              path={mode === "buy" ? buyPath(market.marketId, side) : marketPath(market.marketId)}
+              className="text-[11px]"
+            />
           </span>
         ),
         duration: 10_000,

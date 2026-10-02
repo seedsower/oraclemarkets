@@ -16,6 +16,13 @@ Commands are parsed by fixed rules, with no AI. Typos and synonyms work
 - "will sol flip btc in volume" (no date, no market) → a hint on how to `propose`
 - small talk ("gm", "thanks", "love this") → no reply
 
+Odds replies for tradable markets end with **one-tap buy links**
+(`/market/<id>?buy=yes&amount=5` and `…?buy=no…`). They open the market with
+the trade panel pre-filled. On a phone without a wallet in the browser, the
+page offers "Open in Phantom / Solflare", which reopens it inside the wallet
+app, already connected. The user still reviews and signs. Live markets are
+always preferred over resolved ones.
+
 | Post | Reply |
 |---|---|
 | `@bot odds <market id or words>` | Question, `YES 34¢ · NO 66¢ · closes in 3d`, and the market link. Groups show the top 3 outcomes. No match gets a link to the market list. |
