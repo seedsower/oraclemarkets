@@ -10,6 +10,7 @@ export const LIST_CACHE = {
   groups: "cache:groups",
   vaults: "cache:vaults",
   vaultGroups: "cache:vault_groups",
+  betVaults: "cache:bet_vaults",
 } as const;
 
 interface CachedList {

@@ -10,6 +10,7 @@ export const LIST_KEYS = {
   groups: "cache:groups",
   vaults: "cache:vaults",
   vaultGroups: "cache:vault_groups",
+  betVaults: "cache:bet_vaults",
 } as const;
 export const UPDATED_AT_KEY = "cache:updated_at";
 /** Lists expire if the keeper stops, so the web falls back to RPC. */

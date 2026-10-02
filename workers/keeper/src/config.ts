@@ -27,6 +27,8 @@ export interface KeeperConfig {
   programId: PublicKey;
   collateralMint: PublicKey;
   intervalMs: number;
+  /** Minimum gap between list (getProgramAccounts) calls — public RPCs rate-limit bursts. */
+  listGapMs: number;
   accrue: null | {
     keypair: Keypair;
     everyMs: number;
@@ -46,6 +48,7 @@ export function loadConfig(): KeeperConfig {
     // Only used to construct the SDK client; list reads don't depend on it.
     collateralMint: pubkey("USDC_MINT", "3WQ8hCqTNwjrh8WzE2XyoZoUrd1miPcwWfMkmFPUMEWZ"),
     intervalMs: num("KEEPER_INTERVAL_SECS", 20) * 1000,
+    listGapMs: num("KEEPER_LIST_GAP_MS", 1500),
     accrue: keypair && {
       keypair,
       everyMs: num("KEEPER_ACCRUE_EVERY_SECS", 3600) * 1000,

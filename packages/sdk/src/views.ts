@@ -9,6 +9,7 @@
 import { priceFromReserves, i80f48ToNumber, sumProbabilities } from "./math";
 import { decodeName } from "./encoding";
 import type {
+  BetVaultAccount,
   CommitmentVaultAccount,
   CommitmentVaultGroupAccount,
   GroupMarketAccount,
@@ -446,4 +447,120 @@ export function vaultGroupView(
 
 export function refreshVaultGroupView(v: VaultGroupView, now: number): VaultGroupView {
   return { ...v, ...vaultGroupPhase(v, now) };
+}
+
+// ----------------------------------------------------------------------------
+// Bet vaults (Bet Vault v2 — stakes set the odds, winner takes the pot)
+// ----------------------------------------------------------------------------
+
+export interface BetVaultView {
+  publicKey: string;
+  vaultId: number;
+  authority: string;
+  /** Only key allowed to resolve. */
+  resolver: string;
+  collateralMint: string;
+  name: string;
+  commitEndTs: number;
+  marketEndTs: number;
+  yesTotal: number; // raw (collateral decimals)
+  noTotal: number;
+  total: number;
+  commitCount: number;
+  minTotal: number;
+  lpBps: number;
+  launched: boolean;
+  /** Launch odds in bps of YES (0 until launched). */
+  priceBps: number;
+  /** Launched Market PDA, "" before launch. */
+  market: string;
+  /** 0 until settled, then 1 = YES, 2 = NO. */
+  winningSide: number;
+  settled: boolean;
+  refunding: boolean;
+  voided: boolean;
+  voidGraceSecs: number;
+  payoutPool: number;
+  /** YES share of the stakes so far, in [0, 1] (0.5 when empty). */
+  impliedYes: number;
+}
+
+/** Decoded `BetVault` account → display row (time-independent). */
+export function betVaultView(publicKey: string, v: BetVaultAccount): BetVaultView {
+  const yesTotal = bnToNum(v.yesTotal);
+  const noTotal = bnToNum(v.noTotal);
+  const total = yesTotal + noTotal;
+  const vaultId = bnToNum(v.vaultId);
+  return {
+    publicKey,
+    vaultId,
+    authority: v.authority.toBase58(),
+    resolver: v.resolver.toBase58(),
+    collateralMint: v.collateralMint.toBase58(),
+    name: decodeName(v.name) || `Bet #${vaultId}`,
+    commitEndTs: bnToNum(v.commitEndTs),
+    marketEndTs: bnToNum(v.marketEndTs),
+    yesTotal,
+    noTotal,
+    total,
+    commitCount: v.commitCount,
+    minTotal: bnToNum(v.minTotal),
+    lpBps: v.lpBps,
+    launched: v.launched,
+    priceBps: v.priceBps,
+    market: pkOrEmpty(v.market),
+    winningSide: v.winningSide,
+    settled: v.settled,
+    refunding: v.refunding,
+    voided: v.voided,
+    voidGraceSecs: bnToNum(v.voidGraceSecs),
+    payoutPool: bnToNum(v.payoutPool),
+    impliedYes: total > 0 ? yesTotal / total : 0.5,
+  };
+}
+
+/** Where a bet is in its life — mirrors the on-chain checks in instructions/bet/*. */
+export type BetPhase =
+  /** Taking stakes (now < commit_end_ts). */
+  | "staking"
+  /** Stakes closed, launchable (both sides, 1–99% odds, ≥ min total). */
+  | "launch-ready"
+  /** Stakes closed, can never launch → each committer refunds 1:1. */
+  | "refundable"
+  /** Market trading until market_end_ts. */
+  | "live"
+  /** Market ended; waiting for the resolver. */
+  | "awaiting-resolution"
+  /** Market resolved; settle_bet_vault (permissionless) not yet run. */
+  | "settle-ready"
+  /** Settled: winners claim their share of the pot. */
+  | "claimable"
+  /** Resolver never resolved; anyone may void → everyone refunds pro-rata. */
+  | "voidable"
+  /** Voided: every committer claims a pro-rata refund. */
+  | "voided";
+
+const MIN_PRICE_BPS = 100;
+const MAX_PRICE_BPS = 9900;
+
+/** `marketResolved` comes from the launched market's row (unknown → false). */
+export function betPhase(v: BetVaultView, now: number, marketResolved = false): BetPhase {
+  if (v.voided) return "voided";
+  if (v.settled) return "claimable";
+  if (!v.launched) {
+    if (now < v.commitEndTs) return "staking";
+    const bps = v.total > 0 ? Math.floor((v.yesTotal * 10_000) / v.total) : 0;
+    const launchable =
+      !v.refunding &&
+      v.total >= v.minTotal &&
+      v.yesTotal > 0 &&
+      v.noTotal > 0 &&
+      bps >= MIN_PRICE_BPS &&
+      bps <= MAX_PRICE_BPS &&
+      now + 300 < v.marketEndTs;
+    return launchable ? "launch-ready" : "refundable";
+  }
+  if (marketResolved) return "settle-ready";
+  if (now < v.marketEndTs) return "live";
+  return now >= v.marketEndTs + v.voidGraceSecs ? "voidable" : "awaiting-resolution";
 }

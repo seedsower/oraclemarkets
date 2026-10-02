@@ -14,6 +14,7 @@ import type IORedis from "ioredis";
 import {
   ACCOUNT_SIZES,
   PmAmmClient,
+  betVaultView,
   groupView,
   marketView,
   vaultGroupView,
@@ -34,6 +35,8 @@ interface Ctx {
   accruer: PmAmmClient | null;
   redis: IORedis;
   lastAccrueAt: number;
+  /** When the last list call started (for spacing; see listGapMs). */
+  lastListAt: number;
 }
 
 /** Fetch + cache one list; a failure is logged and doesn't stop the others. */
@@ -42,6 +45,10 @@ async function syncList<T>(
   key: keyof typeof LIST_KEYS,
   fetchRows: () => Promise<T[]>,
 ): Promise<T[] | null> {
+  // Space getProgramAccounts calls: five back-to-back trip public RPC limits.
+  const wait = ctx.lastListAt + ctx.cfg.listGapMs - Date.now();
+  if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+  ctx.lastListAt = Date.now();
   try {
     const rows = await withBackoff(key, fetchRows);
     await writeList(ctx.redis, key, rows, Date.now());
@@ -93,6 +100,10 @@ async function tick(ctx: Ctx): Promise<void> {
     ),
   );
 
+  const betVaults = await syncList(ctx, "betVaults", async () =>
+    (await r.fetchAllBetVaults()).map((a) => betVaultView(a.publicKey.toBase58(), a.account)),
+  );
+
   const points = markets ? await recordPrices(ctx, markets, now) : 0;
   await maybeAccrue(ctx, markets, now);
 
@@ -102,6 +113,7 @@ async function tick(ctx: Ctx): Promise<void> {
     groups: groups?.length ?? null,
     vaults: vaults?.length ?? null,
     vaultGroups: vaultGroups?.length ?? null,
+    betVaults: betVaults?.length ?? null,
     pricePoints: points,
   });
 }
@@ -131,6 +143,7 @@ function init(): Ctx {
     accruer: makeAccrueClient(connection, cfg),
     redis: connectRedis(cfg.redisUrl),
     lastAccrueAt: 0,
+    lastListAt: 0,
   };
   log.info("keeper starting", {
     programId: cfg.programId.toBase58(),
