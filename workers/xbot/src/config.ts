@@ -20,6 +20,7 @@ function price(name: string): number | null {
 
 import { Keypair, PublicKey } from "@solana/web3.js";
 import type { OAuth1Keys } from "./oauth1";
+import type { ClaudeConfig } from "./claude";
 
 /** Opening bets from X (Bet Vault v2). null → `bet?` replies "not enabled". */
 export interface BetsConfig {
@@ -58,6 +59,18 @@ function betsConfig(e: NodeJS.ProcessEnv): BetsConfig | null {
     perDay: Math.floor(num("XBOT_BETS_PER_DAY", 10)),
     perUserPerDay: Math.floor(num("XBOT_BETS_PER_USER_PER_DAY", 2)),
     minLamports: Math.floor(num("XBOT_MIN_SOL", 0.05) * 1e9),
+  };
+}
+
+/** Claude assist (see claude.ts). null → rules only. */
+function claudeConfig(e: NodeJS.ProcessEnv): ClaudeConfig | null {
+  if (!e.ANTHROPIC_API_KEY) return null;
+  return {
+    apiKey: e.ANTHROPIC_API_KEY,
+    model: e.XBOT_CLAUDE_MODEL || "claude-haiku-4-5-20251001",
+    refineModel: e.XBOT_CLAUDE_REFINE_MODEL || "claude-sonnet-5-5",
+    perDay: Math.floor(num("XBOT_CLAUDE_PER_DAY", 300)),
+    timeoutMs: num("XBOT_CLAUDE_TIMEOUT_SECS", 20) * 1000,
   };
 }
 
@@ -114,6 +127,7 @@ export interface XbotConfig {
   x: XCreds | null;
   prices: { read: number | null; post: number | null; postWithUrl: number | null };
   bets: BetsConfig | null;
+  claude: ClaudeConfig | null;
 }
 
 export function loadConfig(): XbotConfig {
@@ -133,6 +147,7 @@ export function loadConfig(): XbotConfig {
     ),
     x,
     bets: betsConfig(process.env),
+    claude: claudeConfig(process.env),
     prices: {
       read: price("XBOT_COST_PER_READ_USD"),
       post: price("XBOT_COST_PER_POST_USD"),

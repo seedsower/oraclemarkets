@@ -1,4 +1,5 @@
-import { parseCommand, type Command } from "./commands";
+import { hasTopic, parseCommand, stripMentions, type Command } from "./commands";
+import { mergeAssist, needsAssist, type Claude } from "./claude";
 import type { XbotConfig } from "./config";
 import { log } from "./log";
 import {
@@ -22,6 +23,8 @@ export interface BotCtx {
   betClient: PmAmmClient | null;
   /** The bot account's user id (never reply to ourselves); null in fixture runs. */
   botUserId: string | null;
+  /** Claude assist; null → rules only. */
+  claude: Claude | null;
 }
 
 export type Outcome =
@@ -70,6 +73,13 @@ async function saveProposal(ctx: BotCtx, m: Mention, cmd: Extract<Command, { kin
   });
 }
 
+/** The rules first; Claude only for free text, unparsed text or a bet without a date. */
+async function readMention(ctx: BotCtx, m: Mention): Promise<Command | null> {
+  const rule = parseCommand(m.text);
+  if (!ctx.claude || !needsAssist(rule, hasTopic(stripMentions(m.text)))) return rule;
+  return mergeAssist(rule, await ctx.claude.interpret(m.text, m.parent?.text ?? null));
+}
+
 /**
  * One mention → at most one reply. Guards, in order: dedupe by tweet id, never
  * our own posts or retweets, a recognised command, one reply per user per
@@ -80,7 +90,7 @@ export async function handleMention(ctx: BotCtx, m: Mention): Promise<Outcome> {
   if (ctx.cfg.x && m.authorId === ctx.cfg.x.botUserId)
     return { action: "skipped", reason: "own post" };
   if (/^RT @/i.test(m.text)) return { action: "skipped", reason: "retweet" };
-  const cmd = parseCommand(m.text);
+  const cmd = await readMention(ctx, m);
   if (!cmd) return { action: "skipped", reason: "no command" };
   if (!(await ctx.store.takeCooldown(m.authorId)))
     return { action: "skipped", reason: "user cooldown" };

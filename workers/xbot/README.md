@@ -7,7 +7,8 @@ and never creates markets.
 
 ## Commands
 
-Commands are parsed by fixed rules, with no AI. Typos and synonyms work
+Commands are parsed by fixed rules first (Claude helps only when they fall
+short; see *Claude assist* below). Typos and synonyms work
 (`odd`, `price`, `chance` → odds; `market`, `top`, `hot` → markets; `suggest`,
 `idea` → propose), and so do **plain questions**:
 
@@ -145,3 +146,27 @@ mainnet this is peer-to-peer wagering with real money, so get legal advice first
 
 End-to-end test (devnet, about 8 minutes): `scripts/e2e-bets.ts` (see its header).
 
+
+## Claude assist (optional)
+
+Set `ANTHROPIC_API_KEY` on the xbot service to turn it on. Without it, the bot
+behaves exactly as before. Two jobs, both **fail-open** (an error, a timeout or
+the daily cap falls back to the rules):
+
+- **Reading mentions** (`XBOT_CLAUDE_MODEL`, default `claude-haiku-4-5-20251001`):
+  called only when the rules don't fully understand a post: free text with a
+  topic ("I'll take that, loser pays, before christmas") or a `bet?` without a
+  usable date. Small talk never calls Claude. Claude's reading is used only
+  when it's a concrete bet / odds / markets request; hashtags and "in 2h"
+  windows from the rules still win.
+- **Writing the market** (`XBOT_CLAUDE_REFINE_MODEL`, default `claude-sonnet-5-5`):
+  before a bet opens, the take becomes a short yes/no question (the on-chain
+  name) plus *How it resolves* rules, shown on `/bet/<id>` with the original
+  take. It also picks a category when there's no hashtag, and refuses bets on
+  death, injury or violence, sexual content, minors, crimes, or the private
+  life of someone outside the conversation.
+
+Post text is untrusted: Claude can only fill a fixed schema, every value is
+validated (dates, windows, categories), and the usual bet limits apply before
+anything reaches the chain. Claude never holds a key and never resolves.
+Cap: `XBOT_CLAUDE_PER_DAY` (default 300 calls); timeout `XBOT_CLAUDE_TIMEOUT_SECS` (20).

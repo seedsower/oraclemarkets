@@ -19,6 +19,10 @@ export interface BetMeta {
   vaultId: number;
   /** Full question (on-chain name is capped at 64 bytes). */
   question: string;
+  /** The take as posted, when Claude rewrote it into `question`. */
+  take?: string | null;
+  /** How it resolves (written by Claude from the take); absent on older bets. */
+  rules?: string | null;
   /** The post the bet was opened on. */
   sourceUrl: string | null;
   /** Who tagged the bot ("bet?"). */

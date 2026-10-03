@@ -26,6 +26,24 @@ const PHASE_LABEL: Record<string, string> = {
   voided: "Voided",
 };
 
+/** "How it resolves" + the original take (bets the X bot rewrote with Claude). */
+function BetRules({ meta }: { meta: BetMeta | null }) {
+  if (!meta?.rules) return null;
+  return (
+    <section className="flex flex-col gap-[6px] rounded-lg border border-line bg-surface/40 p-[14px]">
+      <span className="font-mono text-[10px] tracking-[0.1em] uppercase text-muted">
+        How it resolves
+      </span>
+      <p className="text-[13px] leading-[1.5] text-text">{meta.rules}</p>
+      {meta.take && meta.take !== meta.question && (
+        <p className="text-[12px] text-muted">
+          The take: <q className="italic">{meta.take}</q>
+        </p>
+      )}
+    </section>
+  );
+}
+
 export function BetView({ id, meta }: { id: string; meta: BetMeta | null }) {
   const { data: v, isLoading } = useBetVault(Number(id));
   const { data: markets } = useMarkets();
@@ -77,6 +95,7 @@ export function BetView({ id, meta }: { id: string; meta: BetMeta | null }) {
                 />
               </div>
             </header>
+            <BetRules meta={meta} />
             <BetPot v={v} />
             <BetPhasePanel v={v} phase={phase} me={me} marketId={market?.marketId ?? null} />
             {phase === "staking" && <BetStakePanel v={v} intent={intent} />}

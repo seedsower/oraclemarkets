@@ -29,6 +29,10 @@ export interface Proposal {
 export interface BetMetaRecord {
   vaultId: number;
   question: string;
+  /** The take as posted, when Claude rewrote it into `question`. */
+  take?: string | null;
+  /** How it resolves (Claude-written); null → none. */
+  rules?: string | null;
   sourceUrl: string | null;
   openedBy: string | null;
   deadline: string | null;

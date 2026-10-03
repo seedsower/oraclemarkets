@@ -21,6 +21,7 @@ import {
 import { logUsage } from "./usage";
 import { advanceBets } from "./bet-actions";
 import { makeBetClient } from "./chain";
+import { Claude } from "./claude";
 
 const maxId = (a: string | null, b: string | null) =>
   !a ? b : !b ? a : BigInt(a) >= BigInt(b) ? a : b;
@@ -105,7 +106,15 @@ async function main(): Promise<void> {
       stakeHours: cfg.bets.stakeWindowSecs / 3600,
     });
   }
-  const ctx: BotCtx | null = made ? { cfg, store, betClient, ...made } : null;
+  const claude = cfg.claude ? new Claude(cfg.claude, store) : null;
+  if (cfg.claude) {
+    log.info("claude assist enabled", {
+      model: cfg.claude.model,
+      refineModel: cfg.claude.refineModel,
+      perDay: cfg.claude.perDay,
+    });
+  }
+  const ctx: BotCtx | null = made ? { cfg, store, betClient, claude, ...made } : null;
   let stopping = false;
   let wake: (() => void) | null = null;
   const stop = () => {

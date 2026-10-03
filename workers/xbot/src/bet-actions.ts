@@ -5,7 +5,10 @@ import type { BetsConfig, XbotConfig } from "./config";
 import { log, errMsg } from "./log";
 import type { Store } from "./store";
 import type { Mention } from "./xapi";
+import type { Claude } from "./claude";
 import {
+  applyRefinement,
+  BET_REFUSED_REPLY,
   BET_RETRY_REPLY,
   BETS_BUSY_REPLY,
   BETS_OFF_REPLY,
@@ -22,6 +25,8 @@ export interface BetCtx {
   store: Store;
   /** Signing client for the bot wallet; null when bets are off. */
   betClient: PmAmmClient | null;
+  /** Rewrites the take into a settleable question + rules; null → the take as is. */
+  claude: Claude | null;
 }
 
 /** Daily limits + a SOL floor so the hot wallet can't be drained by spam. */
@@ -61,12 +66,20 @@ async function openBetFor(ctx: BetCtx, m: Mention, cmd: BetCmd): Promise<string>
   const b = ctx.cfg.bets;
   if (!b || !ctx.betClient) return BETS_OFF_REPLY;
   const now = Math.floor(Date.now() / 1000);
-  const plan = planBet(cmd, m, b, now);
-  if (plan.action === "reply") return plan.text;
-  const existing = await ctx.store.betForPost(plan.sourceId);
+  const planned = planBet(cmd, m, b, now);
+  if (planned.action === "reply") return planned.text;
+  const existing = await ctx.store.betForPost(planned.sourceId);
   if (existing) return betExistingReply(existing, ctx.cfg.siteUrl);
   const busy = await capacity(ctx, b, m.authorId);
   if (busy) return busy;
+  const refined = ctx.claude
+    ? await ctx.claude.refineBet(planned.question, planned.deadline)
+    : null;
+  if (refined && !refined.allowed) {
+    log.info("bet refused", { by: m.username, take: planned.question.slice(0, 80) });
+    return BET_REFUSED_REPLY;
+  }
+  const plan = applyRefinement(planned, refined);
 
   const stakeWindow = windowLabel(plan.windowSecs);
   if (ctx.cfg.dryRun) {
@@ -88,6 +101,8 @@ async function openBetFor(ctx: BetCtx, m: Mention, cmd: BetCmd): Promise<string>
     {
       vaultId,
       question: plan.question,
+      take: plan.take,
+      rules: plan.rules,
       sourceUrl: plan.sourceUrl,
       openedBy: m.username || null,
       deadline: plan.deadline.toISOString(),

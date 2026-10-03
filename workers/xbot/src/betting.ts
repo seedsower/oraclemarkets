@@ -1,4 +1,5 @@
 import { hasTopic, stripMentions, takeCategory, type Command } from "./commands";
+import type { Refined } from "./claude";
 import type { BetsConfig } from "./config";
 import type { Mention } from "./xapi";
 
@@ -111,6 +112,24 @@ export function planBet(cmd: BetCmd, m: Mention, cfg: BetsConfig, now: number): 
   };
 }
 
+type OpenPlan = Extract<BetPlan, { action: "open" }>;
+
+/** Claude's question + rules replace the raw take; a hashtag still wins the category. */
+export function applyRefinement(
+  plan: OpenPlan,
+  r: Refined | null,
+): OpenPlan & { take: string; rules: string | null } {
+  if (!r?.allowed) return { ...plan, take: plan.question, rules: null };
+  return {
+    ...plan,
+    take: plan.question,
+    question: r.name,
+    name: clipBytes(r.name),
+    rules: r.rules,
+    category: plan.category ?? r.category,
+  };
+}
+
 const clip = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
 export function stakeLinks(site: string, vaultId: number | string): string {
@@ -143,4 +162,5 @@ export function betExistingReply(vaultId: string, site: string): string {
 
 export const BETS_OFF_REPLY = "Bets from X aren't switched on yet. Stay tuned.";
 export const BETS_BUSY_REPLY = "The bet desk is at its limit for today. Try again tomorrow.";
+export const BET_REFUSED_REPLY = "I can't open a bet on that one. Try a different take.";
 export const BET_RETRY_REPLY = "Couldn't open that bet just now. Tag me again in a few minutes.";
