@@ -21,7 +21,7 @@ test("the 7 categories, nothing else", () => {
     "sports",
     "politics",
     "science",
-    "entertainment",
+    "culture",
     "finance",
     "personal",
   ]) {

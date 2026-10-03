@@ -9,7 +9,7 @@ export const CATEGORIES = [
   { slug: "sports", label: "Sports" },
   { slug: "politics", label: "Politics" },
   { slug: "science", label: "Science" },
-  { slug: "entertainment", label: "Entertainment" },
+  { slug: "culture", label: "Culture" },
   { slug: "finance", label: "Finance" },
   { slug: "personal", label: "Personal" },
 ] as const;

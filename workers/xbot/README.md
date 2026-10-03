@@ -132,7 +132,7 @@ Someone posts a take; someone else replies "@bot bet? by Oct 20" (optionally
    anyone can void it after 7 days and everyone is refunded.
 
 Add a category hashtag to file the bet (`#crypto`, `#sports`, `#politics`,
-`#science`, `#entertainment`, `#finance`, `#personal`), either in the `bet?`
+`#science`, `#culture`, `#finance`, `#personal`), either in the `bet?`
 reply or in the take itself; the reply's tag wins. The launched market inherits
 it on the site.
 
