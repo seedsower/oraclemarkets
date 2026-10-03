@@ -1,7 +1,7 @@
-import { hasTopic, stripMentions, takeCategory, type Command } from "./commands";
+import { hasTopic, parseCommand, stripMentions, takeCategory, type Command } from "./commands";
 import type { Refined } from "./claude";
 import type { BetsConfig } from "./config";
-import type { Mention } from "./xapi";
+import type { Mention, ParentPost } from "./xapi";
 
 /**
  * `bet?` → a Bet Vault on the take. Pure planning + reply copy (tested);
@@ -42,8 +42,45 @@ export function cleanTake(text: string): string {
 const fmtDate = (d: Date) =>
   d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 
+/**
+ * A bet the bot asked a follow-up about ("pick a deadline"), remembered under
+ * the bot's reply id so an answer like "Oct 4" opens it on the original take.
+ */
+export interface PendingBet {
+  /** The take (null when the question was written inline). */
+  take: ParentPost | null;
+  question: string | null;
+  windowSecs: number | null;
+  category: string | null;
+}
+
+const pendingFrom = (cmd: BetCmd, m: Mention): PendingBet => ({
+  take: cmd.question ? null : m.parent,
+  question: cmd.question,
+  windowSecs: cmd.windowSecs,
+  category: cmd.category,
+});
+
+/**
+ * An answer to the bot's follow-up ("Oct 4", "Nov 1 in 2h #weather"): the
+ * date/window/hashtag come from the answer, the question from the original.
+ */
+export function followUpCommand(text: string, p: PendingBet, now = new Date()): BetCmd {
+  const body = stripMentions(text);
+  const direct = parseCommand(text, now);
+  const parsed =
+    direct?.kind === "bet" ? direct : parseCommand(body ? `bet? by ${body}` : "bet?", now);
+  const c = parsed as BetCmd; // "bet? …" always parses as a bet
+  return {
+    ...c,
+    question: p.question,
+    windowSecs: c.windowSecs ?? p.windowSecs,
+    category: c.category ?? p.category,
+  };
+}
+
 export type BetPlan =
-  | { action: "reply"; text: string }
+  | { action: "reply"; text: string; pending?: PendingBet }
   | {
       action: "open";
       question: string;
@@ -73,6 +110,7 @@ export function planBet(cmd: BetCmd, m: Mention, cfg: BetsConfig, now: number): 
     return {
       action: "reply",
       text: `Staking can stay open from 15m to 7d, e.g. "bet? by <date> in 1h".`,
+      pending: { ...pendingFrom(cmd, m), windowSecs: null },
     };
   }
   const closes = now + windowSecs;
@@ -81,7 +119,8 @@ export function planBet(cmd: BetCmd, m: Mention, cfg: BetsConfig, now: number): 
   if (!cmd.deadline) {
     return {
       action: "reply",
-      text: `Add a deadline so it can be settled: "bet? by <date>" — any day up to ${fmtDate(latest)}.`,
+      text: `Add a deadline so it can be settled: reply with a date up to ${fmtDate(latest)}.`,
+      pending: pendingFrom(cmd, m),
     };
   }
   // A bare date means the END of that day (UTC).
@@ -92,7 +131,8 @@ export function planBet(cmd: BetCmd, m: Mention, cfg: BetsConfig, now: number): 
   if (secs < MIN_MARKET_SECS || secs > MAX_MARKET_SECS) {
     return {
       action: "reply",
-      text: `Pick a deadline between ${fmtDate(earliest)} and ${fmtDate(latest)} — bets run up to 30 days after staking closes.`,
+      text: `Pick a deadline between ${fmtDate(earliest)} and ${fmtDate(latest)} (bets run up to 30 days after staking closes): reply with a date.`,
+      pending: pendingFrom(cmd, m),
     };
   }
   const fromParent = cmd.question === null && m.parent !== null;

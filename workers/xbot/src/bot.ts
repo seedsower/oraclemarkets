@@ -13,6 +13,7 @@ import {
 import type { Store } from "./store";
 import type { PmAmmClient } from "@pm-amm/sdk";
 import { handleBet } from "./bet-actions";
+import { followUpCommand, type PendingBet } from "./betting";
 import type { Mention, MentionSource } from "./xapi";
 
 export interface BotCtx {
@@ -80,19 +81,49 @@ async function readMention(ctx: BotCtx, m: Mention): Promise<Command | null> {
   return mergeAssist(rule, await ctx.claude.interpret(m.text, m.parent?.text ?? null));
 }
 
+interface Understood {
+  cmd: Command | null;
+  /** The mention, with `parent` set to the real take (never the bot's own post). */
+  m: Mention;
+  /** An answer to the bot's own follow-up ("Oct 4"): exempt from the cooldown. */
+  followUp: boolean;
+}
+
+/** A reply to the bot's "pick a deadline" → the original bet with the new date. */
+async function answerFollowUp(ctx: BotCtx, m: Mention, p: PendingBet): Promise<Understood> {
+  let cmd = followUpCommand(m.text, p);
+  if (!cmd.deadline && ctx.claude) {
+    const ai = await ctx.claude.interpret(m.text, p.take?.text ?? p.question);
+    if (ai?.kind === "bet" && ai.deadline) cmd = { ...cmd, by: ai.by, deadline: ai.deadline };
+  }
+  return { cmd, m: { ...m, parent: p.take }, followUp: true };
+}
+
+/** Replies to the bot's own posts are answers to its follow-ups, or have no take at all. */
+async function understand(ctx: BotCtx, m: Mention): Promise<Understood> {
+  const botId = ctx.botUserId ?? ctx.cfg.x?.botUserId ?? null;
+  if (!botId || !m.parent || m.parent.authorId !== botId) {
+    return { cmd: await readMention(ctx, m), m, followUp: false };
+  }
+  const pending = await ctx.store.pendingBet(m.parent.id);
+  if (pending) return answerFollowUp(ctx, m, pending);
+  const noTake = { ...m, parent: null };
+  return { cmd: await readMention(ctx, noTake), m: noTake, followUp: false };
+}
+
 /**
  * One mention → at most one reply. Guards, in order: dedupe by tweet id, never
  * our own posts or retweets, a recognised command, one reply per user per
  * 10 min, the daily cap. Dry run logs the reply instead of sending it.
  */
-export async function handleMention(ctx: BotCtx, m: Mention): Promise<Outcome> {
-  if (!(await ctx.store.markSeen(m.id))) return { action: "skipped", reason: "already handled" };
-  if (ctx.cfg.x && m.authorId === ctx.cfg.x.botUserId)
+export async function handleMention(ctx: BotCtx, raw: Mention): Promise<Outcome> {
+  if (!(await ctx.store.markSeen(raw.id))) return { action: "skipped", reason: "already handled" };
+  if (ctx.cfg.x && raw.authorId === ctx.cfg.x.botUserId)
     return { action: "skipped", reason: "own post" };
-  if (/^RT @/i.test(m.text)) return { action: "skipped", reason: "retweet" };
-  const cmd = await readMention(ctx, m);
+  if (/^RT @/i.test(raw.text)) return { action: "skipped", reason: "retweet" };
+  const { cmd, m, followUp } = await understand(ctx, raw);
   if (!cmd) return { action: "skipped", reason: "no command" };
-  if (!(await ctx.store.takeCooldown(m.authorId)))
+  if (!(await ctx.store.takeCooldown(m.authorId)) && !followUp)
     return { action: "skipped", reason: "user cooldown" };
   const p: Plan = cmd.kind === "bet" ? { text: "" } : await plan(ctx, cmd);
   if (p.propose) await saveProposal(ctx, m, p.propose);
@@ -101,13 +132,15 @@ export async function handleMention(ctx: BotCtx, m: Mention): Promise<Outcome> {
   if ((await ctx.store.repliesToday(dry)) >= ctx.cfg.dailyReplyCap) {
     return { action: "skipped", reason: "daily reply cap" };
   }
-  const text = cmd.kind === "bet" ? await handleBet(ctx, m, cmd) : p.text;
+  const bet = cmd.kind === "bet" ? await handleBet(ctx, m, cmd) : null;
+  const text = bet ? bet.text : p.text;
   await ctx.store.countReply(dry);
   if (dry) {
     log.info("DRY RUN — would reply", { to: m.username, inReplyTo: m.id, command: cmd.kind, text });
     return { action: "would-reply", text };
   }
   const replyId = await ctx.source.reply(text, m.id);
-  log.info("replied", { to: m.username, inReplyTo: m.id, command: cmd.kind, replyId });
+  if (bet?.pending) await ctx.store.savePendingBet(replyId, bet.pending);
+  log.info("replied", { to: m.username, inReplyTo: m.id, command: cmd.kind, replyId, followUp });
   return { action: "replied", text, replyId };
 }

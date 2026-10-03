@@ -61,6 +61,7 @@ test("missing take, missing deadline, out-of-range deadline → helpful replies"
   assert.match(noTake.action === "reply" ? noTake.text : "", /under the take/);
   const noDate = planBet(bet("@daotao23 bet?"), mention("x"), cfg, now);
   assert.match(noDate.action === "reply" ? noDate.text : "", /Add a deadline/);
+  assert.ok(noDate.action === "reply" && noDate.pending, "remembers the take");
   const tooFar = planBet(bet("@daotao23 bet? by Dec 31"), mention("x"), cfg, now);
   assert.match(
     tooFar.action === "reply" ? tooFar.text : "",

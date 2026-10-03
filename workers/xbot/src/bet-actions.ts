@@ -16,6 +16,7 @@ import {
   betOpenedReply,
   planBet,
   windowLabel,
+  type PendingBet,
 } from "./betting";
 
 type BetCmd = Extract<Command, { kind: "bet" }>;
@@ -51,23 +52,30 @@ async function capacity(ctx: BetCtx, b: BetsConfig, userId: string): Promise<str
  * (unless dry run) and return the reply. Stakes, launch odds and payouts are
  * all on-chain; this wallet can open and launch, never resolve.
  */
-export async function handleBet(ctx: BetCtx, m: Mention, cmd: BetCmd): Promise<string> {
+export interface BetReply {
+  text: string;
+  /** Set when the reply asks a follow-up; saved under the reply's id. */
+  pending: PendingBet | null;
+}
+
+export async function handleBet(ctx: BetCtx, m: Mention, cmd: BetCmd): Promise<BetReply> {
   try {
-    return await openBetFor(ctx, m, cmd);
+    const r = await openBetFor(ctx, m, cmd);
+    return typeof r === "string" ? { text: r, pending: null } : r;
   } catch (e) {
     // RPC / chain hiccup: say so instead of going silent (the mention is
     // already marked handled, so it won't be retried automatically).
     log.error("bet open failed", { by: m.username, error: errMsg(e) });
-    return BET_RETRY_REPLY;
+    return { text: BET_RETRY_REPLY, pending: null };
   }
 }
 
-async function openBetFor(ctx: BetCtx, m: Mention, cmd: BetCmd): Promise<string> {
+async function openBetFor(ctx: BetCtx, m: Mention, cmd: BetCmd): Promise<string | BetReply> {
   const b = ctx.cfg.bets;
   if (!b || !ctx.betClient) return BETS_OFF_REPLY;
   const now = Math.floor(Date.now() / 1000);
   const planned = planBet(cmd, m, b, now);
-  if (planned.action === "reply") return planned.text;
+  if (planned.action === "reply") return { text: planned.text, pending: planned.pending ?? null };
   const existing = await ctx.store.betForPost(planned.sourceId);
   if (existing) return betExistingReply(existing, ctx.cfg.siteUrl);
   const busy = await capacity(ctx, b, m.authorId);

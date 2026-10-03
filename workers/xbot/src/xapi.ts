@@ -11,6 +11,8 @@ export interface ParentPost {
   id: string;
   text: string;
   username: string;
+  /** Lets the bot recognise replies to its own posts (never a take). */
+  authorId?: string;
 }
 
 export interface Mention {
@@ -56,7 +58,9 @@ function parentOf(
     t.referenced_tweets?.find((r) => r.type === "replied_to") ??
     t.referenced_tweets?.find((r) => r.type === "quoted");
   const p = ref ? tweets.get(ref.id) : undefined;
-  return p ? { id: p.id, text: p.text, username: users.get(p.author_id ?? "") ?? "" } : null;
+  if (!p) return null;
+  const authorId = p.author_id ?? "";
+  return { id: p.id, text: p.text, username: users.get(authorId) ?? "", authorId };
 }
 
 /** Builds the Authorization header for one request (OAuth 1.0a or 2.0). */

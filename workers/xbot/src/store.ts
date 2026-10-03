@@ -1,5 +1,6 @@
 import IORedis from "ioredis";
 import type { GroupRow, MarketRow } from "./replies";
+import type { PendingBet } from "./betting";
 
 /**
  * Bot state in the shared Redis (same instance as web + keeper).
@@ -9,6 +10,7 @@ import type { GroupRow, MarketRow } from "./replies";
  *   xbot:cooldown:<user>    one reply per user per 10 min
  *   xbot:replies:<day>      daily reply count (dry runs: xbot:dryreplies:<day>)
  *   xbot:usage:<day>        hash of API call counts for cost estimates (30 d)
+ *   xbot:pending:<reply>    bet waiting for an answer to the bot's follow-up (2 d)
  *   proposals:<tweet>       JSON proposal; index in sorted set proposals:index
  */
 const DAY_SECS = 86_400;
@@ -144,6 +146,14 @@ export class Store {
     const m = this.redis.multi().set(`bets:meta:${meta.vaultId}`, JSON.stringify(meta));
     if (sourcePostId) m.set(`bets:by_post:${sourcePostId}`, String(meta.vaultId));
     await m.exec();
+  }
+
+  savePendingBet = (replyId: string, p: PendingBet) =>
+    this.redis.set(`xbot:pending:${replyId}`, JSON.stringify(p), "EX", 2 * DAY_SECS);
+
+  async pendingBet(replyId: string): Promise<PendingBet | null> {
+    const raw = await this.redis.get(`xbot:pending:${replyId}`);
+    return raw ? (JSON.parse(raw) as PendingBet) : null;
   }
 
   /** Same hash the web's /api/categories reads (account → slug). */
