@@ -142,6 +142,9 @@ export class Store {
     await m.exec();
   }
 
+  /** Same hash the web's /api/categories reads (account → slug). */
+  setCategory = (account: string, slug: string) => this.redis.hset("categories", account, slug);
+
   /** Keeper snapshot of bet vaults (`cache:bet_vaults`). */
   betVaults = () => this.rows<BetVaultRow>("cache:bet_vaults");
 

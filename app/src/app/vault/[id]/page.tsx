@@ -1,5 +1,6 @@
 "use client";
 
+import { CategoryEditor } from "@/components/category-editor";
 import { use, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { PublicKey } from "@solana/web3.js";
@@ -102,6 +103,7 @@ export default function VaultPage({ params }: { params: Promise<{ id: string }> 
           <>
             <div className="flex items-center gap-[12px] flex-wrap mb-[8px]">
               <h2 className="text-title">{vault.name}</h2>
+              <CategoryEditor account={vault.publicKey} authority={vault.authority} />
               {vault.isCommitOpen && (
                 <span className="text-[10px] px-[8px] py-[2px] border border-text-hi text-text-hi font-mono">
                   COMMIT OPEN

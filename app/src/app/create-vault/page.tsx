@@ -1,5 +1,8 @@
 "use client";
 
+import { CategoryPicker } from "@/components/category-picker";
+import { useSetCategory } from "@/hooks/use-categories";
+import type { CategorySlug } from "@/lib/categories";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useWallet } from "@solana/wallet-adapter-react";
@@ -20,6 +23,8 @@ export default function CreateVaultPage() {
   const [marketHours, setMarketHours] = useState("24");
   const [minTotal, setMinTotal] = useState("10");
   const [loading, setLoading] = useState(false);
+  const [category, setCategory] = useState<CategorySlug | null>(null);
+  const saveCategory = useSetCategory();
 
   const client = useClient();
   const { publicKey } = useWallet();
@@ -60,6 +65,7 @@ export default function CreateVaultPage() {
           marketDurationSecs: marketSecs,
           minTotalUsdc: minTotalNum,
         });
+        if (category) await saveCategory(result.vaultPda, category);
         toast.success(`Vault ${result.vaultId} opened`);
         router.push(`/vault/${result.vaultId}`);
       } else {
@@ -76,6 +82,7 @@ export default function CreateVaultPage() {
           marketDurationSecs: marketSecs,
           minTotalUsdc: minTotalNum,
         });
+        if (category) await saveCategory(result.vaultPda, category);
         toast.success(`Multi-outcome vault ${result.vaultId} opened`);
         router.push(`/vault-group/${result.vaultId}`);
       }
@@ -114,6 +121,10 @@ export default function CreateVaultPage() {
         </div>
 
         <div className="space-y-[16px]">
+          <div>
+            <div className="text-caption mb-[8px]">CATEGORY</div>
+            <CategoryPicker value={category} onChange={setCategory} />
+          </div>
           <Field
             label="Question / Name"
             placeholder={
@@ -199,7 +210,7 @@ export default function CreateVaultPage() {
 
         <Button
           onClick={handleCreate}
-          disabled={loading || !publicKey}
+          disabled={loading || !publicKey || !category}
           className="w-full mt-[24px]"
         >
           {loading ? "Opening…" : "Open vault"}

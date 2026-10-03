@@ -7,14 +7,28 @@ import { Countdown } from "@/components/ui/countdown";
 import { formatUsdc } from "@pm-amm/sdk/math";
 import { CommunityBadge } from "@/components/ui/community-badge";
 import type { Curation } from "@/lib/featured";
+import { useCategoryOf } from "@/hooks/use-categories";
+import type { CategorySlug } from "@/lib/categories";
 
 /** Lightweight section on the home page listing every open vault.
  *  Hidden when nothing is open. */
-export function VaultsSection({ curation }: { curation?: Curation }) {
+export function VaultsSection({
+  curation,
+  category = "all",
+}: {
+  curation?: Curation;
+  category?: CategorySlug | "all";
+}) {
+  const categoryOf = useCategoryOf();
+  const inCategory = (pk: string) => category === "all" || categoryOf(pk) === category;
   const { data: allBinaries } = useVaults();
   const { data: allGroups } = useVaultGroups();
-  const binaries = (curation ? curation.curate(allBinaries) : allBinaries) ?? [];
-  const groups = (curation ? curation.curate(allGroups) : allGroups) ?? [];
+  const binaries = ((curation ? curation.curate(allBinaries) : allBinaries) ?? []).filter((v) =>
+    inCategory(v.publicKey),
+  );
+  const groups = ((curation ? curation.curate(allGroups) : allGroups) ?? []).filter((v) =>
+    inCategory(v.publicKey),
+  );
   const showCommunity = !!curation?.enabled && curation.showAll;
 
   // Only show vaults that still need user action on the commit/launch flow.

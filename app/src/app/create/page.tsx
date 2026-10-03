@@ -1,5 +1,8 @@
 "use client";
 
+import { CategoryPicker } from "@/components/category-picker";
+import { useSetCategory } from "@/hooks/use-categories";
+import type { CategorySlug } from "@/lib/categories";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useWallet } from "@solana/wallet-adapter-react";
@@ -26,6 +29,9 @@ export default function CreateMarketPage() {
   const [initialPricePct, setInitialPricePct] = useState("50");
   const [collateralMint, setCollateralMint] = useState(USDC_MINT.toBase58());
   const [loading, setLoading] = useState(false);
+  // Required at the outset; saved off-chain after creation (one free signature).
+  const [category, setCategory] = useState<CategorySlug | null>(null);
+  const saveCategory = useSetCategory();
 
   // Prefill from an X proposal (/admin → "Create market": ?name=…&days=…).
   useEffect(() => {
@@ -95,6 +101,7 @@ export default function CreateMarketPage() {
         },
       });
 
+      if (category) await saveCategory(client.marketPda(marketId).toBase58(), category);
       router.push(`/market/${marketId}`);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -126,6 +133,11 @@ export default function CreateMarketPage() {
           {/* Left: form */}
           <div className="border border-line p-[24px] space-y-[16px]">
             <div className="text-caption">CREATE MARKET</div>
+
+            <div>
+              <div className="text-caption mb-[8px]">CATEGORY</div>
+              <CategoryPicker value={category} onChange={setCategory} />
+            </div>
 
             {/* Question */}
             <div>
@@ -268,7 +280,9 @@ export default function CreateMarketPage() {
               variant="secondary"
               className="w-full"
               onClick={handleCreate}
-              disabled={!publicKey || !name || name.length > 64 || loading || durNum <= 0}
+              disabled={
+                !publicKey || !category || !name || name.length > 64 || loading || durNum <= 0
+              }
             >
               {loading ? "Creating..." : "Create Market"}
             </Button>

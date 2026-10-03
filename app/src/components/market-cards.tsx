@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Countdown } from "@/components/ui/countdown";
 import { CommunityBadge } from "@/components/ui/community-badge";
+import { CategoryChip } from "@/components/category-picker";
 import { Sparkline } from "@/components/ui/sparkline";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { MarketData } from "@/hooks/use-markets";
@@ -20,6 +21,7 @@ import { buyPath, cents, groupPath, legLabel, marketPath } from "@/lib/share";
 import { findToken } from "@/lib/tokens";
 
 type IsCommunity = (item: { authority: string; publicKey: string }) => boolean;
+type CategoryOf = (account: string) => string | null;
 
 /**
  * Card shell: the whole card links to `href` via an overlay, so inner action
@@ -54,10 +56,12 @@ function CardHeader(props: {
   status: ReturnType<typeof marketStatus>;
   endTs: number;
   community: boolean;
+  category?: string | null;
 }) {
   return (
     <div className="relative z-10 pointer-events-none flex items-center gap-[8px] font-mono text-[10px] text-muted">
       <StatusBadge variant={props.status} />
+      <CategoryChip slug={props.category} />
       {props.community && <CommunityBadge />}
       {!props.status.startsWith("resolved") && (
         <span className="ml-auto">
@@ -105,12 +109,18 @@ export function MarketCard(props: {
   m: MarketData;
   history?: number[];
   isCommunity?: IsCommunity;
+  category?: string | null;
 }) {
   const { m } = props;
   const yes = Math.round(m.price * 100);
   return (
     <CardShell href={marketPath(m.marketId)} label={m.name}>
-      <CardHeader status={marketStatus(m)} endTs={m.endTs} community={!!props.isCommunity?.(m)} />
+      <CardHeader
+        status={marketStatus(m)}
+        endTs={m.endTs}
+        community={!!props.isCommunity?.(m)}
+        category={props.category}
+      />
       <h3 className="relative z-10 pointer-events-none text-[15px] leading-[1.3] text-text-hi line-clamp-2 min-h-[39px]">
         {m.name}
       </h3>
@@ -143,13 +153,22 @@ export function MarketCard(props: {
 
 const MAX_OUTCOMES = 3;
 
-export function GroupCard(props: { g: GroupData; isCommunity?: IsCommunity }) {
+export function GroupCard(props: {
+  g: GroupData;
+  isCommunity?: IsCommunity;
+  category?: string | null;
+}) {
   const { g } = props;
   const legs = g.legs.filter((l): l is MarketData => l !== null).sort((a, b) => b.price - a.price);
   const mint = legs[0]?.collateralMint ?? "";
   return (
     <CardShell href={groupPath(g.groupId)} label={g.name}>
-      <CardHeader status={groupStatus(g)} endTs={g.endTs} community={!!props.isCommunity?.(g)} />
+      <CardHeader
+        status={groupStatus(g)}
+        endTs={g.endTs}
+        community={!!props.isCommunity?.(g)}
+        category={props.category}
+      />
       <h3 className="relative z-10 pointer-events-none text-[15px] leading-[1.3] text-text-hi line-clamp-2 min-h-[39px]">
         {g.name}
       </h3>
@@ -183,6 +202,7 @@ export function MarketCards(props: {
   items: FeedItem[];
   priceHistories?: Map<string, number[]>;
   isCommunity?: IsCommunity;
+  categoryOf?: CategoryOf;
 }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-[12px] p-[16px] md:p-[24px]">
@@ -193,9 +213,15 @@ export function MarketCards(props: {
             m={it.market}
             history={props.priceHistories?.get(it.market.publicKey)}
             isCommunity={props.isCommunity}
+            category={props.categoryOf?.(it.market.publicKey)}
           />
         ) : (
-          <GroupCard key={it.group.publicKey} g={it.group} isCommunity={props.isCommunity} />
+          <GroupCard
+            key={it.group.publicKey}
+            g={it.group}
+            isCommunity={props.isCommunity}
+            category={props.categoryOf?.(it.group.publicKey)}
+          />
         ),
       )}
     </div>

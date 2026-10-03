@@ -23,6 +23,7 @@ import { PROGRAM_ID, USDC_MINT, solscanAccountUrl } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { ShareOnX } from "@/components/share-on-x";
 import { OpenInWallet } from "@/components/open-in-wallet";
+import { CategoryEditor } from "@/components/category-editor";
 import { cents, groupPath, legLabel } from "@/lib/share";
 
 export function GroupPage({ id }: { id: string }) {
@@ -176,6 +177,7 @@ function GroupHeader({ group, drift }: { group: GroupData; drift: number }) {
       >
         Solscan ↗
       </a>
+      <CategoryEditor account={group.publicKey} authority={group.authority} />
       <ShareOnX text={groupShareText(group)} path={groupPath(group.groupId)} />
     </div>
   );

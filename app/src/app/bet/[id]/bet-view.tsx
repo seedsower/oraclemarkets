@@ -8,6 +8,7 @@ import { BetPot } from "@/components/bet/bet-pot";
 import { BetPhasePanel } from "@/components/bet/bet-phase";
 import { BetStakePanel } from "@/components/bet/bet-stake-panel";
 import { ShareOnX } from "@/components/share-on-x";
+import { CategoryEditor } from "@/components/category-editor";
 import { useBetVault, useMyBet } from "@/hooks/use-bet-vaults";
 import { useMarkets } from "@/hooks/use-markets";
 import { betPath, betStakePath, type BetMeta } from "@/lib/bets";
@@ -69,6 +70,11 @@ export function BetView({ id, meta }: { id: string; meta: BetMeta | null }) {
                 {meta?.openedBy && <span>Called by @{meta.openedBy}</span>}
                 <span>Resolves {new Date(v.marketEndTs * 1000).toLocaleDateString()}</span>
                 <ShareOnX text={`Bet: ${question}`} path={betPath(v.vaultId)} />
+                <CategoryEditor
+                  account={v.publicKey}
+                  authority={v.authority}
+                  alsoAllowed={v.resolver}
+                />
               </div>
             </header>
             <BetPot v={v} />

@@ -1,5 +1,8 @@
 "use client";
 
+import { CategoryPicker } from "@/components/category-picker";
+import { useSetCategory } from "@/hooks/use-categories";
+import type { CategorySlug } from "@/lib/categories";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -29,6 +32,8 @@ export default function CreateGroupPage() {
   const [budgetPerLeg, setBudgetPerLeg] = useState("50");
 
   const [step, setStep] = useState<{ label: string; index: number } | null>(null);
+  const [category, setCategory] = useState<CategorySlug | null>(null);
+  const saveCategory = useSetCategory();
 
   const client = useClient();
   const { publicKey } = useWallet();
@@ -102,6 +107,7 @@ export default function CreateGroupPage() {
         setStep({ label, index }),
       );
       setStep(null);
+      if (category) await saveCategory(result.groupPda, category);
       toast.success(`Group #${result.groupId} created`, {
         description: `${legCount} legs at ${(seedBps / 100).toFixed(2)}% each`,
         action: {
@@ -147,6 +153,11 @@ export default function CreateGroupPage() {
         <div className="grid grid-cols-1 md:grid-cols-[1fr_240px] gap-[16px]">
           <div className="border border-line p-[24px] space-y-[16px]">
             <div className="text-caption">CREATE GROUP MARKET</div>
+
+            <div>
+              <div className="text-caption mb-[8px]">CATEGORY</div>
+              <CategoryPicker value={category} onChange={setCategory} />
+            </div>
 
             <div>
               <div className="text-caption mb-[8px]">QUESTION</div>
@@ -246,7 +257,7 @@ export default function CreateGroupPage() {
               variant="secondary"
               className="w-full"
               onClick={onSubmit}
-              disabled={!publicKey || !name || step !== null}
+              disabled={!publicKey || !category || !name || step !== null}
             >
               {step
                 ? `${step.label} (${step.index}/${totalSteps})`

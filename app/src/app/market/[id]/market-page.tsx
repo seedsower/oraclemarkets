@@ -25,6 +25,7 @@ import Link from "next/link";
 import { ShareOnX } from "@/components/share-on-x";
 import { marketPath, marketSummary, parseBuyIntent, type BuySide } from "@/lib/share";
 import { OpenInWallet } from "@/components/open-in-wallet";
+import { CategoryEditor } from "@/components/category-editor";
 import { needsWalletApp } from "@/lib/wallet-links";
 import { useEffect, useRef, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
@@ -132,6 +133,7 @@ export function MarketPage({ id }: { id: string }) {
                   >
                     Solscan ↗
                   </a>
+                  <CategoryEditor account={market.publicKey} authority={market.authority} />
                   <ShareOnX
                     text={`${market.name} — ${marketSummary(market)}`}
                     path={marketPath(market.marketId)}

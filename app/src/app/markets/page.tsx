@@ -14,6 +14,8 @@ import { MarketCards } from "@/components/market-cards";
 import { OpenBets } from "@/components/bet/open-bets";
 import { ViewToggle, useFeedView } from "@/components/view-toggle";
 import { groupTvl, marketTvl } from "@/lib/feed";
+import { CategoryFilter, useCategoryFilter } from "@/components/category-filter";
+import { useCategoryOf } from "@/hooks/use-categories";
 import { useUserPositions } from "@/hooks/use-user-positions";
 import { usePriceHistories } from "@/hooks/use-price-histories";
 import { PortfolioPanel } from "@/components/portfolio-panel";
@@ -43,6 +45,8 @@ export default function Markets() {
   const priceHistories = usePriceHistories(markets);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [view, setView] = useFeedView();
+  const [category, setCategory] = useCategoryFilter();
+  const categoryOf = useCategoryOf();
   const [sort, setSort] = useState<Sort>("tvl");
 
   /** Build the unified feed: standalone markets (drop legs) + group rows
@@ -61,6 +65,13 @@ export default function Markets() {
     const groupRows = (groups ?? []).map((g): FeedItem => ({ kind: "group", group: g }));
 
     let result: FeedItem[] = [...standalone, ...groupRows];
+
+    if (category !== "all") {
+      result = result.filter(
+        (it) =>
+          categoryOf(it.kind === "market" ? it.market.publicKey : it.group.publicKey) === category,
+      );
+    }
 
     // Filters
     if (filter === "active") {
@@ -116,7 +127,7 @@ export default function Markets() {
     const active = result.filter(isItemActive).sort(cmp);
     const inactive = result.filter((it) => !isItemActive(it)).sort(cmp);
     return [...active, ...inactive];
-  }, [markets, groups, filter, sort, userPositions]);
+  }, [markets, groups, filter, sort, userPositions, category, categoryOf]);
 
   const selectedMarket =
     selectedId === null ? null : (allMarkets?.find((m) => m.publicKey === selectedId) ?? null);
@@ -214,10 +225,12 @@ export default function Markets() {
           </div>
 
           {/* Bets taking stakes (e.g. opened from X) — hidden when none */}
-          <OpenBets />
+          <CategoryFilter value={category} onChange={setCategory} />
+
+          <OpenBets category={category} />
 
           {/* Open vaults — binary + multi-outcome (hidden when none) */}
-          <VaultsSection curation={curation} />
+          <VaultsSection curation={curation} category={category} />
 
           {/* Loading skeleton */}
           {isLoading && view === "cards" && (
@@ -258,6 +271,7 @@ export default function Markets() {
             (view === "cards" ? (
               <MarketCards
                 items={feedItems}
+                categoryOf={categoryOf}
                 priceHistories={priceHistories}
                 isCommunity={
                   curation.enabled && curation.showAll ? curation.isCommunity : undefined

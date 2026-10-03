@@ -114,3 +114,19 @@ test("per-bet window: used for staking and the deadline math; bounded 15m..7d", 
   const dflt = planBet(bet("@daotao23 bet? by Oct 20"), mention("x"), cfg, now);
   assert.equal(dflt.action === "open" && dflt.windowSecs, 24 * 3600);
 });
+
+test("category: from the reply's hashtag, else the take's; stripped from the question", () => {
+  const tagged = { ...take, text: "SOL flips ETH this month #crypto #wagmi" };
+  const p = planBet(bet("@daotao23 bet? by Oct 20"), mention("x", tagged), cfg, now);
+  assert.equal(p.action === "open" && p.category, "crypto");
+  assert.equal(p.action === "open" && p.question, "SOL flips ETH this month");
+  const override = planBet(
+    bet("@daotao23 bet? by Oct 20 #finance"),
+    mention("x", tagged),
+    cfg,
+    now,
+  );
+  assert.equal(override.action === "open" && override.category, "finance");
+  const none = planBet(bet("@daotao23 bet? by Oct 20"), mention("x"), cfg, now);
+  assert.equal(none.action === "open" && none.category, null);
+});

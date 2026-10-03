@@ -25,6 +25,8 @@ export type Command =
       deadline: Date | null;
       /** Optional staking window ("in 30m", "in 2h", "in 1d"); null → the default. */
       windowSecs: number | null;
+      /** From a hashtag like #crypto (see CATEGORY_SLUGS); null → uncategorized. */
+      category: string | null;
     };
 
 const ODDS = new Set([
@@ -157,6 +159,28 @@ function parsePropose(rest: string, now: Date): Command | null {
 
 const UNIT_SECS: Record<string, number> = { m: 60, h: 3600, d: 86_400 };
 
+/** Same slugs as the web (app/src/lib/categories.ts) — keep in sync. */
+export const CATEGORY_SLUGS = new Set([
+  "crypto",
+  "sports",
+  "politics",
+  "science",
+  "entertainment",
+  "finance",
+  "personal",
+]);
+
+/** First known category hashtag in `text` (e.g. "#Crypto" → "crypto"), and the text without hashtags. */
+export function takeCategory(text: string): { category: string | null; rest: string } {
+  let category: string | null = null;
+  const rest = text.replace(/(^|\s)#(\w+)/g, (_m, pre: string, tag: string) => {
+    const slug = tag.toLowerCase();
+    if (!category && CATEGORY_SLUGS.has(slug)) category = slug;
+    return pre;
+  });
+  return { category, rest: rest.replace(/\s+/g, " ").trim() };
+}
+
 /**
  * Trailing "in <N><unit>" staking window: "in 30m", "in 2 hours", "in 1d".
  * Only a number + time unit at the END counts, so "in the top 3" never does.
@@ -171,7 +195,8 @@ export function splitWindow(body: string): { rest: string; windowSecs: number | 
 }
 
 /** "? by Dec 31 [in 1h]" | "Will X happen by Dec 31" | "" → question, deadline, window. */
-function parseBet(rest: string, now: Date): Command {
+function parseBet(raw: string, now: Date): Command {
+  const { category, rest } = takeCategory(raw);
   const { rest: withoutWindow, windowSecs } = splitWindow(" " + rest.trim());
   const body = withoutWindow.replace(/^[?!.\s]+/, "").trim();
   let question: string | null = body || null;
@@ -188,7 +213,14 @@ function parseBet(rest: string, now: Date): Command {
   }
   // "bet? on it" / "bet ser" carry no question of their own.
   if (question && !hasTopic(question)) question = null;
-  return { kind: "bet", question, by, deadline: by ? parseDeadline(by, now) : null, windowSecs };
+  return {
+    kind: "bet",
+    question,
+    by,
+    deadline: by ? parseDeadline(by, now) : null,
+    windowSecs,
+    category,
+  };
 }
 
 export function parseCommand(text: string, now = new Date()): Command | null {

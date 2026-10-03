@@ -1,4 +1,4 @@
-import { hasTopic, stripMentions, type Command } from "./commands";
+import { hasTopic, stripMentions, takeCategory, type Command } from "./commands";
 import type { BetsConfig } from "./config";
 import type { Mention } from "./xapi";
 
@@ -32,8 +32,8 @@ export function clipBytes(s: string, max = 64): string {
 
 /** A post's text as a question: no @handles, links, or extra whitespace. */
 export function cleanTake(text: string): string {
-  return stripMentions(text)
-    .replace(/@\w{1,15}/g, "")
+  return takeCategory(stripMentions(text))
+    .rest.replace(/@\w{1,15}/g, "")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -54,6 +54,8 @@ export type BetPlan =
       /** Dedupe key: the take's post id (or the mention itself for inline questions). */
       sourceId: string;
       sourceUrl: string | null;
+      /** From the reply's hashtag, else the take's (#crypto …); null → none. */
+      category: string | null;
     };
 
 /** Validate a `bet?` mention: needs a take and a deadline inside the program's bounds. */
@@ -93,6 +95,7 @@ export function planBet(cmd: BetCmd, m: Mention, cfg: BetsConfig, now: number): 
     };
   }
   const fromParent = cmd.question === null && m.parent !== null;
+  const category = cmd.category ?? (m.parent ? takeCategory(m.parent.text).category : null);
   return {
     action: "open",
     question,
@@ -101,6 +104,7 @@ export function planBet(cmd: BetCmd, m: Mention, cfg: BetsConfig, now: number): 
     windowSecs,
     marketDurationSecs: secs,
     sourceId: fromParent ? m.parent!.id : m.id,
+    category,
     sourceUrl: fromParent
       ? `https://x.com/${m.parent!.username || "i"}/status/${m.parent!.id}`
       : `https://x.com/${m.username || "i"}/status/${m.id}`,

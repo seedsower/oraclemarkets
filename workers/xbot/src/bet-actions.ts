@@ -76,7 +76,7 @@ async function openBetFor(ctx: BetCtx, m: Mention, cmd: BetCmd): Promise<string>
     });
     return betOpenedReply(plan.question, "<new>", plan.deadline, stakeWindow, ctx.cfg.siteUrl);
   }
-  const { vaultId, signature } = await ctx.betClient.send.createBetVault({
+  const { vaultId, betVaultPda, signature } = await ctx.betClient.send.createBetVault({
     name: plan.name,
     commitDurationSecs: plan.windowSecs,
     marketDurationSecs: plan.marketDurationSecs,
@@ -95,8 +95,19 @@ async function openBetFor(ctx: BetCtx, m: Mention, cmd: BetCmd): Promise<string>
     },
     plan.sourceId,
   );
-  await Promise.all([ctx.store.bump("xbot:bets"), ctx.store.bump(`xbot:bets:user:${m.authorId}`)]);
-  log.info("opened bet", { vaultId, signature, by: m.username, name: plan.name });
+  await Promise.all([
+    ctx.store.bump("xbot:bets"),
+    ctx.store.bump(`xbot:bets:user:${m.authorId}`),
+    // The launched market inherits this via the vault (web resolveCategory).
+    plan.category ? ctx.store.setCategory(betVaultPda, plan.category) : Promise.resolve(0),
+  ]);
+  log.info("opened bet", {
+    vaultId,
+    signature,
+    by: m.username,
+    name: plan.name,
+    category: plan.category,
+  });
   return betOpenedReply(plan.question, vaultId, plan.deadline, stakeWindow, ctx.cfg.siteUrl);
 }
 

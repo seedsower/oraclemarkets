@@ -105,6 +105,7 @@ test("bet: reply form, inline question, and missing pieces", () => {
     by: null,
     deadline: null,
     windowSecs: null,
+    category: null,
   });
   const vague = parseCommand("@daotao23 bet on it", now);
   assert.equal(vague?.kind === "bet" && vague.question, null);
@@ -128,4 +129,13 @@ test("bet: optional staking window at the end", () => {
   const q = w("@daotao23 bet Will SOL be in the top 3 by Oct 20");
   assert.equal(q?.question, "Will SOL be in the top 3");
   assert.equal(q?.windowSecs, null);
+});
+
+test("bet: category hashtag (#crypto) is parsed and removed", () => {
+  const c = parseCommand("@daotao23 bet? by Oct 20 in 1h #Crypto", now);
+  assert.equal(c?.kind === "bet" && c.category, "crypto");
+  assert.equal(c?.kind === "bet" && c.windowSecs, 3600);
+  assert.equal(c?.kind === "bet" && c.deadline?.toISOString().slice(0, 10), "2026-10-20");
+  const unknown = parseCommand("@daotao23 bet? by Oct 20 #memes", now);
+  assert.equal(unknown?.kind === "bet" && unknown.category, null);
 });

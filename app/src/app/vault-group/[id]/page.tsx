@@ -1,5 +1,6 @@
 "use client";
 
+import { CategoryEditor } from "@/components/category-editor";
 import { use, useMemo, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { PublicKey } from "@solana/web3.js";
@@ -178,6 +179,7 @@ export default function VaultGroupPage({ params }: { params: Promise<{ id: strin
           <>
             <div className="flex items-center gap-[12px] flex-wrap mb-[8px]">
               <h2 className="text-title">{vault.name}</h2>
+              <CategoryEditor account={vault.publicKey} authority={vault.authority} />
               <span className="text-[10px] px-[8px] py-[2px] border border-border text-muted font-mono">
                 MULTI · {vault.legCount} LEGS
               </span>
