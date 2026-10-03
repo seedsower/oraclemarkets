@@ -167,6 +167,7 @@ export const CATEGORY_SLUGS = new Set([
   "science",
   "culture",
   "finance",
+  "weather",
   "personal",
 ]);
 

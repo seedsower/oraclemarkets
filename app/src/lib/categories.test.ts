@@ -15,7 +15,7 @@ function wallet() {
   return { pubkey, signMessage };
 }
 
-test("the 7 categories, nothing else", () => {
+test("the 8 categories, nothing else", () => {
   for (const s of [
     "crypto",
     "sports",
@@ -23,6 +23,7 @@ test("the 7 categories, nothing else", () => {
     "science",
     "culture",
     "finance",
+    "weather",
     "personal",
   ]) {
     assert.ok(isCategory(s), s);
