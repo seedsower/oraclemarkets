@@ -36,7 +36,7 @@ interface Tool {
 const API_URL = "https://api.anthropic.com/v1/messages";
 const CATEGORIES = [...CATEGORY_SLUGS];
 
-/** One forced tool call → its input object. Throws on HTTP errors or a missing tool block. */
+/** One tool call → its input object. Throws on HTTP errors or a missing tool block. */
 export async function callTool(
   c: ClaudeConfig,
   req: { model: string; system: string; user: string; tool: Tool },
@@ -52,10 +52,12 @@ export async function callTool(
     body: JSON.stringify({
       model: req.model,
       max_tokens: 1024,
-      system: req.system,
+      // Some models (e.g. Sonnet 5.5) reject a forced tool_choice, so ask in the
+      // prompt instead; a text-only answer throws below → the rules (fail-open).
+      system: `${req.system}\nAlways answer by calling the ${req.tool.name} tool, never in text.`,
       messages: [{ role: "user", content: req.user }],
       tools: [req.tool],
-      tool_choice: { type: "tool", name: req.tool.name },
+      tool_choice: { type: "auto" },
     }),
     signal: AbortSignal.timeout(c.timeoutMs),
   });

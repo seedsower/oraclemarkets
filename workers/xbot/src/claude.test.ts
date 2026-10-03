@@ -28,7 +28,7 @@ function fakeFetch(input: Record<string, unknown>, status = 200) {
     calls.push(JSON.parse(String(init.body)));
     const body = {
       content: [
-        { type: "tool_use", name: (calls.at(-1)!.tool_choice as { name: string }).name, input },
+        { type: "tool_use", name: (calls.at(-1)!.tools as { name: string }[])[0]!.name, input },
       ],
     };
     return new Response(status === 200 ? JSON.stringify(body) : "boom", { status });
@@ -130,13 +130,14 @@ test("toRefined: needs a real question and rules; refusals pass through", () => 
   );
 });
 
-test("Claude client: forced tool call, daily cap, fail-open on errors", async () => {
+test("Claude client: tool call, daily cap, fail-open on errors", async () => {
   const ok = fakeFetch({ intent: "markets" });
   const c = new Claude(cfg, memCounter(), ok.f);
   assert.deepEqual(await c.interpret("@b what's hot", null), { kind: "markets" });
   const sent = ok.calls[0]!;
   assert.equal(sent.model, "m");
-  assert.deepEqual(sent.tool_choice, { type: "tool", name: "classify_mention" });
+  assert.deepEqual(sent.tool_choice, { type: "auto" });
+  assert.match(String(sent.system), /calling the classify_mention tool/);
   assert.deepEqual(await c.interpret("@b again", null), { kind: "markets" });
   assert.equal(await c.interpret("@b over the cap", null), null, "3rd call > perDay 2");
   assert.equal(ok.calls.length, 2);
