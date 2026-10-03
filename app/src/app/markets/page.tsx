@@ -10,10 +10,13 @@ import { useGroups } from "@/hooks/use-groups";
 import { useVaults } from "@/hooks/use-vaults";
 import { useCuration } from "@/lib/featured";
 import { CurationToggle } from "@/components/curation-toggle";
+import { MarketCards } from "@/components/market-cards";
+import { OpenBets } from "@/components/bet/open-bets";
+import { ViewToggle, useFeedView } from "@/components/view-toggle";
+import { groupTvl, marketTvl } from "@/lib/feed";
 import { useUserPositions } from "@/hooks/use-user-positions";
 import { usePriceHistories } from "@/hooks/use-price-histories";
 import { PortfolioPanel } from "@/components/portfolio-panel";
-import { poolValue } from "@pm-amm/sdk/math";
 import Link from "next/link";
 
 type Filter = "all" | "active" | "expiring" | "resolved" | "positions";
@@ -39,6 +42,7 @@ export default function Markets() {
   const { data: userPositions } = useUserPositions(allMarkets);
   const priceHistories = usePriceHistories(markets);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [view, setView] = useFeedView();
   const [sort, setSort] = useState<Sort>("tvl");
 
   /** Build the unified feed: standalone markets (drop legs) + group rows
@@ -94,8 +98,8 @@ export default function Markets() {
 
     const cmp = (a: FeedItem, b: FeedItem): number => {
       if (sort === "tvl") {
-        const tvlA = a.kind === "market" ? itemTvl(a.market) : groupItemTvl(a.group);
-        const tvlB = b.kind === "market" ? itemTvl(b.market) : groupItemTvl(b.group);
+        const tvlA = a.kind === "market" ? marketTvl(a.market) : groupTvl(a.group);
+        const tvlB = b.kind === "market" ? marketTvl(b.market) : groupTvl(b.group);
         return tvlB - tvlA;
       }
       if (sort === "expiry") {
@@ -152,7 +156,7 @@ export default function Markets() {
         <main className="flex flex-col min-w-0">
           {/* Toolbar */}
           <div className="flex items-center justify-between px-[24px] py-[12px] border-b border-line font-mono text-[11px] tracking-[0.05em] gap-[12px] flex-wrap">
-            <div className="flex gap-[4px]">
+            <div className="flex gap-[4px] max-w-full overflow-x-auto whitespace-nowrap">
               {filters.map((f) => (
                 <button
                   key={f.key}
@@ -173,7 +177,8 @@ export default function Markets() {
               ))}
             </div>
 
-            <div className="flex gap-[8px] items-center">
+            <div className="flex flex-wrap gap-[8px] items-center">
+              <ViewToggle view={view} onChange={setView} />
               <CurationToggle curation={curation} />
               <div className="flex gap-[2px] border border-line rounded-sm">
                 {sorts.map((s) => (
@@ -190,12 +195,12 @@ export default function Markets() {
                 ))}
               </div>
 
-              <Link href="/create-vault">
+              <Link href="/create-vault" className="hidden sm:block">
                 <button className="px-[10px] py-[4px] border border-line text-muted hover:text-text-hi rounded-sm font-mono text-[11px] tracking-[0.03em] font-medium cursor-pointer">
                   + VAULT
                 </button>
               </Link>
-              <Link href="/create-group">
+              <Link href="/create-group" className="hidden sm:block">
                 <button className="px-[10px] py-[4px] border border-line text-muted hover:text-text-hi rounded-sm font-mono text-[11px] tracking-[0.03em] font-medium cursor-pointer">
                   + GROUP
                 </button>
@@ -208,11 +213,24 @@ export default function Markets() {
             </div>
           </div>
 
+          {/* Bets taking stakes (e.g. opened from X) — hidden when none */}
+          <OpenBets />
+
           {/* Open vaults — binary + multi-outcome (hidden when none) */}
           <VaultsSection curation={curation} />
 
           {/* Loading skeleton */}
-          {isLoading && (
+          {isLoading && view === "cards" && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-[12px] p-[16px] md:p-[24px]">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-[210px] animate-pulse rounded-xl border border-line bg-surface/60"
+                />
+              ))}
+            </div>
+          )}
+          {isLoading && view === "list" && (
             <div className="flex-1 min-w-0 flex flex-col">
               {Array.from({ length: 5 }).map((_, i) => (
                 <div
@@ -236,15 +254,26 @@ export default function Markets() {
             </div>
           )}
 
-          {feedItems.length > 0 && (
-            <MarketTable
-              items={feedItems}
-              selectedId={selectedId}
-              onSelect={setSelectedId}
-              priceHistories={priceHistories}
-              isCommunity={curation.enabled && curation.showAll ? curation.isCommunity : undefined}
-            />
-          )}
+          {feedItems.length > 0 &&
+            (view === "cards" ? (
+              <MarketCards
+                items={feedItems}
+                priceHistories={priceHistories}
+                isCommunity={
+                  curation.enabled && curation.showAll ? curation.isCommunity : undefined
+                }
+              />
+            ) : (
+              <MarketTable
+                items={feedItems}
+                selectedId={selectedId}
+                onSelect={setSelectedId}
+                priceHistories={priceHistories}
+                isCommunity={
+                  curation.enabled && curation.showAll ? curation.isCommunity : undefined
+                }
+              />
+            ))}
 
           {!isLoading && !error && feedItems.length === 0 && (
             <div className="flex-1 flex flex-col items-center justify-center gap-[12px] p-[48px]">
@@ -264,18 +293,4 @@ export default function Markets() {
       </div>
     </>
   );
-}
-
-/** Pool value of a standalone market for the TVL sort. */
-function itemTvl(m: { lEff: number; price: number }): number {
-  return m.lEff > 0 ? poolValue(m.price, m.lEff) : 0;
-}
-
-/** Sum of pool values across a group's attached legs. */
-function groupItemTvl(g: { legs: ({ lEff: number; price: number } | null)[] }): number {
-  let sum = 0;
-  for (const leg of g.legs) {
-    if (leg && leg.lEff > 0) sum += poolValue(leg.price, leg.lEff);
-  }
-  return sum;
 }

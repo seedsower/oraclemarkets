@@ -4,41 +4,19 @@ import { useRouter } from "next/navigation";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Sparkline } from "@/components/ui/sparkline";
 import { Countdown } from "@/components/ui/countdown";
-import { formatAmount, poolValue } from "@pm-amm/sdk/math";
+import { formatAmount } from "@pm-amm/sdk/math";
+import {
+  groupStatus as getGroupStatus,
+  groupTvl,
+  marketTvl,
+  marketStatus as getMarketStatus,
+  type FeedItem,
+} from "@/lib/feed";
 import { findToken } from "@/lib/tokens";
 import type { MarketData } from "@/hooks/use-markets";
-import type { GroupData } from "@/hooks/use-groups";
 import { CommunityBadge } from "@/components/ui/community-badge";
 
-/** Unified row type for the home feed — a standalone market or a multi-
- *  outcome GroupMarket. Group rows collapse N legs into one entry; clicking
- *  routes to `/group/[id]` for the full leg breakdown + trade panel. */
-export type FeedItem = { kind: "market"; market: MarketData } | { kind: "group"; group: GroupData };
-
-type Status = "active" | "expiring" | "resolved-yes" | "resolved-no";
-
-function getMarketStatus(m: MarketData): Status {
-  if (m.resolved) return m.winningSide === 1 ? "resolved-yes" : "resolved-no";
-  const remaining = m.endTs - Math.floor(Date.now() / 1000);
-  if (remaining <= 86400) return "expiring";
-  return "active";
-}
-
-function getGroupStatus(g: GroupData): Status {
-  if (g.resolved) return g.winningLeg !== null ? "resolved-yes" : "resolved-no";
-  const remaining = g.endTs - Math.floor(Date.now() / 1000);
-  if (remaining <= 86400) return "expiring";
-  return "active";
-}
-
-/** Sum the pool value across a group's legs (for the TVL column). */
-function groupTvl(g: GroupData): number {
-  let sum = 0;
-  for (const leg of g.legs) {
-    if (leg && leg.lEff > 0) sum += poolValue(leg.price, leg.lEff);
-  }
-  return sum;
-}
+export type { FeedItem } from "@/lib/feed";
 
 interface MarketTableProps {
   items: FeedItem[];
@@ -86,7 +64,7 @@ export function MarketTable({
           const status = getMarketStatus(m);
           const isResolved = m.resolved;
           const isSelected = selectedId === m.publicKey;
-          const pv = m.lEff > 0 ? poolValue(m.price, m.lEff) : 0;
+          const pv = marketTvl(m);
           const tk = findToken(m.collateralMint);
           const yesP = Math.round(m.price * 100);
           const noP = 100 - yesP;
