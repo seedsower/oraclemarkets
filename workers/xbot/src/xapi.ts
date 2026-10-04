@@ -5,6 +5,7 @@ import { log } from "./log";
 import type { Store } from "./store";
 
 const API = "https://api.x.com/2";
+type Json = Record<string, unknown>;
 
 /** The post a mention replies to or quotes — "the take" for `bet?`. */
 export interface ParentPost {
@@ -211,15 +212,33 @@ export class XApi implements MentionSource {
     return { mentions, newestId };
   }
 
-  async reply(text: string, inReplyTo: string): Promise<string> {
-    const res = await this.call("/tweets", {
-      method: "POST",
-      body: JSON.stringify({ text, reply: { in_reply_to_tweet_id: inReplyTo } }),
-    });
+  private async post(
+    payload: Json,
+  ): Promise<{ id: string | null; status: number; detail: string }> {
+    const res = await this.call("/tweets", { method: "POST", body: JSON.stringify(payload) });
     const body = (await res.json().catch(() => ({}))) as { data?: { id: string }; detail?: string };
-    if (!res.ok || !body.data) throw new Error(`reply ${res.status}: ${body.detail ?? "failed"}`);
+    return {
+      id: res.ok ? (body.data?.id ?? null) : null,
+      status: res.status,
+      detail: body.detail ?? "",
+    };
+  }
+
+  /**
+   * Reply to a mention. In threads limited to mentioned accounts ("Only
+   * accounts you mention can reply") X refuses replies from the bot, so fall
+   * back to a quote post of the mention: that isn't restricted and still
+   * notifies the person.
+   */
+  async reply(text: string, inReplyTo: string): Promise<string> {
+    let r = await this.post({ text, reply: { in_reply_to_tweet_id: inReplyTo } });
+    if (!r.id && r.status === 403 && /restricted who can reply/i.test(r.detail)) {
+      r = await this.post({ text, quote_tweet_id: inReplyTo });
+      if (r.id) log.info("replies restricted; posted a quote instead", { inReplyTo, id: r.id });
+    }
+    if (!r.id) throw new Error(`reply ${r.status}: ${r.detail || "failed"}`);
     await this.store.usage(/https?:\/\//.test(text) ? "posts_with_url" : "posts");
-    return body.data.id;
+    return r.id;
   }
 }
 

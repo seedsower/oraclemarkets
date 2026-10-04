@@ -75,11 +75,17 @@ async function openBetFor(ctx: BetCtx, m: Mention, cmd: BetCmd): Promise<string 
   if (!b || !ctx.betClient) return BETS_OFF_REPLY;
   const now = Math.floor(Date.now() / 1000);
   const planned = planBet(cmd, m, b, now);
-  if (planned.action === "reply") return { text: planned.text, pending: planned.pending ?? null };
+  if (planned.action === "reply") {
+    log.info("bet needs more info", { by: m.username, reply: planned.text });
+    return { text: planned.text, pending: planned.pending ?? null };
+  }
   const existing = await ctx.store.betForPost(planned.sourceId);
   if (existing) return betExistingReply(existing, ctx.cfg.siteUrl);
   const busy = await capacity(ctx, b, m.authorId);
-  if (busy) return busy;
+  if (busy) {
+    log.info("bet not opened", { by: m.username, reason: busy });
+    return busy;
+  }
   const refined = ctx.claude
     ? await ctx.claude.refineBet(planned.question, planned.deadline)
     : null;
