@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { errorMessage } from "@/lib/errors";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { Button } from "@/components/ui/button";
 import { AmountInput } from "@/components/ui/amount-input";
@@ -225,7 +226,7 @@ export function TradePanel({
       });
       setAmount("");
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = errorMessage(err);
       if (msg.includes("WalletSign") || msg.includes("User rejected")) {
         toast.info("Transaction cancelled");
         setLoading(false);

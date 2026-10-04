@@ -40,6 +40,6 @@ export function useLpPosition(marketPda: string | undefined) {
       };
     },
     enabled: !!publicKey && !!marketPda,
-    refetchInterval: 5_000,
+    refetchInterval: 15_000,
   });
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { CategoryEditor } from "@/components/category-editor";
+import { errorMessage } from "@/lib/errors";
 import { use, useMemo, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { PublicKey } from "@solana/web3.js";
@@ -53,7 +54,7 @@ export default function VaultGroupPage({ params }: { params: Promise<{ id: strin
       await client.send.vaultCommitGroup(new PublicKey(vault.publicKey), selectedLeg, num);
       toast.success(`Committed ${num} USDC on ${vault.legs[selectedLeg].name}`);
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = errorMessage(e);
       toast.error(msg.slice(0, 200));
     } finally {
       setBusy(false);
@@ -91,7 +92,7 @@ export default function VaultGroupPage({ params }: { params: Promise<{ id: strin
           );
           toast.success(`Leg ${leg.name} launched`);
         } catch (e: unknown) {
-          const msg = e instanceof Error ? e.message : String(e);
+          const msg = errorMessage(e);
           if (msg.includes("VaultGroupLegAlreadyLaunched")) {
             // already done in a prior attempt — keep going
           } else {
@@ -105,7 +106,7 @@ export default function VaultGroupPage({ params }: { params: Promise<{ id: strin
       preferDirectRpc(); // the keeper hasn't seen the launch yet
       await refetch();
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = errorMessage(e);
       toast.error(msg.slice(0, 200));
     } finally {
       setBusy(false);
@@ -131,7 +132,7 @@ export default function VaultGroupPage({ params }: { params: Promise<{ id: strin
           await client.send.claimCommitterGroup(vaultPda, groupPda, legMarketPda, i);
           claimed += 1;
         } catch (e: unknown) {
-          const msg = e instanceof Error ? e.message : String(e);
+          const msg = errorMessage(e);
           if (msg.includes("NoCommitFunds") || msg.includes("AlreadyClaimed")) {
             // user has no stake in this leg, or already claimed — skip
             continue;
@@ -141,7 +142,7 @@ export default function VaultGroupPage({ params }: { params: Promise<{ id: strin
       }
       toast.success(`Minted YES tokens for ${claimed} leg${claimed === 1 ? "" : "s"}`);
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = errorMessage(e);
       toast.error(msg.slice(0, 200));
     } finally {
       setBusy(false);
@@ -155,7 +156,7 @@ export default function VaultGroupPage({ params }: { params: Promise<{ id: strin
       await client.send.refundCommitGroup(new PublicKey(vault.publicKey));
       toast.success("Refund successful");
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = errorMessage(e);
       toast.error(msg.slice(0, 200));
     } finally {
       setBusy(false);

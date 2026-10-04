@@ -1,6 +1,7 @@
 "use client";
 
 import { CategoryPicker } from "@/components/category-picker";
+import { errorMessage } from "@/lib/errors";
 import { useSetCategory } from "@/hooks/use-categories";
 import type { CategorySlug } from "@/lib/categories";
 import { useState } from "react";
@@ -59,7 +60,7 @@ export default function CreateGroupPage() {
         description: "Attached legs finalized as Side::No.",
       });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = errorMessage(err);
       if (msg.includes("WalletSign") || msg.includes("User rejected")) {
         toast.info("Transaction cancelled");
       } else {
@@ -118,7 +119,7 @@ export default function CreateGroupPage() {
       router.push(`/group/${result.groupId}`);
     } catch (err) {
       setStep(null);
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = errorMessage(err);
       if (msg.includes("WalletSign") || msg.includes("User rejected")) {
         toast.info("Transaction cancelled");
         return;

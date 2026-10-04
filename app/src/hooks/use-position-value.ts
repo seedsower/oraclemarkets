@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { errorMessage } from "@/lib/errors";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import {
   PublicKey,
@@ -122,7 +123,7 @@ export function usePositionValue(marketPda: string | undefined, tokens: UserToke
           error: null,
         };
       } catch (e: unknown) {
-        const msg = e instanceof Error ? e.message : String(e);
+        const msg = errorMessage(e);
         return {
           yesValueUsdc: 0,
           noValueUsdc: 0,

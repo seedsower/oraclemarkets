@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { errorMessage } from "@/lib/errors";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { StatusBar } from "@/components/layout/status-bar";
 import { Button } from "@/components/ui/button";
@@ -37,7 +38,7 @@ function useResolveBinary(market: MarketData) {
       await client.send.resolveMarket(new PublicKey(market.publicKey), side);
       toast.success(`Resolved → ${side.toUpperCase()}`);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = errorMessage(err);
       if (msg.includes("WalletSign") || msg.includes("User rejected")) {
         toast.info("Transaction cancelled");
         return;
@@ -129,7 +130,7 @@ function useResolveGroupAction(group: GroupData) {
       );
     } catch (err: unknown) {
       setProgress(null);
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = errorMessage(err);
       if (msg.includes("WalletSign") || msg.includes("User rejected")) {
         toast.info("Transaction cancelled");
         return;

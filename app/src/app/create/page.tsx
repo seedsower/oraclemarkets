@@ -1,6 +1,7 @@
 "use client";
 
 import { CategoryPicker } from "@/components/category-picker";
+import { errorMessage } from "@/lib/errors";
 import { useSetCategory } from "@/hooks/use-categories";
 import type { CategorySlug } from "@/lib/categories";
 import { useEffect, useState } from "react";
@@ -104,7 +105,7 @@ export default function CreateMarketPage() {
       if (category) await saveCategory(client.marketPda(marketId).toBase58(), category);
       router.push(`/market/${marketId}`);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = errorMessage(err);
       if (msg.includes("WalletSign") || msg.includes("User rejected")) {
         toast.info("Transaction cancelled");
         setLoading(false);

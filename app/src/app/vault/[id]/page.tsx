@@ -1,6 +1,7 @@
 "use client";
 
 import { CategoryEditor } from "@/components/category-editor";
+import { errorMessage } from "@/lib/errors";
 import { use, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { PublicKey } from "@solana/web3.js";
@@ -37,7 +38,7 @@ export default function VaultPage({ params }: { params: Promise<{ id: string }> 
       await client.send.vaultCommit(new PublicKey(vault.publicKey), side, num);
       toast.success(`Committed ${num} USDC on ${side.toUpperCase()}`);
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = errorMessage(e);
       toast.error(msg.slice(0, 200));
     } finally {
       setBusy(false);
@@ -51,7 +52,7 @@ export default function VaultPage({ params }: { params: Promise<{ id: string }> 
       const r = await client.send.launchVaultMarket(new PublicKey(vault.publicKey));
       toast.success(`Market ${r.marketId} launched at ${(vault.impliedPrice * 100).toFixed(2)}%`);
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = errorMessage(e);
       toast.error(msg.slice(0, 200));
     } finally {
       setBusy(false);
@@ -65,7 +66,7 @@ export default function VaultPage({ params }: { params: Promise<{ id: string }> 
       await client.send.claimCommitter(new PublicKey(vault.publicKey), new PublicKey(vault.market));
       toast.success("Claimed your LP position — you're now a liquidity provider of this market");
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = errorMessage(e);
       toast.error(msg.slice(0, 200));
     } finally {
       setBusy(false);
@@ -79,7 +80,7 @@ export default function VaultPage({ params }: { params: Promise<{ id: string }> 
       await client.send.refundCommit(new PublicKey(vault.publicKey));
       toast.success("Refund successful");
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = errorMessage(e);
       toast.error(msg.slice(0, 200));
     } finally {
       setBusy(false);

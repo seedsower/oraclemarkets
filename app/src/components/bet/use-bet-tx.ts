@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { errorMessage } from "@/lib/errors";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { solscanTxUrl } from "@/lib/constants";
 
 /** Short reason from a failed transaction (Anchor error name or message). */
 function reason(e: unknown): string {
-  const msg = e instanceof Error ? e.message : String(e);
+  const msg = errorMessage(e);
   const anchor = msg.match(/Error Message: ([^.]+)/)?.[1];
   if (anchor) return anchor;
   if (/User rejected/i.test(msg)) return "Cancelled in wallet";

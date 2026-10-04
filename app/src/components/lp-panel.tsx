@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { errorMessage } from "@/lib/errors";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { PublicKey } from "@solana/web3.js";
 import { BN } from "@anchor-lang/core";
@@ -38,7 +39,7 @@ export function LpPanel({ market }: { market: MarketData }) {
       });
       setDepositAmt("");
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = errorMessage(err);
       if (msg.includes("WalletSign") || msg.includes("User rejected")) {
         toast.info("Transaction cancelled");
         setLoading(false);
@@ -63,7 +64,7 @@ export function LpPanel({ market }: { market: MarketData }) {
         action: { label: "Solscan ↗", onClick: () => window.open(solscanTxUrl(tx), "_blank") },
       });
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = errorMessage(err);
       if (msg.includes("WalletSign") || msg.includes("User rejected")) {
         toast.info("Transaction cancelled");
         setLoading(false);

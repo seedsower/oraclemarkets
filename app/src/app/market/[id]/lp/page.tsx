@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useState } from "react";
+import { errorMessage } from "@/lib/errors";
 import { StatusBar } from "@/components/layout/status-bar";
 import { Figure } from "@/components/ui/figure";
 import { MetaRow } from "@/components/ui/meta-row";
@@ -112,7 +113,7 @@ export default function LpPage({ params }: { params: Promise<{ id: string }> }) 
       queryClient.invalidateQueries({ queryKey: ["lp-position"] });
       queryClient.invalidateQueries({ queryKey: ["markets"] });
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = errorMessage(err);
       if (msg.includes("WalletSign") || msg.includes("User rejected")) {
         toast.info("Transaction cancelled");
       } else {
@@ -138,7 +139,7 @@ export default function LpPage({ params }: { params: Promise<{ id: string }> }) 
       queryClient.invalidateQueries({ queryKey: ["lp-position"] });
       queryClient.invalidateQueries({ queryKey: ["markets"] });
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = errorMessage(err);
       if (msg.includes("WalletSign") || msg.includes("User rejected")) {
         toast.info("Transaction cancelled");
       } else {

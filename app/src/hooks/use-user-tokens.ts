@@ -44,6 +44,6 @@ export function useUserTokens(
       return { yes, no, usdc, yesAta, noAta, usdcAta };
     },
     enabled: !!publicKey && !!yesMint,
-    refetchInterval: 5_000,
+    refetchInterval: 15_000,
   });
 }

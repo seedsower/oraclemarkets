@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo } from "react";
+import { errorMessage } from "@/lib/errors";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { toast } from "sonner";
@@ -86,7 +87,7 @@ export function useSetCategory() {
         toast.success(`Category: ${categoryLabel(slug)}`);
         return true;
       } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
+        const msg = errorMessage(e);
         toast.error("Category not saved", {
           description: /reject/i.test(msg) ? "Cancelled in wallet" : msg,
         });

@@ -1,6 +1,7 @@
 "use client";
 
 import { CategoryPicker } from "@/components/category-picker";
+import { errorMessage } from "@/lib/errors";
 import { useSetCategory } from "@/hooks/use-categories";
 import type { CategorySlug } from "@/lib/categories";
 import { useState } from "react";
@@ -87,7 +88,7 @@ export default function CreateVaultPage() {
         router.push(`/vault-group/${result.vaultId}`);
       }
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = errorMessage(e);
       toast.error(msg.slice(0, 200));
     } finally {
       setLoading(false);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { errorMessage } from "@/lib/errors";
 import Link from "next/link";
 import { toast } from "sonner";
 import { PublicKey } from "@solana/web3.js";
@@ -498,7 +499,7 @@ function useGroupClaimAll(group: GroupData): ClaimAllState {
       setClaimable([]); // optimistic: positions consumed
     } catch (err) {
       setProgress(null);
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = errorMessage(err);
       if (msg.includes("WalletSign") || msg.includes("User rejected")) {
         toast.info("Transaction cancelled");
       } else {
