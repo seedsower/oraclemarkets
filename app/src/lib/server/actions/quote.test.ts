@@ -34,3 +34,28 @@ test("rows cached before lastAccrualTs existed fall back to lEff", () => {
   const old = { ...m, lastAccrualTs: undefined };
   assert.equal(quoteReserves(old).lEff, m.lEff);
 });
+
+test("sells follow the on-chain formula: ≤ 1 USDC per share, and a round trip loses money", () => {
+  const r = quoteReserves(m);
+  const shares = quoteSwap(r, "buy", "yes", 5_000_000, SWAP_FEE_BPS).output;
+  for (const side of ["yes", "no"] as const) {
+    const { output } = quoteSwap(r, "sell", side, shares, SWAP_FEE_BPS);
+    assert.ok(output > 0 && output < shares, `${side}: ${output} for ${shares} shares`);
+  }
+  // Buy 5 USDC of YES then sell it straight back: you get back less than 5 (fees + curve).
+  const back = quoteSwap(r, "sell", "yes", shares, SWAP_FEE_BPS).output;
+  assert.ok(back < 5_000_000 && back > 4_000_000, `round trip returned ${back}`);
+});
+
+test("selling nothing returns nothing", () => {
+  // (The old sell formula — buy math with sides swapped — over-quoted a real
+  // devnet sell 4.8x: 4.65 vs 0.96 USDC paid, so every minOutput failed.)
+  const { output } = quoteSwap(
+    { reserveYes: 1, reserveNo: 1, lEff: 1 },
+    "sell",
+    "yes",
+    0,
+    SWAP_FEE_BPS,
+  );
+  assert.equal(output, 0);
+});

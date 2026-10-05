@@ -83,7 +83,7 @@ export async function handleMoney(ctx: MoneyCtx, m: Mention, cmd: MoneyCommand):
   } catch (e) {
     if (e instanceof TradeRefused) return e.message;
     log.error("money command failed", { by: m.username, kind: cmd.kind, error: errMsg(e) });
-    return "That didn't go through (network hiccup). Nothing was charged. Try again in a minute.";
+    return "That didn't go through, and nothing was charged. Try again in a minute, or a smaller amount.";
   } finally {
     await ctx.store.unlock(m.authorId);
   }

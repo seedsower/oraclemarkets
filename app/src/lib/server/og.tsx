@@ -54,7 +54,6 @@ function OgArt({ src }: { src: string }) {
     <div
       style={{ position: "absolute", top: 0, right: 0, width: 640, height: 630, display: "flex" }}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element -- Satori needs a plain <img> */}
       <img
         src={src}
         width={640}

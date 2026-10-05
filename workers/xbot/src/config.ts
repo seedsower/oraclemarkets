@@ -94,7 +94,8 @@ function custodyConfig(e: NodeJS.ProcessEnv, bets: BetsConfig | null): CustodyCo
     starterUsdc: num("XBOT_STARTER_USDC", 50),
     maxTradeUsdc: num("XBOT_MAX_TRADE_USDC", 25),
     dailyUsdc: num("XBOT_DAILY_USDC", 100),
-    maxImpactBps: Math.floor(num("XBOT_MAX_IMPACT_BPS", 500)),
+    // Devnet markets are thin (~$20 liquidity): $2 already moves the price ~7%.
+    maxImpactBps: Math.floor(num("XBOT_MAX_IMPACT_BPS", 1500)),
     slippageBps: Math.floor(num("XBOT_SLIPPAGE_BPS", 200)),
   };
 }

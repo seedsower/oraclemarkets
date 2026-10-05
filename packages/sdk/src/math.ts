@@ -178,6 +178,35 @@ export type SwapMode = "buy" | "sell";
  * net trades the curve) and off the OUTPUT on a sell — matching the program,
  * so a `minOutput` derived from this isn't over-stated. Pass `SWAP_FEE_BPS`.
  */
+/** Must match Z_CLAMP_LO / Z_CLAMP_HI in pm_math.rs. */
+const Z_CLAMP = 5.9;
+
+/**
+ * YES/NO → collateral, exactly as `compute_swap_output` does on-chain
+ * (pm_math.rs): z' = ((y − x) ∓ Δ) / L (clamped), reserves re-read off the
+ * curve at z' (x = L(zΦ(z)+φ(z)−z), y = L(zΦ(z)+φ(z))), gross output =
+ * y − y' for YES (x − x' for NO), minus the fee floored like `fee_of`.
+ * (It used to reuse the buy formula with the sides swapped, which over-quoted
+ * sells several-fold, so every sell's minOutput failed with SlippageExceeded.)
+ */
+function quoteSell(
+  r: { reserveYes: number; reserveNo: number; lEff: number },
+  side: "yes" | "no",
+  amount: number,
+  feeBps: number,
+): { output: number; priceAfter: number } {
+  const { reserveYes: x, reserveNo: y, lEff: l } = r;
+  if (l <= 0 || amount <= 0) return { output: 0, priceAfter: 0.5 };
+  const shifted = side === "yes" ? (y - x - amount) / l : (y - x + amount) / l;
+  const z = Math.min(Z_CLAMP, Math.max(-Z_CLAMP, shifted));
+  const base = z * capitalPhi(z) + phi(z);
+  const xNew = l * (base - z);
+  const yNew = l * base;
+  const gross = Math.floor(side === "yes" ? y - yNew : x - xNew);
+  const fee = Math.floor((gross * feeBps) / 10_000);
+  return { output: Math.max(0, gross - fee), priceAfter: capitalPhi(z) };
+}
+
 export function quoteSwap(
   reserves: { reserveYes: number; reserveNo: number; lEff: number },
   mode: SwapMode,
@@ -188,20 +217,7 @@ export function quoteSwap(
   const amount = Math.floor(rawAmount);
   const netNum = 10_000 - feeBps;
   const { reserveYes, reserveNo, lEff } = reserves;
-  if (mode === "sell") {
-    // Sell YES/NO → collateral mirrors the buy math with the sides reversed.
-    const est = estimateSwapOutput(
-      reserveYes,
-      reserveNo,
-      lEff,
-      amount,
-      side === "yes" ? "no" : "yes",
-    );
-    return {
-      output: Math.max(0, Math.floor((est.output * netNum) / 10_000)),
-      priceAfter: est.priceAfter,
-    };
-  }
+  if (mode === "sell") return quoteSell(reserves, side, amount, feeBps);
   const netIn = Math.floor((amount * netNum) / 10_000);
   const est = estimateSwapOutput(reserveYes, reserveNo, lEff, netIn, side);
   return { output: Math.max(0, Math.floor(est.output)), priceAfter: est.priceAfter };

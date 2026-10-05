@@ -10,7 +10,6 @@ export function MarketArt({ account, className = "" }: { account: string; classN
   const [missing, setMissing] = useState(false);
   if (missing || !account) return null;
   return (
-    // eslint-disable-next-line @next/next/no-img-element -- tiny same-origin SVG, no optimisation needed
     <img
       src={`/api/art/${account}`}
       alt=""

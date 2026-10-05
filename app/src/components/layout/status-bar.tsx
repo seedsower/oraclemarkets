@@ -66,6 +66,9 @@ export function StatusBar() {
           <Link href="/markets" className="hover:text-text-hi transition-all duration-[120ms]">
             Markets
           </Link>
+          <Link href="/wallet" className="hover:text-text-hi transition-all duration-[120ms]">
+            X wallet
+          </Link>
           <Link href="/docs" className="hover:text-text-hi transition-all duration-[120ms]">
             Docs
           </Link>

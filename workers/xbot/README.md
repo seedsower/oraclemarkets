@@ -187,3 +187,40 @@ cards, market/group/bet pages and the X share cards (`/api/art/<account>`).
 - `XBOT_ART_MODEL` (default `claude-sonnet-5-5`), `XBOT_ART_PER_DAY` (40),
   `XBOT_ART_PER_PASS` (2), `XBOT_ART=false` to turn it off. It has its own daily
   budget, separate from the mention/bet budget.
+
+## Trading from X (devnet, custodial)
+
+People trade by replying to the bot. Each X account gets its own Solana wallet on
+first use, funded with `XBOT_STARTER_USDC` (50) test USDC from the bot wallet's
+USDC float. Commands (fixed rules, never Claude):
+
+| Reply | Does |
+|---|---|
+| `buy YES $5` / `buy NO 10` | trade the market in the thread (link in the post, the bet on the take, or `#<id>`) |
+| `sell YES` / `sell YES $3` | sell all / about $3 worth |
+| `stake YES $10` | stake in a bet that's still taking stakes |
+| `balance` | cash + top positions |
+| `withdraw $20 to <address>` / `withdraw all to <address>` | send USDC out |
+
+A `bet?` reply with a side and amount ("…I'll take YES $10") also stakes for the
+caller. Winnings, settled bets and refunds are paid out automatically each poll,
+and the bot replies under the post that opened the position.
+
+- **Keys**: `wallets.ts`. One keypair per X user id in Redis hash `xwallets`,
+  secret encrypted with AES-256-GCM under `XBOT_WALLET_MASTER_KEY` (base64 of 32
+  bytes; Railway only), with the user id as associated data.
+- **Fees**: the bot wallet pays every fee and token-account deposit (~0.006 SOL per
+  new user + market), plus the small rent a bet stake needs. Keep it funded with
+  devnet SOL and test USDC.
+- **Limits**: `XBOT_MAX_TRADE_USDC` (25), `XBOT_DAILY_USDC` (100 traded, and 100
+  withdrawn, per user per day), `XBOT_MAX_IMPACT_BPS` (1500: refuse a trade whose
+  average price is >15% + fee worse than now; devnet markets are thin),
+  `XBOT_SLIPPAGE_BPS` (200), one action at a time per user.
+- **Site**: `/wallet` → "Sign in with X" (OAuth 1.0a with the app's `X_API_KEY` /
+  `X_API_SECRET`; add `https://oraclemarkets.app/api/auth/x/callback` to the X
+  app's callback URLs). Shows balance and positions and can export the private
+  key (base58, for Phantom) after a sign-in in the last 15 minutes. The web
+  service needs the same `XBOT_WALLET_MASTER_KEY` plus `X_API_KEY` / `X_API_SECRET`.
+- **Devnet only**: the bot refuses to start with a master key against real USDC
+  or a mainnet RPC. Mainnet needs a managed key service and legal review.
+- End-to-end: `scripts/e2e-money.ts`.

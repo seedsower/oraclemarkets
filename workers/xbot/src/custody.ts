@@ -126,7 +126,10 @@ export class Custody {
     const avg =
       mode === "buy" ? built.amountIn / built.quotedOutput : built.quotedOutput / built.amountIn;
     if (!priceOk(mode, avg, price, this.cfg.maxImpactBps)) {
-      throw new TradeRefused("That trade would move the price too much. Try a smaller amount.");
+      const c = (p: number) => `${Math.round(p * 100)}¢`;
+      throw new TradeRefused(
+        `Too big for this market: you'd get ${c(avg)} on average vs ${c(price)} now. Try a smaller amount.`,
+      );
     }
     const sig = await this.send(built.instructions, user);
     return { sig, avg, amountIn: fromRaw(built.amountIn), out: fromRaw(built.quotedOutput), price };
