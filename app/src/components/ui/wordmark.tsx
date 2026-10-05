@@ -7,7 +7,7 @@ export function Wordmark({
   tone?: "light" | "dark";
 }) {
   const color = tone === "light" ? "var(--text-hi)" : "var(--bg)";
-  const dim = tone === "light" ? "var(--muted)" : "oklch(0.45 0.01 70)";
+  const dim = tone === "light" ? "var(--muted)" : "oklch(0.45 0.03 268)";
 
   return (
     <div

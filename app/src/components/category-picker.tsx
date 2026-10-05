@@ -22,7 +22,7 @@ export function CategoryPicker({
           className={[
             "px-[10px] py-[5px] rounded-full border font-mono text-[11px] tracking-[0.03em] cursor-pointer transition-all duration-[120ms]",
             value === c.slug
-              ? "bg-text-hi text-bg border-text-hi"
+              ? "bg-accent text-bg border-accent"
               : "border-line-2 text-text-dim hover:text-text-hi hover:border-muted",
           ].join(" ")}
         >

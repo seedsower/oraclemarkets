@@ -118,7 +118,7 @@ function Live({ v, marketId }: PhaseProps) {
       {marketId !== null && (
         <Link
           href={`/market/${marketId}`}
-          className="text-center px-[14px] py-[10px] bg-text-hi text-bg rounded-md font-mono text-[12px] font-medium"
+          className="text-center px-[14px] py-[10px] bg-accent text-bg rounded-md font-mono text-[12px] font-medium"
         >
           Trade the market →
         </Link>

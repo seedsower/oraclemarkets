@@ -7,7 +7,8 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
-  primary: "bg-text-hi text-bg hover:bg-text border-transparent",
+  primary:
+    "bg-accent text-bg hover:brightness-110 border-transparent shadow-[0_0_18px_-4px_var(--accent)]",
   secondary: "bg-transparent text-text border-line-2 hover:border-muted",
   ghost: "bg-transparent text-text-dim border-transparent hover:text-text-hi",
   yes: "bg-yes-soft text-yes border-[color-mix(in_oklch,var(--yes)_25%,transparent)]",

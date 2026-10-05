@@ -46,7 +46,7 @@ export function CategoryFilter({
           className={[
             "px-[12px] py-[5px] rounded-full font-sans text-[13px] cursor-pointer transition-all duration-[120ms]",
             value === o.slug
-              ? "bg-text-hi text-bg"
+              ? "bg-accent text-bg"
               : "text-text-dim hover:text-text-hi hover:bg-surface",
           ].join(" ")}
         >

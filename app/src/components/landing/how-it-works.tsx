@@ -52,7 +52,7 @@ function TapIt() {
         <span className="flex-1 rounded-[8px] border border-line-2 px-[8px] py-[6px] font-mono text-[10px] text-muted">
           Custom amount
         </span>
-        <span className={`${b} flex-none px-[10px] bg-text-hi text-bg`}>Buy</span>
+        <span className={`${b} flex-none px-[10px] bg-accent text-bg`}>Buy</span>
       </div>
     </Frame>
   );
@@ -95,7 +95,7 @@ function ShareIt({ m }: { m: ShowcaseMarket }) {
           </span>
         </span>
         <span className="text-[11px] text-accent">oraclemarkets.app/market/…</span>
-        <span className="self-end px-[12px] py-[4px] rounded-full bg-text-hi text-bg font-mono text-[10px] font-medium">
+        <span className="self-end px-[12px] py-[4px] rounded-full bg-accent text-bg font-mono text-[10px] font-medium">
           Post
         </span>
       </div>

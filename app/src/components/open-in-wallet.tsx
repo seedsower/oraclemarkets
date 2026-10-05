@@ -25,7 +25,7 @@ export function OpenInWallet() {
         Open this market in your wallet app to connect and confirm in one step.
       </p>
       <div className="flex gap-[8px]">
-        <a href={links.phantom} className={`${btn} bg-text-hi text-bg`}>
+        <a href={links.phantom} className={`${btn} bg-accent text-bg`}>
           Open in Phantom
         </a>
         <a href={links.solflare} className={`${btn} border border-line-2 text-text-hi`}>

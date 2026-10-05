@@ -17,6 +17,7 @@
   --color-no: var(--no);
   --color-no-soft: var(--no-soft);
   --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
 
   /* Fonts */
   --font-sans: var(--font-sans);
@@ -32,7 +33,11 @@
 * { box-sizing: border-box; }
 
 body {
-  background: var(--bg);
+  background:
+    radial-gradient(1100px 620px at 8% -12%, var(--glow-1), transparent 62%),
+    radial-gradient(900px 520px at 100% -8%, var(--glow-2), transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
   color: var(--text);
   font-family: var(--font-sans);
   font-feature-settings: "tnum", "cv11";
@@ -117,7 +122,7 @@ body {
 ::-webkit-scrollbar-thumb:hover { background: var(--line-2); }
 
 /* Selection */
-::selection { background: var(--line-2); color: var(--text-hi); }
+::selection { background: var(--accent-soft); color: var(--text-hi); }
 
 /* Transition default */
 .transition-brand { transition: all 120ms ease; }
@@ -128,10 +133,10 @@ body {
 .wallet-adapter-button {
   background: transparent !important;
   border: 1px solid var(--line-2) !important;
-  border-radius: 2px !important;
+  border-radius: var(--r-lg) !important;
   font-family: var(--font-mono) !important;
   font-size: 11px !important;
-  height: 28px !important;
+  height: 30px !important;
   padding: 0 10px !important;
   color: var(--text) !important;
   letter-spacing: 0.03em !important;
@@ -144,13 +149,15 @@ body {
   color: var(--text-hi) !important;
 }
 .wallet-adapter-button-trigger {
-  background: var(--text-hi) !important;
+  background: var(--accent) !important;
   color: var(--bg) !important;
-  border-color: var(--text-hi) !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 18px -4px var(--accent) !important;
 }
 .wallet-adapter-button-trigger:not([disabled]):hover {
-  background: var(--text) !important;
-  border-color: var(--text) !important;
+  filter: brightness(1.1);
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
   color: var(--bg) !important;
 }
 .wallet-adapter-button .wallet-adapter-button-start-icon {
@@ -162,7 +169,7 @@ body {
 .wallet-adapter-dropdown-list {
   background: var(--surface) !important;
   border: 1px solid var(--line) !important;
-  border-radius: 2px !important;
+  border-radius: var(--r-lg) !important;
   padding: 4px !important;
   font-family: var(--font-mono) !important;
 }
@@ -170,7 +177,7 @@ body {
   font-size: 11px !important;
   color: var(--text) !important;
   padding: 6px 10px !important;
-  border-radius: 2px !important;
+  border-radius: var(--r-md) !important;
   transition: all 120ms ease !important;
 }
 .wallet-adapter-dropdown-list-item:hover {
@@ -180,7 +187,7 @@ body {
 .wallet-adapter-modal-wrapper {
   background: var(--surface) !important;
   border: 1px solid var(--line) !important;
-  border-radius: 4px !important;
+  border-radius: var(--r-xl) !important;
   font-family: var(--font-sans) !important;
 }
 .wallet-adapter-modal-title {
@@ -213,7 +220,7 @@ body {
   color: var(--text-hi) !important;
 }
 .wallet-adapter-modal-overlay {
-  background: oklch(0.1 0 0 / 0.7) !important;
+  background: oklch(0.15 0.03 268 / 0.7) !important;
 }
 
 /* Blink animation for live indicator */

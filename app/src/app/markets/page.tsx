@@ -217,7 +217,7 @@ export default function Markets() {
                 </button>
               </Link>
               <Link href="/create">
-                <button className="px-[10px] py-[4px] bg-text-hi text-bg border border-text-hi rounded-sm font-mono text-[11px] tracking-[0.03em] font-medium cursor-pointer">
+                <button className="px-[10px] py-[4px] bg-accent text-bg border border-accent rounded-sm font-mono text-[11px] tracking-[0.03em] font-medium cursor-pointer">
                   + NEW
                 </button>
               </Link>
@@ -295,7 +295,7 @@ export default function Markets() {
                 {filter === "positions" ? "No positions found" : "No markets yet"}
               </div>
               <Link href="/create">
-                <button className="px-[14px] py-[6px] bg-text-hi text-bg border border-text-hi rounded-sm font-mono text-[11px] tracking-[0.03em] font-medium cursor-pointer">
+                <button className="px-[14px] py-[6px] bg-accent text-bg border border-accent rounded-sm font-mono text-[11px] tracking-[0.03em] font-medium cursor-pointer">
                   + CREATE MARKET
                 </button>
               </Link>

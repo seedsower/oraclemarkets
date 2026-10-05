@@ -70,7 +70,7 @@ function BlinkButtons() {
         <span className="flex-1 px-[12px] py-[8px] rounded-[9px] border border-line-2 font-mono text-[12px] text-muted">
           USDC on YES (1–250)
         </span>
-        <span className={`${btn} flex-none px-[16px] bg-text-hi text-bg`}>Buy YES</span>
+        <span className={`${btn} flex-none px-[16px] bg-accent text-bg`}>Buy YES</span>
       </div>
       <div className="font-mono text-[10px] text-muted text-center">
         Signed in your wallet · non-custodial

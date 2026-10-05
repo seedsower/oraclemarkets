@@ -56,7 +56,7 @@ export function XProposals() {
             <span>{new Date(p.createdAt).toLocaleDateString()}</span>
             <Link
               href={createHref(p)}
-              className="ml-auto px-[10px] py-[4px] bg-text-hi text-bg rounded-sm font-medium hover:opacity-90"
+              className="ml-auto px-[10px] py-[4px] bg-accent text-bg rounded-sm font-medium hover:opacity-90"
             >
               Create market →
             </Link>

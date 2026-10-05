@@ -43,7 +43,7 @@ export default async function Home() {
           <div className="mt-[36px] flex flex-wrap items-center gap-[12px]">
             <Link
               href="/markets"
-              className="px-[18px] py-[11px] bg-text-hi text-bg rounded-md font-mono text-[13px] tracking-[0.03em] font-medium hover:opacity-90 transition-all duration-[120ms]"
+              className="px-[18px] py-[11px] bg-accent text-bg rounded-md font-mono text-[13px] tracking-[0.03em] font-medium hover:opacity-90 transition-all duration-[120ms]"
             >
               Browse markets →
             </Link>

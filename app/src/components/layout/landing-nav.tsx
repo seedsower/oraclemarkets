@@ -38,7 +38,7 @@ export function LandingNav() {
         </a>
         <Link
           href="/markets"
-          className="whitespace-nowrap px-[12px] py-[6px] bg-text-hi text-bg rounded-sm font-medium hover:opacity-90 transition-all duration-[120ms]"
+          className="whitespace-nowrap px-[12px] py-[6px] bg-accent text-bg rounded-sm font-medium hover:opacity-90 transition-all duration-[120ms]"
         >
           Launch app →
         </Link>
