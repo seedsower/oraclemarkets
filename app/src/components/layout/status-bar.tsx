@@ -51,7 +51,7 @@ export function StatusBar() {
   return (
     <div
       className={[
-        "grid grid-cols-[auto_1fr_auto] gap-[32px] items-center",
+        "grid grid-cols-[auto_1fr_auto] gap-x-[32px] gap-y-[8px] items-center",
         "px-[24px] py-[10px]",
         "border-b border-line bg-bg",
         "font-mono text-[11px] text-muted tracking-[0.03em]",
@@ -124,6 +124,22 @@ export function StatusBar() {
         )}
         <WalletMultiButton />
       </div>
+
+      {/* Phones: the desktop nav above is hidden, so show the links on their own row. */}
+      <nav className="md:hidden col-span-full flex items-center gap-[18px] text-[12px]">
+        <Link href="/markets" className="hover:text-text-hi">
+          Markets
+        </Link>
+        <Link href="/wallet" className="text-accent hover:text-text-hi">
+          X wallet
+        </Link>
+        <Link href="/create-vault" className="sm:hidden hover:text-text-hi">
+          Vault
+        </Link>
+        <Link href="/docs" className="hover:text-text-hi">
+          Docs
+        </Link>
+      </nav>
     </div>
   );
 }

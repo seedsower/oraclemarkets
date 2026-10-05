@@ -22,6 +22,9 @@ export function LandingNav() {
         >
           Markets
         </Link>
+        <Link href="/wallet" className="hover:text-text-hi transition-all duration-[120ms]">
+          X wallet
+        </Link>
         <Link
           href="/docs"
           className="hidden sm:inline hover:text-text-hi transition-all duration-[120ms]"
