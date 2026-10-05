@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { getArtDataUri } from "@/lib/server/art";
 import { poolValue } from "@pm-amm/sdk/math";
 import type { MarketView } from "@pm-amm/sdk";
 import { NotFoundCard, OG, OG_SIZE, OgFrame, Question } from "@/lib/server/og";
@@ -55,10 +56,12 @@ export default async function Image({ params }: { params: Promise<{ id: string }
   const m = marketId === null ? null : await getMarketById(marketId);
   if (!m) return new ImageResponse(<NotFoundCard what="Market" />, size);
 
+  const art = await getArtDataUri(m.publicKey);
   const delta = m.resolved ? null : await priceChange24h(m);
   const status = m.resolved ? resolvedLabel(m.winningSide) : closesIn(m.endTs);
   return new ImageResponse(
     <OgFrame
+      art={art}
       footer={
         <span>
           {status} · {liquidityLabel(m)}

@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { ShareOnX } from "@/components/share-on-x";
 import { OpenInWallet } from "@/components/open-in-wallet";
 import { CategoryEditor } from "@/components/category-editor";
+import { MarketArt } from "@/components/market-art";
 import { cents, groupPath, legLabel } from "@/lib/share";
 
 export function GroupPage({ id }: { id: string }) {
@@ -104,6 +105,10 @@ function GroupView({ group, priceHistories }: GroupViewProps) {
   return (
     <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-[24px]">
       <div className="space-y-[16px] min-w-0">
+        <MarketArt
+          account={group.publicKey}
+          className="w-full h-[140px] md:h-[180px] rounded-xl border border-line"
+        />
         <GroupHeader group={group} drift={drift} />
 
         <div className="border border-line p-[16px]">

@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { getArtDataUri } from "@/lib/server/art";
 import type { GroupView, MarketView } from "@pm-amm/sdk";
 import { NotFoundCard, OG, OG_SIZE, OgFrame, Question } from "@/lib/server/og";
 import { getGroupById, parseId } from "@/lib/server/snapshots";
@@ -45,12 +46,13 @@ export default async function Image({ params }: { params: Promise<{ id: string }
   const g = groupId === null ? null : await getGroupById(groupId);
   if (!g) return new ImageResponse(<NotFoundCard what="Market" />, size);
 
+  const art = await getArtDataUri(g.publicKey);
   const legs = g.legs
     .filter((l): l is MarketView => l !== null)
     .sort((a, b) => b.price - a.price)
     .slice(0, MAX_LEGS);
   return new ImageResponse(
-    <OgFrame footer={<span>{status(g)}</span>}>
+    <OgFrame art={art} footer={<span>{status(g)}</span>}>
       <Question text={g.name} compact />
       <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: "auto" }}>
         {legs.map((leg, i) => (

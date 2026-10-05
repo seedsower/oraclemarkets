@@ -26,6 +26,7 @@ import { ShareOnX } from "@/components/share-on-x";
 import { marketPath, marketSummary, parseBuyIntent, type BuySide } from "@/lib/share";
 import { OpenInWallet } from "@/components/open-in-wallet";
 import { CategoryEditor } from "@/components/category-editor";
+import { MarketArt } from "@/components/market-art";
 import { needsWalletApp } from "@/lib/wallet-links";
 import { useEffect, useRef, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
@@ -112,6 +113,10 @@ export function MarketPage({ id }: { id: string }) {
 
             return (
               <div className="space-y-[24px]">
+                <MarketArt
+                  account={market.publicKey}
+                  className="w-full h-[140px] md:h-[180px] rounded-xl border border-line"
+                />
                 {/* Header */}
                 <div className="flex items-center gap-[12px] flex-wrap">
                   <h2 className="text-title">{name}</h2>

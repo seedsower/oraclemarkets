@@ -4,15 +4,15 @@ import { BRAND } from "@/lib/brand";
 /** Shared look for share cards (1200×630) — design tokens as hex (Satori has no CSS vars). */
 export const OG_SIZE = { width: 1200, height: 630 };
 export const OG = {
-  bg: "#1f1d1a",
-  surface: "#272420",
-  line: "#47423d",
-  muted: "#8a847c",
-  dim: "#b5afa6",
-  text: "#f5efe3",
-  yes: "#7fb08a",
-  no: "#d0806a",
-  accent: "#e0b870",
+  bg: "#1f2739",
+  surface: "#283147",
+  line: "#525d79",
+  muted: "#9aa3bb",
+  dim: "#bcc3d4",
+  text: "#fbfcff",
+  yes: "#3fdc8c",
+  no: "#f2705e",
+  accent: "#a98bf5",
 };
 
 /** Question size steps down with length so 3 lines always fit. */
@@ -48,11 +48,45 @@ function Wordmark() {
   );
 }
 
-/** Card chrome: wordmark top-left, `footer` bottom row, content in between. */
-export function OgFrame({ children, footer }: { children: ReactNode; footer: ReactNode }) {
+/** The market's illustration, faded into the right side behind the text. */
+function OgArt({ src }: { src: string }) {
+  return (
+    <div
+      style={{ position: "absolute", top: 0, right: 0, width: 640, height: 630, display: "flex" }}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element -- Satori needs a plain <img> */}
+      <img
+        src={src}
+        width={640}
+        height={630}
+        alt=""
+        style={{ objectFit: "cover", opacity: 0.55 }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          backgroundImage: `linear-gradient(90deg, ${OG.bg} 0%, rgba(31,39,57,0.55) 45%, rgba(31,39,57,0) 100%)`,
+        }}
+      />
+    </div>
+  );
+}
+
+/** Card chrome: wordmark top-left, `footer` bottom row, content in between; optional art behind. */
+export function OgFrame({
+  children,
+  footer,
+  art = null,
+}: {
+  children: ReactNode;
+  footer: ReactNode;
+  art?: string | null;
+}) {
   return (
     <div
       style={{
+        position: "relative",
         width: "100%",
         height: "100%",
         display: "flex",
@@ -64,6 +98,7 @@ export function OgFrame({ children, footer }: { children: ReactNode; footer: Rea
         color: OG.text,
       }}
     >
+      {art && <OgArt src={art} />}
       <Wordmark />
       <div style={{ display: "flex", flexDirection: "column", flexGrow: 1, marginTop: 36 }}>
         {children}

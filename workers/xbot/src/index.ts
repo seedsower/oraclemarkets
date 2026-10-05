@@ -22,6 +22,7 @@ import { logUsage } from "./usage";
 import { advanceBets } from "./bet-actions";
 import { makeBetClient } from "./chain";
 import { Claude } from "./claude";
+import { artPass } from "./art";
 
 const maxId = (a: string | null, b: string | null) =>
   !a ? b : !b ? a : BigInt(a) >= BigInt(b) ? a : b;
@@ -61,6 +62,20 @@ async function tick(ctx: BotCtx): Promise<void> {
   }
   if (newestId && !ctx.cfg.fixture) await ctx.store.setCursor(maxId(since, newestId)!);
   if (mentions.length) log.info("tick", { mentions: mentions.length });
+}
+
+/** One poll: mentions, the bot's bets, usage, and market art. */
+async function cycle(ctx: BotCtx): Promise<void> {
+  await tick(ctx);
+  // Launch / settle the bot's bets (cache-driven; no-op in dry run).
+  await advanceBets(ctx).catch((e) => log.warn("advanceBets failed", { error: errMsg(e) }));
+  await logUsage(ctx.store, ctx.cfg);
+  // Market art for new markets (site + bot), a few per pass.
+  if (ctx.claude && ctx.cfg.art) {
+    await artPass(ctx.claude, ctx.cfg.art, ctx.store).catch((e) =>
+      log.warn("art pass failed", { error: errMsg(e) }),
+    );
+  }
 }
 
 /** Real X client (resolving the bot's user id if unset), a fixture, or null. */
@@ -112,6 +127,7 @@ async function main(): Promise<void> {
       model: cfg.claude.model,
       refineModel: cfg.claude.refineModel,
       perDay: cfg.claude.perDay,
+      art: cfg.art ? `${cfg.art.model}, ${cfg.art.perDay}/day` : "off",
     });
   }
   const ctx: BotCtx | null = made ? { cfg, store, betClient, claude, ...made } : null;
@@ -129,10 +145,7 @@ async function main(): Promise<void> {
     let waitMs = cfg.pollMs;
     if (ctx) {
       try {
-        await tick(ctx);
-        // Launch / settle the bot's bets (cache-driven; no-op in dry run).
-        await advanceBets(ctx).catch((e) => log.warn("advanceBets failed", { error: errMsg(e) }));
-        await logUsage(store, cfg);
+        await cycle(ctx);
       } catch (e) {
         if (e instanceof RateLimited) waitMs = Math.max(cfg.pollMs, e.resetAt - Date.now());
         log.warn("tick failed", { error: errMsg(e), nextInSecs: Math.round(waitMs / 1000) });

@@ -27,7 +27,7 @@ export interface ClaudeConfig {
 type Fetch = typeof fetch;
 type Json = Record<string, unknown>;
 
-interface Tool {
+export interface Tool {
   name: string;
   description: string;
   input_schema: Json;
@@ -39,7 +39,7 @@ const CATEGORIES = [...CATEGORY_SLUGS];
 /** One tool call → its input object. Throws on HTTP errors or a missing tool block. */
 export async function callTool(
   c: ClaudeConfig,
-  req: { model: string; system: string; user: string; tool: Tool },
+  req: { model: string; system: string; user: string; tool: Tool; maxTokens?: number },
   f: Fetch = fetch,
 ): Promise<Json> {
   const res = await f(API_URL, {
@@ -51,7 +51,7 @@ export async function callTool(
     },
     body: JSON.stringify({
       model: req.model,
-      max_tokens: 1024,
+      max_tokens: req.maxTokens ?? 1024,
       // Some models (e.g. Sonnet 5.5) reject a forced tool_choice, so ask in the
       // prompt instead; a text-only answer throws below → the rules (fail-open).
       system: `${req.system}\nAlways answer by calling the ${req.tool.name} tool, never in text.`,
@@ -224,21 +224,27 @@ export class Claude {
     private readonly f: Fetch = fetch,
   ) {}
 
-  private async call(
-    model: string,
-    system: string,
-    user: string,
-    tool: Tool,
+  private call(model: string, system: string, user: string, tool: Tool): Promise<Json | null> {
+    return this.tool(
+      { model, system, user, tool },
+      { key: "xbot:claude", perDay: this.cfg.perDay },
+    );
+  }
+
+  /** One tool call under a daily budget (a Redis counter); null when over it or on any error. */
+  async tool(
+    req: { model: string; system: string; user: string; tool: Tool; maxTokens?: number },
+    budget: { key: string; perDay: number },
   ): Promise<Json | null> {
-    if ((await this.counter.count("xbot:claude")) >= this.cfg.perDay) {
-      log.warn("claude daily cap reached; using the rules only", { perDay: this.cfg.perDay });
+    if ((await this.counter.count(budget.key)) >= budget.perDay) {
+      log.warn("claude daily cap reached", { budget: budget.key, perDay: budget.perDay });
       return null;
     }
-    await this.counter.bump("xbot:claude");
+    await this.counter.bump(budget.key);
     try {
-      return await callTool(this.cfg, { model, system, user, tool }, this.f);
+      return await callTool(this.cfg, req, this.f);
     } catch (e) {
-      log.warn("claude call failed; using the rules only", { tool: tool.name, error: errMsg(e) });
+      log.warn("claude call failed", { tool: req.tool.name, error: errMsg(e) });
       return null;
     }
   }

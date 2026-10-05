@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { getArtDataUri } from "@/lib/server/art";
 import { formatUsdc } from "@pm-amm/sdk/math";
 import { NotFoundCard, OG, OG_SIZE, OgFrame, Question } from "@/lib/server/og";
 import { getBetById, getBetMeta } from "@/lib/server/bets";
@@ -15,9 +16,10 @@ export default async function Image({ params }: { params: Promise<{ id: string }
   const [v, meta] =
     vaultId === null ? [null, null] : await Promise.all([getBetById(vaultId), getBetMeta(vaultId)]);
   if (!v) return new ImageResponse(<NotFoundCard what="Bet" />, size);
+  const art = await getArtDataUri(v.publicKey);
   const yes = Math.round(v.impliedYes * 100);
   return new ImageResponse(
-    <OgFrame footer={<span>Pot ${formatUsdc(v.total)} · winner takes the pot</span>}>
+    <OgFrame art={art} footer={<span>Pot ${formatUsdc(v.total)} · winner takes the pot</span>}>
       <span style={{ fontSize: 22, color: OG.accent, letterSpacing: "0.12em", marginBottom: 14 }}>
         BET
       </span>

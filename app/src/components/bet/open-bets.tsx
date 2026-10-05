@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { betPhase, type BetVaultView } from "@pm-amm/sdk";
 import { formatUsdc } from "@pm-amm/sdk/math";
-import { CardShell } from "@/components/market-cards";
+import { CardShell, CardArt } from "@/components/market-cards";
 import { Countdown } from "@/components/ui/countdown";
 import { useBetVaults } from "@/hooks/use-bet-vaults";
 import { betPath, betStakePath } from "@/lib/bets";
@@ -17,6 +17,7 @@ function BetCard({ v, category }: { v: BetVaultView; category: string | null }) 
     "flex-1 text-center py-[8px] rounded-md font-mono text-[12px] font-medium transition-all duration-[120ms]";
   return (
     <CardShell href={betPath(v.vaultId)} label={v.name}>
+      <CardArt account={v.publicKey} />
       <div className="relative z-10 pointer-events-none flex items-center gap-[8px] font-mono text-[10px]">
         <span className="px-[6px] py-[1px] border border-accent/50 text-accent rounded-sm tracking-[0.08em]">
           BET

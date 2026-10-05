@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { Countdown } from "@/components/ui/countdown";
 import { CommunityBadge } from "@/components/ui/community-badge";
 import { CategoryChip } from "@/components/category-picker";
+import { MarketArt } from "@/components/market-art";
 import { Sparkline } from "@/components/ui/sparkline";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { MarketData } from "@/hooks/use-markets";
@@ -37,10 +38,20 @@ export function CardShell({
   children: ReactNode;
 }) {
   return (
-    <article className="relative flex flex-col gap-[12px] rounded-xl border border-line bg-surface/40 p-[16px] transition-all duration-[120ms] hover:border-line-2 hover:bg-surface">
+    <article className="relative flex flex-col gap-[12px] overflow-hidden rounded-xl border border-line bg-surface/40 p-[16px] transition-all duration-[120ms] hover:border-line-2 hover:bg-surface">
       <Link href={href} aria-label={label} className="absolute inset-0 z-0 rounded-xl" />
       {children}
     </article>
+  );
+}
+
+/** Full-bleed illustration across the top of a card (hidden until the art exists). */
+export function CardArt({ account }: { account: string }) {
+  return (
+    <MarketArt
+      account={account}
+      className="pointer-events-none -mx-[16px] -mt-[16px] h-[120px] w-[calc(100%+32px)] max-w-none border-b border-line"
+    />
   );
 }
 
@@ -115,6 +126,7 @@ export function MarketCard(props: {
   const yes = Math.round(m.price * 100);
   return (
     <CardShell href={marketPath(m.marketId)} label={m.name}>
+      <CardArt account={m.publicKey} />
       <CardHeader
         status={marketStatus(m)}
         endTs={m.endTs}
@@ -163,6 +175,7 @@ export function GroupCard(props: {
   const mint = legs[0]?.collateralMint ?? "";
   return (
     <CardShell href={groupPath(g.groupId)} label={g.name}>
+      <CardArt account={g.publicKey} />
       <CardHeader
         status={groupStatus(g)}
         endTs={g.endTs}

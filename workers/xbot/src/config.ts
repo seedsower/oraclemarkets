@@ -21,6 +21,7 @@ function price(name: string): number | null {
 import { Keypair, PublicKey } from "@solana/web3.js";
 import type { OAuth1Keys } from "./oauth1";
 import type { ClaudeConfig } from "./claude";
+import type { ArtConfig } from "./art";
 
 /** Opening bets from X (Bet Vault v2). null → `bet?` replies "not enabled". */
 export interface BetsConfig {
@@ -71,6 +72,16 @@ function claudeConfig(e: NodeJS.ProcessEnv): ClaudeConfig | null {
     refineModel: e.XBOT_CLAUDE_REFINE_MODEL || "claude-sonnet-5-5",
     perDay: Math.floor(num("XBOT_CLAUDE_PER_DAY", 300)),
     timeoutMs: num("XBOT_CLAUDE_TIMEOUT_SECS", 20) * 1000,
+  };
+}
+
+/** Market art (art.ts): needs Claude; XBOT_ART=false turns it off. */
+function artConfig(e: NodeJS.ProcessEnv): ArtConfig | null {
+  if (!e.ANTHROPIC_API_KEY || e.XBOT_ART === "false") return null;
+  return {
+    model: e.XBOT_ART_MODEL || "claude-sonnet-5-5",
+    perDay: Math.floor(num("XBOT_ART_PER_DAY", 40)),
+    perPass: Math.floor(num("XBOT_ART_PER_PASS", 2)),
   };
 }
 
@@ -128,6 +139,7 @@ export interface XbotConfig {
   prices: { read: number | null; post: number | null; postWithUrl: number | null };
   bets: BetsConfig | null;
   claude: ClaudeConfig | null;
+  art: ArtConfig | null;
 }
 
 export function loadConfig(): XbotConfig {
@@ -148,6 +160,7 @@ export function loadConfig(): XbotConfig {
     x,
     bets: betsConfig(process.env),
     claude: claudeConfig(process.env),
+    art: artConfig(process.env),
     prices: {
       read: price("XBOT_COST_PER_READ_USD"),
       post: price("XBOT_COST_PER_POST_USD"),

@@ -8,6 +8,7 @@ import { BetPot } from "@/components/bet/bet-pot";
 import { BetPhasePanel } from "@/components/bet/bet-phase";
 import { BetStakePanel } from "@/components/bet/bet-stake-panel";
 import { ShareOnX } from "@/components/share-on-x";
+import { MarketArt } from "@/components/market-art";
 import { CategoryEditor } from "@/components/category-editor";
 import { useBetVault, useMyBet } from "@/hooks/use-bet-vaults";
 import { useMarkets } from "@/hooks/use-markets";
@@ -67,6 +68,10 @@ export function BetView({ id, meta }: { id: string; meta: BetMeta | null }) {
         {!isLoading && !v && <p className="text-no font-mono text-[12px]">Bet #{id} not found.</p>}
         {v && phase && (
           <>
+            <MarketArt
+              account={v.publicKey}
+              className="w-full h-[140px] md:h-[180px] rounded-xl border border-line"
+            />
             <header className="flex flex-col gap-[10px]">
               <span className="font-mono text-[10px] tracking-[0.1em] uppercase text-accent">
                 Bet · {PHASE_LABEL[phase]}

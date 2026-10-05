@@ -11,6 +11,7 @@ import type { PendingBet } from "./betting";
  *   xbot:replies:<day>      daily reply count (dry runs: xbot:dryreplies:<day>)
  *   xbot:usage:<day>        hash of API call counts for cost estimates (30 d)
  *   xbot:pending:<reply>    bet waiting for an answer to the bot's follow-up (2 d)
+ *   art / art:fails         market art: account → SVG, and failed attempts (see art.ts)
  *   proposals:<tweet>       JSON proposal; index in sorted set proposals:index
  */
 const DAY_SECS = 86_400;
@@ -166,6 +167,22 @@ export class Store {
     const raw = await this.redis.get(key);
     const items = raw ? (JSON.parse(raw) as { items?: unknown }).items : null;
     return Array.isArray(items) ? (items as T[]) : [];
+  }
+
+  /** Every keeper list (market art covers all of them). */
+  async lists() {
+    const [markets, groups, vaults, vaultGroups, betVaults] = await Promise.all(
+      ["markets", "groups", "vaults", "vault_groups", "bet_vaults"].map((k) =>
+        this.rows<Record<string, unknown>>(`cache:${k}`),
+      ),
+    );
+    return {
+      markets: markets!,
+      groups: groups!,
+      vaults: vaults!,
+      vaultGroups: vaultGroups!,
+      betVaults: betVaults!,
+    };
   }
 
   /** The keeper's snapshot (web's /api/markets reads the same keys). */

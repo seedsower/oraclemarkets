@@ -170,3 +170,20 @@ Post text is untrusted: Claude can only fill a fixed schema, every value is
 validated (dates, windows, categories), and the usual bet limits apply before
 anything reaches the chain. Claude never holds a key and never resolves.
 Cap: `XBOT_CLAUDE_PER_DAY` (default 300 calls); timeout `XBOT_CLAUDE_TIMEOUT_SECS` (20).
+
+## Market art (optional)
+
+With Claude on, every poll the bot also draws a small flat SVG illustration for
+live markets, groups, vaults and bets that don't have one yet, from the
+keeper's cache, so markets created on the site get art too. Group legs and
+markets launched from a vault or bet use the parent's art. The site shows it on
+cards, market/group/bet pages and the X share cards (`/api/art/<account>`).
+
+- Stored in Redis: hash `art` (account → SVG); failed attempts in `art:fails`
+  (2 tries per account).
+- Safety: Claude's SVG is untrusted. `sanitizeSvg` accepts only plain shapes and
+  gradients (no scripts, styles, text, links, images or external URLs), and the
+  web serves it with a no-script CSP and `nosniff`.
+- `XBOT_ART_MODEL` (default `claude-sonnet-5-5`), `XBOT_ART_PER_DAY` (40),
+  `XBOT_ART_PER_PASS` (2), `XBOT_ART=false` to turn it off. It has its own daily
+  budget, separate from the mention/bet budget.
