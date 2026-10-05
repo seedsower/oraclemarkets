@@ -22,6 +22,8 @@ import { Keypair, PublicKey } from "@solana/web3.js";
 import type { OAuth1Keys } from "./oauth1";
 import type { ClaudeConfig } from "./claude";
 import type { ArtConfig } from "./art";
+import type { CustodyConfig } from "./custody";
+import { parseMasterKey } from "./wallets";
 
 /** Opening bets from X (Bet Vault v2). null → `bet?` replies "not enabled". */
 export interface BetsConfig {
@@ -72,6 +74,28 @@ function claudeConfig(e: NodeJS.ProcessEnv): ClaudeConfig | null {
     refineModel: e.XBOT_CLAUDE_REFINE_MODEL || "claude-sonnet-5-5",
     perDay: Math.floor(num("XBOT_CLAUDE_PER_DAY", 300)),
     timeoutMs: num("XBOT_CLAUDE_TIMEOUT_SECS", 20) * 1000,
+  };
+}
+
+const MAINNET_USDC = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+
+/**
+ * Trading from X with custodial wallets (custody.ts). Off unless
+ * XBOT_WALLET_MASTER_KEY is set and bets are on. Devnet only: refuses to
+ * start against real USDC or a mainnet RPC.
+ */
+function custodyConfig(e: NodeJS.ProcessEnv, bets: BetsConfig | null): CustodyConfig | null {
+  if (!e.XBOT_WALLET_MASTER_KEY || !bets) return null;
+  if (bets.collateralMint.toBase58() === MAINNET_USDC || /mainnet/i.test(bets.rpcUrl)) {
+    throw new Error("Trading from X is devnet-only; unset XBOT_WALLET_MASTER_KEY on mainnet");
+  }
+  return {
+    master: parseMasterKey(e.XBOT_WALLET_MASTER_KEY),
+    starterUsdc: num("XBOT_STARTER_USDC", 50),
+    maxTradeUsdc: num("XBOT_MAX_TRADE_USDC", 25),
+    dailyUsdc: num("XBOT_DAILY_USDC", 100),
+    maxImpactBps: Math.floor(num("XBOT_MAX_IMPACT_BPS", 500)),
+    slippageBps: Math.floor(num("XBOT_SLIPPAGE_BPS", 200)),
   };
 }
 
@@ -140,6 +164,7 @@ export interface XbotConfig {
   bets: BetsConfig | null;
   claude: ClaudeConfig | null;
   art: ArtConfig | null;
+  custody: CustodyConfig | null;
 }
 
 export function loadConfig(): XbotConfig {
@@ -147,6 +172,7 @@ export function loadConfig(): XbotConfig {
   if (!redisUrl) throw new Error("REDIS_URL is required");
   const fixture = process.env.XBOT_FIXTURE || null;
   const x = xCreds(process.env);
+  const bets = betsConfig(process.env);
   return {
     redisUrl,
     siteUrl: (process.env.XBOT_SITE_URL || "https://oraclemarkets.app").replace(/\/$/, ""),
@@ -158,7 +184,8 @@ export function loadConfig(): XbotConfig {
       process.env.XBOT_FEATURED_AUTHORITIES || process.env.NEXT_PUBLIC_FEATURED_AUTHORITIES,
     ),
     x,
-    bets: betsConfig(process.env),
+    bets,
+    custody: custodyConfig(process.env, bets),
     claude: claudeConfig(process.env),
     art: artConfig(process.env),
     prices: {

@@ -6,6 +6,8 @@ import { log, errMsg } from "./log";
 import type { Store } from "./store";
 import type { Mention } from "./xapi";
 import type { Claude } from "./claude";
+import { stakeOnOpen, type MoneyCtx } from "./money";
+import { stakeInBet } from "./money-commands";
 import {
   applyRefinement,
   BET_REFUSED_REPLY,
@@ -28,6 +30,8 @@ export interface BetCtx {
   betClient: PmAmmClient | null;
   /** Rewrites the take into a settleable question + rules; null → the take as is. */
   claude: Claude | null;
+  /** Custodial wallets: "bet? … I'll take YES $10" also stakes for the caller. */
+  money: MoneyCtx | null;
 }
 
 /** Daily limits + a SOL floor so the hot wallet can't be drained by spam. */
@@ -111,6 +115,31 @@ async function openBetFor(ctx: BetCtx, m: Mention, cmd: BetCmd): Promise<string 
     lpBps: b.lpBps,
     resolver: b.resolver,
   });
+  await recordBet(ctx, m, plan, vaultId, betVaultPda);
+  log.info("opened bet", {
+    vaultId,
+    signature,
+    by: m.username,
+    name: plan.name,
+    category: plan.category,
+  });
+  const take = ctx.money ? stakeInBet(m.text) : null;
+  const staked = take ? await stakeOnOpen(ctx.money!, m, betVaultPda, take.side, take.usd) : "";
+  return (
+    betOpenedReply(plan.question, vaultId, plan.deadline, stakeWindow, ctx.cfg.siteUrl) + staked
+  );
+}
+
+type OpenPlan = ReturnType<typeof applyRefinement>;
+
+/** Off-chain record of a new bet: metadata for /bet/<id>, per-take dedupe, counters, category. */
+async function recordBet(
+  ctx: BetCtx,
+  m: Mention,
+  plan: OpenPlan,
+  vaultId: number,
+  betVaultPda: string,
+) {
   await ctx.store.saveBet(
     {
       vaultId,
@@ -130,14 +159,6 @@ async function openBetFor(ctx: BetCtx, m: Mention, cmd: BetCmd): Promise<string 
     // The launched market inherits this via the vault (web resolveCategory).
     plan.category ? ctx.store.setCategory(betVaultPda, plan.category) : Promise.resolve(0),
   ]);
-  log.info("opened bet", {
-    vaultId,
-    signature,
-    by: m.username,
-    name: plan.name,
-    category: plan.category,
-  });
-  return betOpenedReply(plan.question, vaultId, plan.deadline, stakeWindow, ctx.cfg.siteUrl);
 }
 
 /**

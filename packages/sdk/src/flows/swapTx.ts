@@ -25,6 +25,8 @@ export interface SwapIxsInput {
   minOutput: number | bigint | BN;
   /** Pre-fetched market account (skips one RPC read). */
   account?: MarketAccount;
+  /** Pays for any ATA creates (defaults to `signer`); e.g. a relayer that pays fees. */
+  payer?: PublicKey;
 }
 
 /**
@@ -57,7 +59,7 @@ export async function buildSwapIxs(
 
   const pre: TransactionInstruction[] = [];
   for (const [owner, mint, offCurve] of atas) {
-    const { ix } = await ensureAtaIdempotentIx(conn, signer, owner, mint, offCurve);
+    const { ix } = await ensureAtaIdempotentIx(conn, input.payer ?? signer, owner, mint, offCurve);
     if (ix) pre.push(ix);
   }
   const ix = await client.ix.swap({
@@ -81,6 +83,8 @@ export interface BuildSwapTxInput {
   amount: number;
   /** Slippage tolerance applied to the quote for `minOutput` (200 = 2%). */
   slippageBps: number;
+  /** Pays for any ATA creates (defaults to `signer`). */
+  payer?: PublicKey;
 }
 
 export interface BuiltSwap {
@@ -128,6 +132,7 @@ export async function buildSwapTx(
     amountIn,
     minOutput,
     account,
+    payer: input.payer,
   });
   return {
     instructions,

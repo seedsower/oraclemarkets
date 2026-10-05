@@ -12,6 +12,11 @@ import type { PendingBet } from "./betting";
  *   xbot:usage:<day>        hash of API call counts for cost estimates (30 d)
  *   xbot:pending:<reply>    bet waiting for an answer to the bot's follow-up (2 d)
  *   art / art:fails         market art: account → SVG, and failed attempts (see art.ts)
+ *   xwallets                custodial wallets (wallets.ts)
+ *   xbot:spend|withdrawn:<user>:<day>  USD traded / withdrawn today (2 d)
+ *   xbot:lock:<user>        one money action at a time per user (90 s)
+ *   xbot:open:<user>        set of "m:<market>" / "b:<bet vault>" to pay out; xbot:open-users
+ *   xbot:open-post:<user>   hash member → the post to reply to when it pays out
  *   proposals:<tweet>       JSON proposal; index in sorted set proposals:index
  */
 const DAY_SECS = 86_400;
@@ -156,6 +161,58 @@ export class Store {
     const raw = await this.redis.get(`xbot:pending:${replyId}`);
     return raw ? (JSON.parse(raw) as PendingBet) : null;
   }
+
+  // ── trading from X ──
+
+  async addUsd(kind: "spend" | "withdrawn", userId: string, usd: number): Promise<void> {
+    const k = `xbot:${kind}:${userId}:${today()}`;
+    await this.redis
+      .multi()
+      .incrbyfloat(k, usd)
+      .expire(k, 2 * DAY_SECS)
+      .exec();
+  }
+
+  async usdToday(kind: "spend" | "withdrawn", userId: string): Promise<number> {
+    return Number((await this.redis.get(`xbot:${kind}:${userId}:${today()}`)) ?? 0);
+  }
+
+  /** True if this user had no money action in flight (then holds the lock ≤ 90 s). */
+  async lock(userId: string): Promise<boolean> {
+    return (await this.redis.set(`xbot:lock:${userId}`, "1", "EX", 90, "NX")) === "OK";
+  }
+
+  unlock = (userId: string) => this.redis.del(`xbot:lock:${userId}`);
+
+  async trackOpen(userId: string, member: string, postId: string): Promise<void> {
+    await this.redis
+      .multi()
+      .sadd(`xbot:open:${userId}`, member)
+      .sadd("xbot:open-users", userId)
+      .hset(`xbot:open-post:${userId}`, member, postId)
+      .exec();
+  }
+
+  async untrackOpen(userId: string, member: string): Promise<void> {
+    await this.redis
+      .multi()
+      .srem(`xbot:open:${userId}`, member)
+      .hdel(`xbot:open-post:${userId}`, member)
+      .exec();
+    if ((await this.redis.scard(`xbot:open:${userId}`)) === 0) {
+      await this.redis.srem("xbot:open-users", userId);
+    }
+  }
+
+  async openFor(userId: string): Promise<{ member: string; postId: string | null }[]> {
+    const [members, posts] = await Promise.all([
+      this.redis.smembers(`xbot:open:${userId}`),
+      this.redis.hgetall(`xbot:open-post:${userId}`),
+    ]);
+    return members.map((member) => ({ member, postId: posts[member] ?? null }));
+  }
+
+  openUsers = () => this.redis.smembers("xbot:open-users");
 
   /** Same hash the web's /api/categories reads (account → slug). */
   setCategory = (account: string, slug: string) => this.redis.hset("categories", account, slug);

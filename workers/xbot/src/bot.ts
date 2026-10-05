@@ -14,6 +14,8 @@ import type { Store } from "./store";
 import type { PmAmmClient } from "@pm-amm/sdk";
 import { handleBet } from "./bet-actions";
 import { followUpCommand, type PendingBet } from "./betting";
+import { handleMoney, type MoneyCtx } from "./money";
+import { parseMoney } from "./money-commands";
 import type { Mention, MentionSource } from "./xapi";
 
 export interface BotCtx {
@@ -26,6 +28,8 @@ export interface BotCtx {
   botUserId: string | null;
   /** Claude assist; null → rules only. */
   claude: Claude | null;
+  /** Trading from X with custodial wallets (devnet); null when off. */
+  money: MoneyCtx | null;
 }
 
 export type Outcome =
@@ -121,26 +125,46 @@ export async function handleMention(ctx: BotCtx, raw: Mention): Promise<Outcome>
   if (ctx.cfg.x && raw.authorId === ctx.cfg.x.botUserId)
     return { action: "skipped", reason: "own post" };
   if (/^RT @/i.test(raw.text)) return { action: "skipped", reason: "retweet" };
+  // Money commands: fixed rules only, no cooldown (one at a time per user + daily limits).
+  const money = ctx.money ? parseMoney(stripMentions(raw.text)) : null;
+  if (money) {
+    if (await capReached(ctx)) return { action: "skipped", reason: "daily reply cap" };
+    const text = ctx.cfg.dryRun
+      ? `(dry run) would run ${money.kind}`
+      : await handleMoney(ctx.money!, raw, money);
+    return deliver(ctx, raw, text, money.kind, null);
+  }
   const { cmd, m, followUp } = await understand(ctx, raw);
   if (!cmd) return { action: "skipped", reason: "no command" };
   if (!(await ctx.store.takeCooldown(m.authorId)) && !followUp)
     return { action: "skipped", reason: "user cooldown" };
   const p: Plan = cmd.kind === "bet" ? { text: "" } : await plan(ctx, cmd);
   if (p.propose) await saveProposal(ctx, m, p.propose);
-
-  const dry = ctx.cfg.dryRun;
-  if ((await ctx.store.repliesToday(dry)) >= ctx.cfg.dailyReplyCap) {
-    return { action: "skipped", reason: "daily reply cap" };
-  }
+  if (await capReached(ctx)) return { action: "skipped", reason: "daily reply cap" };
   const bet = cmd.kind === "bet" ? await handleBet(ctx, m, cmd) : null;
-  const text = bet ? bet.text : p.text;
+  return deliver(ctx, m, bet ? bet.text : p.text, cmd.kind, bet?.pending ?? null, followUp);
+}
+
+const capReached = async (ctx: BotCtx) =>
+  (await ctx.store.repliesToday(ctx.cfg.dryRun)) >= ctx.cfg.dailyReplyCap;
+
+/** Count, then post (or log, in dry run) one reply; remember a follow-up question. */
+async function deliver(
+  ctx: BotCtx,
+  m: Mention,
+  text: string,
+  command: string,
+  pending: PendingBet | null,
+  followUp = false,
+): Promise<Outcome> {
+  const dry = ctx.cfg.dryRun;
   await ctx.store.countReply(dry);
   if (dry) {
-    log.info("DRY RUN — would reply", { to: m.username, inReplyTo: m.id, command: cmd.kind, text });
+    log.info("DRY RUN — would reply", { to: m.username, inReplyTo: m.id, command, text });
     return { action: "would-reply", text };
   }
   const replyId = await ctx.source.reply(text, m.id);
-  if (bet?.pending) await ctx.store.savePendingBet(replyId, bet.pending);
-  log.info("replied", { to: m.username, inReplyTo: m.id, command: cmd.kind, replyId, followUp });
+  if (pending) await ctx.store.savePendingBet(replyId, pending);
+  log.info("replied", { to: m.username, inReplyTo: m.id, command, replyId, followUp });
   return { action: "replied", text, replyId };
 }

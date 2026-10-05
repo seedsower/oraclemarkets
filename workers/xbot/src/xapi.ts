@@ -14,6 +14,8 @@ export interface ParentPost {
   username: string;
   /** Lets the bot recognise replies to its own posts (never a take). */
   authorId?: string;
+  /** Expanded links in the post (t.co unwrapped): finds the market a reply is about. */
+  urls?: string[];
 }
 
 export interface Mention {
@@ -22,6 +24,8 @@ export interface Mention {
   authorId: string;
   username: string;
   parent: ParentPost | null;
+  /** Expanded links in the mention itself. */
+  urls?: string[];
 }
 
 /** Where mentions come from and where replies go (real X API, or a fixture). */
@@ -41,6 +45,12 @@ interface RawTweet {
   text: string;
   author_id?: string;
   referenced_tweets?: { type: string; id: string }[];
+  entities?: { urls?: { expanded_url?: string; unwound_url?: string }[] };
+}
+
+/** t.co links as the URLs people actually posted. */
+export function urlsOf(t: Pick<RawTweet, "entities">): string[] {
+  return (t.entities?.urls ?? []).map((u) => u.unwound_url ?? u.expanded_url ?? "").filter(Boolean);
 }
 
 interface RawPage {
@@ -61,7 +71,7 @@ function parentOf(
   const p = ref ? tweets.get(ref.id) : undefined;
   if (!p) return null;
   const authorId = p.author_id ?? "";
-  return { id: p.id, text: p.text, username: users.get(authorId) ?? "", authorId };
+  return { id: p.id, text: p.text, username: users.get(authorId) ?? "", authorId, urls: urlsOf(p) };
 }
 
 /** Builds the Authorization header for one request (OAuth 1.0a or 2.0). */
@@ -165,7 +175,7 @@ export class XApi implements MentionSource {
       // Also return the post each mention replies to / quotes (the take for `bet?`).
       expansions: "author_id,referenced_tweets.id,referenced_tweets.id.author_id",
       "user.fields": "username",
-      [this.fieldsParam]: "author_id,created_at,referenced_tweets",
+      [this.fieldsParam]: "author_id,created_at,referenced_tweets,entities",
     });
     if (sinceId) q.set("since_id", sinceId);
     if (next) q.set("pagination_token", next);
@@ -202,6 +212,7 @@ export class XApi implements MentionSource {
           authorId: t.author_id ?? "",
           username: users.get(t.author_id ?? "") ?? "",
           parent: parentOf(t, tweets, users),
+          urls: urlsOf(t),
         });
       }
       newestId ??= p.meta?.newest_id ?? null;

@@ -23,6 +23,10 @@ import { advanceBets } from "./bet-actions";
 import { makeBetClient } from "./chain";
 import { Claude } from "./claude";
 import { artPass } from "./art";
+import { Custody } from "./custody";
+import type { MoneyCtx } from "./money";
+import { payoutPass } from "./payouts";
+import { Wallets } from "./wallets";
 
 const maxId = (a: string | null, b: string | null) =>
   !a ? b : !b ? a : BigInt(a) >= BigInt(b) ? a : b;
@@ -70,12 +74,39 @@ async function cycle(ctx: BotCtx): Promise<void> {
   // Launch / settle the bot's bets (cache-driven; no-op in dry run).
   await advanceBets(ctx).catch((e) => log.warn("advanceBets failed", { error: errMsg(e) }));
   await logUsage(ctx.store, ctx.cfg);
+  // Pay out X wallets (winning tokens, settled / refunded bets).
+  if (ctx.money && !ctx.cfg.dryRun) {
+    await payoutPass(ctx.money, ctx.source).catch((e) =>
+      log.warn("payout pass failed", { error: errMsg(e) }),
+    );
+  }
   // Market art for new markets (site + bot), a few per pass.
   if (ctx.claude && ctx.cfg.art) {
     await artPass(ctx.claude, ctx.cfg.art, ctx.store).catch((e) =>
       log.warn("art pass failed", { error: errMsg(e) }),
     );
   }
+}
+
+/** Custodial trading from X (devnet), when XBOT_WALLET_MASTER_KEY and bets are configured. */
+function makeMoney(
+  cfg: BotCtx["cfg"],
+  store: Store,
+  betClient: BotCtx["betClient"],
+): MoneyCtx | null {
+  if (!cfg.custody || !cfg.bets || !betClient) return null;
+  const custody = new Custody(betClient, cfg.bets.wallet, cfg.custody);
+  log.info("trading from X enabled", {
+    starterUsdc: cfg.custody.starterUsdc,
+    maxTradeUsdc: cfg.custody.maxTradeUsdc,
+    dailyUsdc: cfg.custody.dailyUsdc,
+  });
+  return {
+    siteUrl: cfg.siteUrl,
+    store,
+    wallets: new Wallets(store.redis, cfg.custody.master),
+    custody,
+  };
 }
 
 /** Real X client (resolving the bot's user id if unset), a fixture, or null. */
@@ -130,7 +161,8 @@ async function main(): Promise<void> {
       art: cfg.art ? `${cfg.art.model}, ${cfg.art.perDay}/day` : "off",
     });
   }
-  const ctx: BotCtx | null = made ? { cfg, store, betClient, claude, ...made } : null;
+  const money = makeMoney(cfg, store, betClient);
+  const ctx: BotCtx | null = made ? { cfg, store, betClient, claude, money, ...made } : null;
   let stopping = false;
   let wake: (() => void) | null = null;
   const stop = () => {

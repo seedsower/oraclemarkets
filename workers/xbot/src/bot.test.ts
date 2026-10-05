@@ -65,7 +65,7 @@ function harness() {
       return id;
     },
   };
-  const ctx: BotCtx = { cfg, store, source, betClient, botUserId: BOT, claude: null };
+  const ctx: BotCtx = { cfg, store, source, betClient, botUserId: BOT, claude: null, money: null };
   return { ctx, replies, opened };
 }
 
