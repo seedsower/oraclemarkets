@@ -65,7 +65,10 @@ function OgArt({ src }: { src: string }) {
       <div
         style={{
           position: "absolute",
-          inset: 0,
+          top: 0,
+          left: 0,
+          width: 640,
+          height: 630,
           backgroundImage: `linear-gradient(90deg, ${OG.bg} 0%, rgba(31,39,57,0.55) 45%, rgba(31,39,57,0) 100%)`,
         }}
       />
