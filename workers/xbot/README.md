@@ -224,3 +224,19 @@ and the bot replies under the post that opened the position.
 - **Devnet only**: the bot refuses to start with a master key against real USDC
   or a mainnet RPC. Mainnet needs a managed key service and legal review.
 - End-to-end: `scripts/e2e-money.ts`.
+
+## Calling a bet's result from X
+
+After a bet's deadline, people in it reply `@bot resolve YES` (or NO) to call the
+result, or `@bot dispute` to object. "People in it" = whoever called the bet, the
+take's author, and anyone who staked from their X wallet; others are told they
+can't. The bot only **records** calls (Redis hash `bet:calls`); it holds no
+resolution key. The bet's resolver (your admin wallet) sees the status in
+`/admin` → *Bets to resolve*, ready ones first, with the called side highlighted:
+
+- **Ready**: two people in the bet agree, or one called it and nobody disputed
+  within 24h → one click to confirm.
+- **Pending**: called, dispute window still open.
+- **Disputed**: calls disagree or someone disputed → you decide.
+
+Confirming resolves and settles; X-wallet winners are then paid automatically.

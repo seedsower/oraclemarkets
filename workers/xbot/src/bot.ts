@@ -16,6 +16,7 @@ import { handleBet } from "./bet-actions";
 import { followUpCommand, type PendingBet } from "./betting";
 import { handleMoney, type MoneyCtx } from "./money";
 import { parseMoney } from "./money-commands";
+import { handleCall, parseCall } from "./calls";
 import type { Mention, MentionSource } from "./xapi";
 
 export interface BotCtx {
@@ -125,6 +126,12 @@ export async function handleMention(ctx: BotCtx, raw: Mention): Promise<Outcome>
   if (ctx.cfg.x && raw.authorId === ctx.cfg.x.botUserId)
     return { action: "skipped", reason: "own post" };
   if (/^RT @/i.test(raw.text)) return { action: "skipped", reason: "retweet" };
+  // Result calls on bets ("resolve YES" / "dispute"): recorded for the resolver, never signed.
+  const call = ctx.cfg.bets ? parseCall(stripMentions(raw.text)) : null;
+  if (call) {
+    if (await capReached(ctx)) return { action: "skipped", reason: "daily reply cap" };
+    return deliver(ctx, raw, await handleCall(ctx.store, raw, call), call.kind, null);
+  }
   // Money commands: fixed rules only, no cooldown (one at a time per user + daily limits).
   const money = ctx.money ? parseMoney(stripMentions(raw.text)) : null;
   if (money) {

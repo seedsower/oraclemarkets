@@ -18,7 +18,8 @@ function Note({ children }: { children: React.ReactNode }) {
 }
 
 /** Resolver-only: decide the outcome, then settle so winners can claim. */
-export function ResolveButtons({ v }: { v: BetVaultView }) {
+/** `suggested` = what the players called (highlighted; you still choose). */
+export function ResolveButtons({ v, suggested }: { v: BetVaultView; suggested?: "yes" | "no" }) {
   const client = useClient();
   const { run, busy } = useBetTx();
   const resolve = (side: "yes" | "no") =>
@@ -32,11 +33,21 @@ export function ResolveButtons({ v }: { v: BetVaultView }) {
     });
   return (
     <div className="grid grid-cols-2 gap-[8px]">
-      <Button variant="yes" disabled={!!busy} onClick={() => resolve("yes")}>
-        YES won
+      <Button
+        variant="yes"
+        disabled={!!busy}
+        onClick={() => resolve("yes")}
+        className={suggested === "yes" ? "ring-2 ring-yes" : suggested ? "opacity-60" : ""}
+      >
+        {suggested === "yes" ? "Confirm YES" : "YES won"}
       </Button>
-      <Button variant="no" disabled={!!busy} onClick={() => resolve("no")}>
-        NO won
+      <Button
+        variant="no"
+        disabled={!!busy}
+        onClick={() => resolve("no")}
+        className={suggested === "no" ? "ring-2 ring-no" : suggested ? "opacity-60" : ""}
+      >
+        {suggested === "no" ? "Confirm NO" : "NO won"}
       </Button>
     </div>
   );

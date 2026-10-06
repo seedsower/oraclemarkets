@@ -17,6 +17,7 @@ import type { PendingBet } from "./betting";
  *   xbot:lock:<user>        one money action at a time per user (90 s)
  *   xbot:open:<user>        set of "m:<market>" / "b:<bet vault>" to pay out; xbot:open-users
  *   xbot:open-post:<user>   hash member → the post to reply to when it pays out
+ *   bet:calls               players' result calls per bet vault (calls.ts)
  *   proposals:<tweet>       JSON proposal; index in sorted set proposals:index
  */
 const DAY_SECS = 86_400;
@@ -43,6 +44,10 @@ export interface BetMetaRecord {
   rules?: string | null;
   sourceUrl: string | null;
   openedBy: string | null;
+  /** X user id of whoever called the bet (`bet?`), and the take's author: they can call the result. */
+  openerId?: string | null;
+  takeAuthorId?: string | null;
+  takeAuthor?: string | null;
   deadline: string | null;
   createdAt: number;
 }

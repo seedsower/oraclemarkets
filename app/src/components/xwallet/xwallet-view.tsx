@@ -24,6 +24,7 @@ function Commands() {
     ["stake YES $10", "in a bet? thread"],
     ["balance", "cash + positions"],
     ["withdraw $20 to <address>", "send USDC out"],
+    ["resolve YES", "after a bet's deadline: call the result (or dispute)"],
   ];
   return (
     <section className={card}>
