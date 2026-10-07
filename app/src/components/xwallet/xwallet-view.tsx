@@ -5,7 +5,8 @@ import Link from "next/link";
 import { BRAND } from "@/lib/brand";
 import { solscanAccountUrl } from "@/lib/constants";
 import { marketPath } from "@/lib/share";
-import { useXHoldings, useXSession } from "./use-xwallet";
+import { betPath } from "@/lib/bets";
+import { useXHoldings, useXSession, useXStakes } from "./use-xwallet";
 import { ExportKey } from "./export-key";
 
 const bot = `@${BRAND.xHandle ?? "daotao23"}`;
@@ -66,10 +67,45 @@ function SignIn() {
   );
 }
 
+const TONE = { yes: "text-yes", no: "text-no", muted: "text-muted", accent: "text-accent" };
+const row = "flex justify-between gap-[12px] text-[13px]";
+const usd = (n: number) => `$${n.toFixed(2)}`;
+
+/** Bet stakes (from X or the site) with where each one stands. */
+function Stakes({ wallet }: { wallet: string }) {
+  const { data: stakes } = useXStakes(wallet);
+  if (!stakes?.length) return null;
+  return (
+    <>
+      <span className="text-caption mt-[6px]">Bets</span>
+      <ul className="flex flex-col gap-[8px]">
+        {stakes.map((s) => (
+          <li key={s.bet.publicKey} className="flex flex-col gap-[2px]">
+            <div className={row}>
+              <Link href={betPath(s.bet.vaultId)} className="text-text hover:text-text-hi truncate">
+                {s.bet.name}
+              </Link>
+              <span className="font-mono shrink-0">
+                {s.yes > 0 && <span className="text-yes">{usd(s.yes / 1e6)} YES</span>}
+                {s.yes > 0 && s.no > 0 && " · "}
+                {s.no > 0 && <span className="text-no">{usd(s.no / 1e6)} NO</span>}
+              </span>
+            </div>
+            <span className={`font-mono text-[11px] ${TONE[s.tone]}`}>{s.status}</span>
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
+/** Balance, then open shares, then bet stakes. */
 function Holdings({ wallet }: { wallet: string }) {
   const { data, isLoading } = useXHoldings(wallet);
+  const { data: stakes } = useXStakes(wallet);
   if (isLoading || !data)
     return <p className="font-mono text-[12px] text-muted">Loading balances…</p>;
+  const empty = data.holdings.length === 0 && !stakes?.length;
   return (
     <section className={card}>
       <div className="flex items-baseline justify-between">
@@ -78,28 +114,28 @@ function Holdings({ wallet }: { wallet: string }) {
           ${data.usdc.toFixed(2)} <span className="text-[12px] text-muted font-mono">USDC</span>
         </span>
       </div>
-      {data.holdings.length === 0 ? (
-        <p className="text-[12px] text-muted">No open positions.</p>
-      ) : (
-        <ul className="flex flex-col gap-[8px]">
-          {data.holdings.map((h) => (
-            <li
-              key={`${h.market.publicKey}-${h.side}`}
-              className="flex justify-between gap-[12px] text-[13px]"
-            >
-              <Link
-                href={marketPath(h.market.marketId)}
-                className="text-text hover:text-text-hi truncate"
-              >
-                {h.market.name}
-              </Link>
-              <span className={`font-mono shrink-0 ${h.side === "YES" ? "text-yes" : "text-no"}`}>
-                {h.amount.toFixed(1)} {h.side} · ${h.value.toFixed(2)}
-              </span>
-            </li>
-          ))}
-        </ul>
+      {empty && <p className="text-[12px] text-muted">No open positions.</p>}
+      {data.holdings.length > 0 && (
+        <>
+          <span className="text-caption mt-[6px]">Positions</span>
+          <ul className="flex flex-col gap-[8px]">
+            {data.holdings.map((h) => (
+              <li key={`${h.market.publicKey}-${h.side}`} className={row}>
+                <Link
+                  href={marketPath(h.market.marketId)}
+                  className="text-text hover:text-text-hi truncate"
+                >
+                  {h.market.name}
+                </Link>
+                <span className={`font-mono shrink-0 ${h.side === "YES" ? "text-yes" : "text-no"}`}>
+                  {h.amount.toFixed(1)} {h.side} · {usd(h.value)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
+      <Stakes wallet={wallet} />
     </section>
   );
 }
