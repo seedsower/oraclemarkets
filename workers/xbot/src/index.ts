@@ -27,6 +27,7 @@ import { Custody } from "./custody";
 import type { MoneyCtx } from "./money";
 import { payoutPass } from "./payouts";
 import { leaderboardPass } from "./leaderboard";
+import { indexTrades } from "./trades-index";
 import { Wallets } from "./wallets";
 
 const maxId = (a: string | null, b: string | null) =>
@@ -81,11 +82,12 @@ async function cycle(ctx: BotCtx): Promise<void> {
       log.warn("payout pass failed", { error: errMsg(e) }),
     );
   }
-  // Leaderboard of X-wallet traders (rebuilt every 10 min).
+  // Leaderboard: index new trades every poll, rebuild the board every 10 min.
   if (ctx.money) {
-    await leaderboardPass(ctx.money).catch((e) =>
-      log.warn("leaderboard pass failed", { error: errMsg(e) }),
-    );
+    const m = ctx.money;
+    await indexTrades(m.custody.client, m.store, m.custody.bot.publicKey.toBase58())
+      .then(() => leaderboardPass(m))
+      .catch((e) => log.warn("leaderboard pass failed", { error: errMsg(e) }));
   }
   // Market art for new markets (site + bot), a few per pass.
   if (ctx.claude && ctx.cfg.art) {

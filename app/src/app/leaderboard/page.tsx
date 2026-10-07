@@ -4,7 +4,7 @@ import { Leaderboard } from "@/components/leaderboard";
 
 export const metadata: Metadata = {
   title: "Leaderboard · Oracle Markets",
-  description: "Top predictors trading from X, ranked by profit.",
+  description: "Top traders on Oracle Markets in the last 48 hours, ranked by profit.",
 };
 
 export default function LeaderboardPage() {

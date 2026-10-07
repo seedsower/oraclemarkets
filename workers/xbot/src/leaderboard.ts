@@ -1,30 +1,27 @@
 import { PublicKey, type AccountInfo } from "@solana/web3.js";
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { betPayout, type BetPositionAccount } from "@pm-amm/sdk";
 import { log } from "./log";
 import type { MoneyCtx } from "./money";
-import type { BetVaultRow } from "./store";
+import { recentTrades, type TradeRecord } from "./trades-index";
 
 /**
- * Leaderboard of X-wallet traders, rebuilt every 10 minutes into Redis
- * `leaderboard` (the web's /leaderboard reads it — no RPC from the site).
+ * Leaderboard: everyone who traded in the last 48 hours (site or X), rebuilt
+ * every 10 minutes into Redis `leaderboard` (the web's /leaderboard reads it).
  *
- *   value = cash + shares at today's price + open stakes (settled ones at payout)
- *   P&L   = value + withdrawn − funded (the starter balance)
+ *   P&L (48h) = USDC in − USDC out over the window
+ *             + shares picked up in the window × today's price (1/0 once resolved)
+ *             + stakes placed in the window, at what they're worth now
  *
- * Money sent INTO a wallet from outside isn't tracked, so it counts as profit.
+ * Claims are neutral (USDC in, winning shares out), so liquidity rewards
+ * claimed later don't show up as trading profit.
  */
 export const LEADERBOARD_KEY = "leaderboard";
 const EVERY_MS = 10 * 60_000;
-const DEFAULT_FUNDED = 50; // wallets made before stats existed got the $50 starter
 
 export interface LeaderRow {
-  handle: string;
   wallet: string;
-  cash: number;
-  shares: number;
-  stakes: number;
-  value: number;
+  /** X handle when it's a bot (X) wallet. */
+  handle: string | null;
   pnl: number;
   volume: number;
   trades: number;
@@ -48,97 +45,111 @@ export function rankRows(rows: LeaderRow[]): LeaderRow[] {
   return [...rows].sort((a, b) => b.pnl - a.pnl || b.volume - a.volume);
 }
 
-/** Shares (YES/NO tokens of known markets) valued at today's price, in USDC. */
-async function sharesValue(ctx: MoneyCtx, owner: PublicKey, markets: Row[]): Promise<number> {
-  const conn = ctx.custody.client.connection;
-  const res = await conn.getParsedTokenAccountsByOwner(owner, { programId: TOKEN_PROGRAM_ID });
-  const held = new Map<string, number>();
-  for (const a of res.value) {
-    const info = a.account.data.parsed.info as { mint: string; tokenAmount: { uiAmount: number } };
-    if (info.tokenAmount.uiAmount > 0) held.set(info.mint, info.tokenAmount.uiAmount);
+interface Agg {
+  usdc: number;
+  tokens: Map<string, number>;
+  /** bet vault → raw USDC staked in the window */
+  staked: Map<string, number>;
+  volume: number;
+  trades: number;
+}
+
+/** Fold the window's records into one aggregate per wallet. */
+export function aggregate(records: TradeRecord[]): Map<string, Agg> {
+  const out = new Map<string, Agg>();
+  for (const r of records) {
+    const a = out.get(r.wallet) ?? {
+      usdc: 0,
+      tokens: new Map(),
+      staked: new Map(),
+      volume: 0,
+      trades: 0,
+    };
+    a.usdc += r.usdc;
+    for (const [mint, d] of Object.entries(r.tokens))
+      a.tokens.set(mint, (a.tokens.get(mint) ?? 0) + d);
+    // A trade moves the site's USDC (markets in other test tokens aren't ranked).
+    if ((r.ix === "Swap" || r.ix === "BetCommit") && r.usdc !== 0) {
+      a.volume += Math.abs(r.usdc);
+      a.trades++;
+    }
+    if (r.ix === "BetCommit" && r.venue)
+      a.staked.set(r.venue, (a.staked.get(r.venue) ?? 0) - r.usdc);
+    out.set(r.wallet, a);
   }
-  let total = 0;
+  return out;
+}
+
+/** mint → value of one raw share (USDC raw): price for live markets, 1/0 once resolved. */
+function shareValues(ctx: MoneyCtx, markets: Row[]): Map<string, number> {
+  const out = new Map<string, number>();
+  const usdc = ctx.custody.mint.toBase58();
   for (const m of markets) {
-    if (m.resolved) continue; // winning shares get redeemed into cash by the payout pass
+    if (m.collateralMint && m.collateralMint !== usdc) continue;
     const pk = new PublicKey(String(m.publicKey));
-    const price = num(m.price);
-    total += (held.get(ctx.custody.client.yesMint(pk).toBase58()) ?? 0) * price;
-    total += (held.get(ctx.custody.client.noMint(pk).toBase58()) ?? 0) * (1 - price);
+    const yes = m.resolved ? (num(m.winningSide) === 1 ? 1 : 0) : num(m.price);
+    out.set(ctx.custody.client.yesMint(pk).toBase58(), yes);
+    out.set(ctx.custody.client.noMint(pk).toBase58(), 1 - yes);
   }
+  return out;
+}
+
+/** Current worth of the stakes placed in the window (pro-rata to the window's share). */
+async function stakesWorth(ctx: MoneyCtx, wallet: string, a: Agg, bets: Row[]): Promise<number> {
+  if (!a.staked.size) return 0;
+  const client = ctx.custody.client;
+  const owner = new PublicKey(wallet);
+  const vaults = [...a.staked.keys()];
+  const infos: (AccountInfo<Buffer> | null)[] = await client.connection.getMultipleAccountsInfo(
+    vaults.map((v) => client.betPosition(new PublicKey(v), owner)),
+  );
+  let total = 0;
+  infos.forEach((info, i) => {
+    const v = bets.find((b) => b.publicKey === vaults[i]);
+    if (!info || !v) return; // claimed/refunded already: the USDC is in a.usdc
+    const p = client.program.coder.accounts.decode<BetPositionAccount>("betPosition", info.data);
+    const yes = Number(p.yesAmount.toString());
+    const no = Number(p.noAmount.toString());
+    const share = Math.min(1, a.staked.get(vaults[i]!)! / Math.max(1, yes + no));
+    total += stakeValue(v, yes, no) * share;
+  });
   return total;
 }
 
-/** Open stakes across every bet, in USDC (one batched read per 100 bets). */
-async function stakesValue(ctx: MoneyCtx, owner: PublicKey, bets: BetVaultRow[]): Promise<number> {
-  const client = ctx.custody.client;
-  const pdas = bets.map((v) => client.betPosition(new PublicKey(v.publicKey), owner));
-  const infos: (AccountInfo<Buffer> | null)[] = [];
-  for (let i = 0; i < pdas.length; i += 100) {
-    infos.push(...(await client.connection.getMultipleAccountsInfo(pdas.slice(i, i + 100))));
-  }
-  let raw = 0;
-  infos.forEach((info, i) => {
-    if (!info) return;
-    const p = client.program.coder.accounts.decode<BetPositionAccount>("betPosition", info.data);
-    raw += stakeValue(bets[i]!, Number(p.yesAmount.toString()), Number(p.noAmount.toString()));
-  });
-  return raw / 1e6;
-}
-
-async function rowFor(
-  ctx: MoneyCtx,
-  userId: string,
-  rec: { pubkey: string; handle: string },
-  lists: { markets: Row[]; bets: BetVaultRow[] },
-): Promise<LeaderRow> {
-  const owner = new PublicKey(rec.pubkey);
-  const [cash, shares, stakes, stats] = await Promise.all([
-    ctx.custody.usdc(owner),
-    sharesValue(ctx, owner, lists.markets),
-    stakesValue(ctx, owner, lists.bets),
-    ctx.store.redis.hgetall(`xwallet:stats:${userId}`),
-  ]);
-  const value = cash + shares + stakes;
-  const funded = stats.funded ? num(stats.funded) : DEFAULT_FUNDED;
-  const pnl = value + num(stats.withdrawn) - funded;
-  const r2 = (n: number) => Math.round(n * 100) / 100;
-  return {
-    handle: rec.handle,
-    wallet: rec.pubkey,
-    cash: r2(cash),
-    shares: r2(shares),
-    stakes: r2(stakes),
-    value: r2(value),
-    pnl: r2(pnl),
-    volume: r2(num(stats.volume)),
-    trades: num(stats.trades),
-  };
-}
-
-/** Rebuild the leaderboard if it's older than 10 minutes. */
+/** Rebuild the board from the 48h index (every 10 minutes; indexing runs every poll). */
 export async function leaderboardPass(ctx: MoneyCtx): Promise<void> {
   const prev = await ctx.store.redis.get(LEADERBOARD_KEY);
   if (prev && Date.now() - (JSON.parse(prev) as { updatedAt: number }).updatedAt < EVERY_MS) return;
-  const [wallets, lists] = await Promise.all([
-    ctx.store.redis.hgetall("xwallets"),
+  const [records, lists, wallets] = await Promise.all([
+    recentTrades(ctx.store),
     ctx.store.lists(),
+    ctx.store.redis.hgetall("xwallets"),
   ]);
+  const handles = new Map(
+    Object.values(wallets).map((raw) => {
+      const r = JSON.parse(raw) as { pubkey: string; handle: string };
+      return [r.pubkey, r.handle] as const;
+    }),
+  );
+  const prices = shareValues(ctx, lists.markets);
   const rows: LeaderRow[] = [];
-  for (const [userId, raw] of Object.entries(wallets)) {
-    const rec = JSON.parse(raw) as { pubkey: string; handle: string };
-    if (!rec.handle) continue;
-    try {
-      rows.push(
-        await rowFor(ctx, userId, rec, {
-          markets: lists.markets,
-          bets: lists.betVaults as BetVaultRow[],
-        }),
-      );
-    } catch (e) {
-      log.warn("leaderboard row failed", { handle: rec.handle, error: String(e).slice(0, 120) });
-    }
+  for (const [wallet, a] of aggregate(records)) {
+    if (a.trades === 0) continue; // only claimed / refunded in the window: not ranked
+    let shares = 0;
+    for (const [mint, d] of a.tokens) shares += d * (prices.get(mint) ?? 0);
+    const stakes = await stakesWorth(ctx, wallet, a, lists.betVaults).catch(() => 0);
+    const r2 = (raw: number) => Math.round(raw / 1e4) / 100;
+    rows.push({
+      wallet,
+      handle: handles.get(wallet) ?? null,
+      pnl: r2(a.usdc + shares + stakes),
+      volume: r2(a.volume),
+      trades: a.trades,
+    });
   }
-  const body = { updatedAt: Date.now(), rows: rankRows(rows) };
-  await ctx.store.redis.set(LEADERBOARD_KEY, JSON.stringify(body));
-  log.info("leaderboard updated", { traders: rows.length });
+  await ctx.store.redis.set(
+    LEADERBOARD_KEY,
+    JSON.stringify({ updatedAt: Date.now(), windowHours: 48, rows: rankRows(rows) }),
+  );
+  log.info("leaderboard updated", { traders: rows.length, trades: records.length });
 }
