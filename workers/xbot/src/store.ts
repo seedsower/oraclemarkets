@@ -14,6 +14,7 @@ import type { PendingBet } from "./betting";
  *   art / art:fails         market art: account → SVG, and failed attempts (see art.ts)
  *   xwallets                custodial wallets (wallets.ts)
  *   xbot:spend|withdrawn:<user>:<day>  USD traded / withdrawn today (2 d)
+ *   xwallet:stats:<user>    lifetime funded / withdrawn / volume / trades; leaderboard (JSON, 10 min)
  *   xbot:lock:<user>        one money action at a time per user (90 s)
  *   xbot:open:<user>        set of "m:<market>" / "b:<bet vault>" to pay out; xbot:open-users
  *   xbot:open-post:<user>   hash member → the post to reply to when it pays out
@@ -176,6 +177,15 @@ export class Store {
       .incrbyfloat(k, usd)
       .expire(k, 2 * DAY_SECS)
       .exec();
+    // Lifetime stats for the leaderboard (buys + stakes = volume/trades).
+    await this.addStats(userId, kind === "spend" ? { volume: usd, trades: 1 } : { withdrawn: usd });
+  }
+
+  /** Lifetime counters per X user: funded, withdrawn, volume, trades (leaderboard.ts). */
+  async addStats(userId: string, add: Record<string, number>): Promise<void> {
+    const m = this.redis.multi();
+    for (const [f, v] of Object.entries(add)) m.hincrbyfloat(`xwallet:stats:${userId}`, f, v);
+    await m.exec();
   }
 
   async usdToday(kind: "spend" | "withdrawn", userId: string): Promise<number> {

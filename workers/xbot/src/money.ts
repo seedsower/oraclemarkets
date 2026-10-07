@@ -94,6 +94,7 @@ async function walletFor(ctx: MoneyCtx, m: Mention): Promise<{ kp: Keypair; intr
   const { kp, created } = await ctx.wallets.getOrCreate(m.authorId, m.username);
   if (!created) return { kp, intro: "" };
   await ctx.custody.fund(kp.publicKey);
+  await ctx.store.addStats(m.authorId, { funded: ctx.custody.cfg.starterUsdc });
   log.info("new X wallet", { by: m.username, wallet: kp.publicKey.toBase58() });
   return {
     kp,
@@ -187,6 +188,7 @@ async function sell(
   const price = cmd.side === "yes" ? mk.price : 1 - mk.price;
   const tokens = cmd.usd === null ? held : Math.min(held, cmd.usd / Math.max(price, 0.01));
   const r = await ctx.custody.swap(kp, market, cmd.side as Side, "sell", tokens);
+  await ctx.store.addStats(m.authorId, { volume: r.out, trades: 1 });
   const cash = await ctx.custody.usdc(kp.publicKey);
   return `Sold ${r.amountIn.toFixed(2)} ${side} for ${money(r.out)} (${cents(r.avg)} each). Balance ${money(cash)}.\n${txUrl(r.sig)}`;
 }

@@ -69,6 +69,9 @@ export function StatusBar() {
           <Link href="/wallet" className="hover:text-text-hi transition-all duration-[120ms]">
             X wallet
           </Link>
+          <Link href="/leaderboard" className="hover:text-text-hi transition-all duration-[120ms]">
+            Leaderboard
+          </Link>
           <Link href="/docs" className="hover:text-text-hi transition-all duration-[120ms]">
             Docs
           </Link>
@@ -133,8 +136,8 @@ export function StatusBar() {
         <Link href="/wallet" className="text-accent hover:text-text-hi">
           X wallet
         </Link>
-        <Link href="/create-vault" className="sm:hidden hover:text-text-hi">
-          Vault
+        <Link href="/leaderboard" className="hover:text-text-hi">
+          Leaders
         </Link>
         <Link href="/docs" className="hover:text-text-hi">
           Docs
