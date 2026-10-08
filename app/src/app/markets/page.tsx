@@ -73,8 +73,13 @@ export default function Markets() {
       );
     }
 
-    // Filters
-    if (filter === "active") {
+    // Filters. "All" leaves out resolved markets: they live under "Resolved"
+    // (and "My bets", so winners can still find them to claim).
+    if (filter === "all") {
+      result = result.filter((it) =>
+        it.kind === "market" ? !it.market.resolved : !it.group.resolved,
+      );
+    } else if (filter === "active") {
       result = result.filter((it) =>
         it.kind === "market"
           ? !it.market.resolved && it.market.endTs > now
@@ -147,7 +152,7 @@ export default function Markets() {
     (groups?.filter((g) => g.resolved).length ?? 0);
 
   const filters: { key: Filter; label: string; count?: number }[] = [
-    { key: "all", label: "All", count: totalCount },
+    { key: "all", label: "All", count: totalCount - resolvedCount },
     { key: "active", label: "Active", count: activeCount },
     { key: "expiring", label: "<24h" },
     { key: "resolved", label: "Resolved", count: resolvedCount },
