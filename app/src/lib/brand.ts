@@ -8,7 +8,7 @@ export const BRAND = {
   shortName: "Oracle",
   tagline: "Prediction markets on Solana",
   description:
-    "Trade on real-world outcomes with an AMM built for prediction markets — Paradigm's pm-AMM, live on Solana.",
+    'Turn any argument on X into a prediction market: reply "bet?" and the bot opens it, gives everyone a wallet, and pays the winner. Built on Paradigm\'s pm-AMM on Solana.',
   siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
   xHandle: process.env.NEXT_PUBLIC_X_HANDLE || undefined,
 } as const;

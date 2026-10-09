@@ -28,10 +28,10 @@ export default function OgImage() {
             letterSpacing: "-0.03em",
           }}
         >
-          <span style={{ color: OG.text }}>Predict the news</span>
-          <span style={{ color: OG.accent }}>without leaving X.</span>
+          <span style={{ color: OG.text }}>Every argument on X</span>
+          <span style={{ color: OG.accent }}>is now a market.</span>
           <span style={{ marginTop: 22, fontSize: 26, color: OG.dim, letterSpacing: 0 }}>
-            Tap YES or NO right in your timeline.
+            Reply &quot;bet?&quot; and the bot does the rest.
           </span>
         </div>
         <MiniCard q="Will the Fed cut rates in December?" yes={47} width={400} />

@@ -26,6 +26,12 @@ export function LandingNav() {
           X wallet
         </Link>
         <Link
+          href="/leaderboard"
+          className="hidden sm:inline hover:text-text-hi transition-all duration-[120ms]"
+        >
+          Leaderboard
+        </Link>
+        <Link
           href="/docs"
           className="hidden sm:inline hover:text-text-hi transition-all duration-[120ms]"
         >
