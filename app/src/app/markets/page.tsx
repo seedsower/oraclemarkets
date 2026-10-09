@@ -21,7 +21,7 @@ import { usePriceHistories } from "@/hooks/use-price-histories";
 import { PortfolioPanel } from "@/components/portfolio-panel";
 import Link from "next/link";
 
-type Filter = "all" | "active" | "expiring" | "resolved" | "positions";
+type Filter = "all" | "expiring" | "resolved" | "positions";
 type Sort = "tvl" | "expiry" | "newest";
 
 export default function Markets() {
@@ -73,22 +73,16 @@ export default function Markets() {
       );
     }
 
-    // Filters. "All" leaves out resolved markets: they live under "Resolved"
-    // (and "My bets", so winners can still find them to claim).
+    // Filters. "All" = live markets only; resolved and expired ones are under
+    // "Ended" (and "My bets", so holders can still find them to claim).
+    const live = (it: FeedItem) =>
+      it.kind === "market"
+        ? !it.market.resolved && it.market.endTs > now
+        : !it.group.resolved && it.group.endTs > now;
     if (filter === "all") {
-      result = result.filter((it) =>
-        it.kind === "market" ? !it.market.resolved : !it.group.resolved,
-      );
-    } else if (filter === "active") {
-      result = result.filter((it) =>
-        it.kind === "market"
-          ? !it.market.resolved && it.market.endTs > now
-          : !it.group.resolved && it.group.endTs > now,
-      );
+      result = result.filter(live);
     } else if (filter === "resolved") {
-      result = result.filter((it) =>
-        it.kind === "market" ? it.market.resolved : it.group.resolved,
-      );
+      result = result.filter((it) => !live(it));
     } else if (filter === "expiring") {
       result = result.filter((it) => {
         if (it.kind === "market") {
@@ -147,15 +141,12 @@ export default function Markets() {
       .length ?? 0) +
     (groups?.filter((g) => !g.resolved && g.endTs > Math.floor(Date.now() / 1000)).length ?? 0);
 
-  const resolvedCount =
-    (markets?.filter((m) => !m.group && m.resolved).length ?? 0) +
-    (groups?.filter((g) => g.resolved).length ?? 0);
+  const endedCount = totalCount - activeCount;
 
   const filters: { key: Filter; label: string; count?: number }[] = [
-    { key: "all", label: "All", count: totalCount - resolvedCount },
-    { key: "active", label: "Active", count: activeCount },
+    { key: "all", label: "All", count: activeCount },
     { key: "expiring", label: "<24h" },
-    { key: "resolved", label: "Resolved", count: resolvedCount },
+    { key: "resolved", label: "Ended", count: endedCount },
     { key: "positions", label: "My bets", count: positionCount || undefined },
   ];
 
