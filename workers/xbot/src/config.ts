@@ -23,6 +23,7 @@ import type { OAuth1Keys } from "./oauth1";
 import type { ClaudeConfig } from "./claude";
 import type { ArtConfig } from "./art";
 import type { CustodyConfig } from "./custody";
+import { DEFAULT_QUERIES, type FinderConfig } from "./finder";
 import { parseMasterKey } from "./wallets";
 
 /** Opening bets from X (Bet Vault v2). null → `bet?` replies "not enabled". */
@@ -100,6 +101,21 @@ function custodyConfig(e: NodeJS.ProcessEnv, bets: BetsConfig | null): CustodyCo
   };
 }
 
+/** Debate finder (finder.ts): needs Claude + X; XBOT_FINDER=false turns it off. */
+function finderConfig(e: NodeJS.ProcessEnv): FinderConfig | null {
+  if (!e.ANTHROPIC_API_KEY || e.XBOT_FINDER === "false") return null;
+  const queries = (e.XBOT_FINDER_QUERIES ?? "")
+    .split("||")
+    .map((q) => q.trim())
+    .filter(Boolean);
+  return {
+    everyMin: num("XBOT_FINDER_EVERY_MIN", 180),
+    perRun: Math.floor(num("XBOT_FINDER_PER_RUN", 25)),
+    perDay: Math.floor(num("XBOT_FINDER_CLAUDE_PER_DAY", 20)),
+    queries: queries.length ? queries : DEFAULT_QUERIES,
+  };
+}
+
 /** Market art (art.ts): needs Claude; XBOT_ART=false turns it off. */
 function artConfig(e: NodeJS.ProcessEnv): ArtConfig | null {
   if (!e.ANTHROPIC_API_KEY || e.XBOT_ART === "false") return null;
@@ -166,6 +182,7 @@ export interface XbotConfig {
   claude: ClaudeConfig | null;
   art: ArtConfig | null;
   custody: CustodyConfig | null;
+  finder: FinderConfig | null;
 }
 
 export function loadConfig(): XbotConfig {
@@ -187,6 +204,7 @@ export function loadConfig(): XbotConfig {
     x,
     bets,
     custody: custodyConfig(process.env, bets),
+    finder: finderConfig(process.env),
     claude: claudeConfig(process.env),
     art: artConfig(process.env),
     prices: {

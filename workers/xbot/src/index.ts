@@ -28,6 +28,7 @@ import type { MoneyCtx } from "./money";
 import { payoutPass } from "./payouts";
 import { leaderboardPass } from "./leaderboard";
 import { indexTrades } from "./trades-index";
+import { finderPass } from "./finder";
 import { Wallets } from "./wallets";
 
 const maxId = (a: string | null, b: string | null) =>
@@ -88,6 +89,18 @@ async function cycle(ctx: BotCtx): Promise<void> {
     await indexTrades(m.custody.client, m.store, m.custody.bot.publicKey.toBase58())
       .then(() => leaderboardPass(m))
       .catch((e) => log.warn("leaderboard pass failed", { error: errMsg(e) }));
+  }
+  // Debate finder for /admin (search X every few hours; humans do the replying).
+  if (ctx.claude && ctx.cfg.finder && ctx.cfg.claude && ctx.source instanceof XApi) {
+    await finderPass({
+      store: ctx.store,
+      claude: ctx.claude,
+      x: ctx.source,
+      cfg: ctx.cfg.finder,
+      model: ctx.cfg.claude.model,
+      botHandle: `@${process.env.XBOT_HANDLE || "daotao23"}`,
+      botUserId: ctx.botUserId,
+    }).catch((e) => log.warn("finder failed", { error: errMsg(e) }));
   }
   // Market art for new markets (site + bot), a few per pass.
   if (ctx.claude && ctx.cfg.art) {

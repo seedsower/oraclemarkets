@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import Link from "next/link";
 import { XProposals } from "@/components/x-proposals";
 import { BetsToResolve } from "@/components/bet/bets-to-resolve";
+import { DebateFinder } from "@/components/debate-finder";
 import { seriesColor } from "@/components/multi-line-chart";
 
 type MarketStatus = "active" | "expired" | "resolved";
@@ -350,6 +351,8 @@ export default function AdminPage() {
             </div>
           </>
         )}
+
+        <DebateFinder />
 
         <div className="text-caption mt-[32px] mb-[12px]">BETS TO RESOLVE</div>
         <BetsToResolve />

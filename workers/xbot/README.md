@@ -240,3 +240,21 @@ resolution key. The bet's resolver (your admin wallet) sees the status in
 - **Disputed**: calls disagree or someone disputed → you decide.
 
 Confirming resolves and settles; X-wallet winners are then paid automatically.
+
+## Debate finder (growth, for humans)
+
+Every `XBOT_FINDER_EVERY_MIN` (180) minutes the bot runs one X recent search
+(rotating through `DEFAULT_QUERIES` in `finder.ts`, or `XBOT_FINDER_QUERIES`
+separated by `||`), reading `XBOT_FINDER_PER_RUN` (25) posts. It skips posts
+whose authors limit replies, posts with almost no engagement, and ones already
+seen; Claude keeps the settleable claims and drafts a question, a deadline 1–29
+days out (bets run ≤ 30 days) and a category. The top 100 from the last 3 days
+show in `/admin` → **Debate finder** (admin wallets only) with **Reply on X**,
+which opens X's composer as a reply from *your* account with
+`@bot bet? by <date>` filled in.
+
+The bot never replies to these people itself: X's automation rules forbid
+unsolicited automated replies, and breaking them would get the account
+suspended. Cost: ~200 post reads/day at the defaults (see the `x api usage` log
+line), plus one Claude call per run (`XBOT_FINDER_CLAUDE_PER_DAY`, 20).
+`XBOT_FINDER=false` turns it off.

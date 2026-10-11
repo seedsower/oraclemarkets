@@ -141,6 +141,30 @@ export async function whoAmI(authorize: Authorizer): Promise<{ id: string; usern
   return body.data;
 }
 
+/** A post from recent search (the debate finder). */
+export interface FoundPost {
+  id: string;
+  text: string;
+  authorId: string;
+  username: string;
+  followers: number;
+  likes: number;
+  replies: number;
+  reposts: number;
+  createdAt: string;
+  /** "everyone" when anyone can reply (the finder skips the rest). */
+  replySettings: string;
+}
+
+interface RawFound {
+  id: string;
+  text: string;
+  author_id?: string;
+  created_at?: string;
+  reply_settings?: string;
+  public_metrics?: { like_count?: number; reply_count?: number; retweet_count?: number };
+}
+
 /** X API v2 client for the bot account (mentions in, replies out). */
 export class XApi implements MentionSource {
   /** X renamed `tweet.fields` → `post.fields` in its docs; use whichever it accepts. */
@@ -195,6 +219,45 @@ export class XApi implements MentionSource {
     }
     if (!res.ok) throw new Error(`mentions ${res.status}: ${JSON.stringify(body).slice(0, 200)}`);
     return body;
+  }
+
+  /** Recent search (last 7 days), most relevant first. Reads count toward the cost log. */
+  async searchRecent(query: string, max: number, startTime: string): Promise<FoundPost[]> {
+    const q = new URLSearchParams({
+      query,
+      max_results: String(Math.min(100, Math.max(10, max))),
+      start_time: startTime,
+      sort_order: "relevancy",
+      expansions: "author_id",
+      "user.fields": "username,public_metrics",
+      [this.fieldsParam]: "created_at,public_metrics,author_id,reply_settings",
+    });
+    const res = await this.call(`/tweets/search/recent?${q}`);
+    const body = (await res.json().catch(() => ({}))) as {
+      data?: RawFound[];
+      includes?: {
+        users?: { id: string; username: string; public_metrics?: { followers_count?: number } }[];
+      };
+    };
+    if (!res.ok) throw new Error(`search ${res.status}: ${JSON.stringify(body).slice(0, 200)}`);
+    const users = new Map((body.includes?.users ?? []).map((u) => [u.id, u]));
+    await this.store.usage("posts_read", body.data?.length ?? 0);
+    await this.store.usage("searches");
+    return (body.data ?? []).map((t) => {
+      const u = users.get(t.author_id ?? "");
+      return {
+        id: t.id,
+        text: t.text,
+        authorId: t.author_id ?? "",
+        username: u?.username ?? "",
+        followers: u?.public_metrics?.followers_count ?? 0,
+        likes: t.public_metrics?.like_count ?? 0,
+        replies: t.public_metrics?.reply_count ?? 0,
+        reposts: t.public_metrics?.retweet_count ?? 0,
+        createdAt: t.created_at ?? "",
+        replySettings: t.reply_settings ?? "everyone",
+      };
+    });
   }
 
   async fetchMentions(sinceId: string | null) {
