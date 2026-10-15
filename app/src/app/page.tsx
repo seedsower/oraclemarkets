@@ -146,47 +146,22 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SDK snippet */}
+      {/* Demo video */}
       <section className="px-[24px] md:px-[48px] pb-[88px] max-w-[1180px] mx-auto w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-[32px] items-center">
-          <div>
-            <div className="text-caption mb-[12px]">FOR BUILDERS</div>
-            <h2 className="text-[26px] md:text-[32px] tracking-[-0.02em] text-text-hi leading-[1.1]">
-              Markets &amp; vaults in a few lines.
-            </h2>
-            <p className="mt-[14px] text-[14px] leading-[1.6] text-text-dim max-w-[48ch]">
-              Point the client at any deployment — pass your program id and collateral mint, supply
-              a wallet provider to sign. Read the{" "}
-              <Link
-                href="/docs"
-                className="text-accent hover:text-text-hi underline underline-offset-2"
-              >
-                integration guide
-              </Link>{" "}
-              to get started.
-            </p>
-          </div>
-          <pre className="bg-surface border border-line rounded-lg p-[20px] overflow-x-auto font-mono text-[12.5px] leading-[1.7] text-text">
-            <span className="text-muted">{`// 1. construct a client (read-only or wallet-aware)`}</span>
-            {"\n"}
-            <span className="text-no">import</span> {`{ PmAmmClient } `}
-            <span className="text-no">from</span>{" "}
-            <span className="text-yes">{`"@pm-amm/sdk"`}</span>;{"\n\n"}
-            <span className="text-no">const</span> client = PmAmmClient.fromProvider(provider,
-            PROGRAM_ID, USDC_MINT);
-            {"\n\n"}
-            <span className="text-muted">{`// 2. read markets, or create one`}</span>
-            {"\n"}
-            <span className="text-no">const</span> markets = <span className="text-no">await</span>{" "}
-            client.fetchAllMarkets();
-            {"\n"}
-            <span className="text-no">await</span> client.send.createMarket({"{"}
-            {"\n"}
-            {"  "}name: <span className="text-yes">{`"Will it ship?"`}</span>, durationSecs: 86_400,
-            depositUsdc: 100,
-            {"\n"}
-            {"}"});
-          </pre>
+        <div className="text-caption mb-[12px]">SEE IT IN ACTION</div>
+        <h2 className="text-[26px] md:text-[32px] tracking-[-0.02em] text-text-hi leading-[1.1] mb-[24px]">
+          Watch a bet go from a post to a payout.
+        </h2>
+        <div className="relative w-full max-w-[900px] aspect-video rounded-xl overflow-hidden border border-line bg-surface">
+          <iframe
+            className="absolute inset-0 w-full h-full"
+            src="https://www.youtube.com/embed/yntkycwceWs?si=3QUOZ4QIthxbD8Oi"
+            title="Oracle Markets demo"
+            loading="lazy"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerPolicy="strict-origin-when-cross-origin"
+            allowFullScreen
+          />
         </div>
       </section>
 
