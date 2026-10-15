@@ -147,7 +147,7 @@ export default function Home() {
       </section>
 
       {/* Demo video */}
-      <section className="px-[24px] md:px-[48px] pb-[88px] max-w-[1180px] mx-auto w-full">
+      <section className="px-[24px] md:px-[48px] pt-[48px] pb-[88px] max-w-[1180px] mx-auto w-full">
         <div className="text-caption mb-[12px]">SEE IT IN ACTION</div>
         <h2 className="text-[26px] md:text-[32px] tracking-[-0.02em] text-text-hi leading-[1.1] mb-[24px]">
           Watch a bet go from a post to a payout.
