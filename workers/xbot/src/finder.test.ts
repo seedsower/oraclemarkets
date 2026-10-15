@@ -71,10 +71,10 @@ test("candidate: reply text the bot understands, link to the post", () => {
       deadline: "2026-10-31",
       category: "crypto",
     },
-    "@daotao23",
+    "@oraclexbot",
     1,
   );
-  assert.equal(c.reply, "@daotao23 bet? by Oct 31");
+  assert.equal(c.reply, "@oraclexbot bet? by Oct 31");
   assert.equal(c.url, "https://x.com/hodler/status/1");
 });
 

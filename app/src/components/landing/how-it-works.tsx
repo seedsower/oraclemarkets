@@ -4,7 +4,7 @@ import { BRAND } from "@/lib/brand";
  * The four steps of a bet from X, plus the full command reference. Copy only
  * describes what the X bot actually does (workers/xbot).
  */
-const BOT = `@${(BRAND.xHandle ?? "daotao23").replace(/^@/, "")}`;
+const BOT = BRAND.xAt;
 
 const STEPS: { n: string; title: string; reply: string; body: string }[] = [
   {

@@ -8,7 +8,7 @@ import { ThreadMock } from "@/components/landing/thread-mock";
 
 const CLUSTER_LABEL =
   CLUSTER === "mainnet-beta" ? "Mainnet" : CLUSTER === "devnet" ? "Devnet" : "Localnet";
-const HANDLE = (BRAND.xHandle ?? "daotao23").replace(/^@/, "");
+const HANDLE = BRAND.xHandle;
 const BOT = `@${HANDLE}`;
 
 const btn =

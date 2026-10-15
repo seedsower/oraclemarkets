@@ -6,7 +6,7 @@ import { BRAND } from "@/lib/brand";
  * the bot opens the market, the other side stakes by replying. Pure markup —
  * no chain reads, no wallet.
  */
-const BOT = `@${(BRAND.xHandle ?? "daotao23").replace(/^@/, "")}`;
+const BOT = BRAND.xAt;
 
 function Avatar({ letter, bot = false }: { letter: string; bot?: boolean }) {
   return (

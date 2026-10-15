@@ -40,7 +40,7 @@ const bet = (text: string) => {
 };
 
 test("bet? by <date> under a take opens a bet on the take", () => {
-  const p = planBet(bet("@takeguy @daotao23 bet? by Oct 20"), mention("x"), cfg, now);
+  const p = planBet(bet("@takeguy @oraclexbot bet? by Oct 20"), mention("x"), cfg, now);
   assert.equal(p.action, "open");
   if (p.action !== "open") return;
   assert.equal(p.question, "SOL flips ETH by market cap this month, easy");
@@ -51,23 +51,28 @@ test("bet? by <date> under a take opens a bet on the take", () => {
 });
 
 test("inline question with no parent post", () => {
-  const p = planBet(bet("@daotao23 bet Will SOL flip ETH by Oct 25"), mention("x", null), cfg, now);
+  const p = planBet(
+    bet("@oraclexbot bet Will SOL flip ETH by Oct 25"),
+    mention("x", null),
+    cfg,
+    now,
+  );
   assert.equal(p.action === "open" && p.question, "Will SOL flip ETH");
   assert.equal(p.action === "open" && p.sourceId, "222");
 });
 
 test("missing take, missing deadline, out-of-range deadline → helpful replies", () => {
-  const noTake = planBet(bet("@daotao23 bet? by Oct 20"), mention("x", null), cfg, now);
+  const noTake = planBet(bet("@oraclexbot bet? by Oct 20"), mention("x", null), cfg, now);
   assert.match(noTake.action === "reply" ? noTake.text : "", /under the take/);
-  const noDate = planBet(bet("@daotao23 bet?"), mention("x"), cfg, now);
+  const noDate = planBet(bet("@oraclexbot bet?"), mention("x"), cfg, now);
   assert.match(noDate.action === "reply" ? noDate.text : "", /Add a deadline/);
   assert.ok(noDate.action === "reply" && noDate.pending, "remembers the take");
-  const tooFar = planBet(bet("@daotao23 bet? by Dec 31"), mention("x"), cfg, now);
+  const tooFar = planBet(bet("@oraclexbot bet? by Dec 31"), mention("x"), cfg, now);
   assert.match(
     tooFar.action === "reply" ? tooFar.text : "",
     /Pick a deadline between Oct 3 and Nov 2/,
   );
-  const tooSoon = planBet(bet("@daotao23 bet? by Oct 2"), mention("x"), cfg, now);
+  const tooSoon = planBet(bet("@oraclexbot bet? by Oct 2"), mention("x"), cfg, now);
   assert.equal(tooSoon.action, "reply");
 });
 
@@ -102,32 +107,32 @@ test("staking window label", async () => {
 });
 
 test("per-bet window: used for staking and the deadline math; bounded 15m..7d", () => {
-  const p = planBet(bet("@daotao23 bet? by Oct 20 in 1h"), mention("x"), cfg, now);
+  const p = planBet(bet("@oraclexbot bet? by Oct 20 in 1h"), mention("x"), cfg, now);
   assert.equal(p.action === "open" && p.windowSecs, 3600);
   assert.equal(
     p.action === "open" && p.marketDurationSecs,
     p.action === "open" && Math.floor(p.deadline.getTime() / 1000) - (now + 3600),
   );
-  const tooShort = planBet(bet("@daotao23 bet? by Oct 20 in 5m"), mention("x"), cfg, now);
+  const tooShort = planBet(bet("@oraclexbot bet? by Oct 20 in 5m"), mention("x"), cfg, now);
   assert.match(tooShort.action === "reply" ? tooShort.text : "", /15m to 7d/);
-  const tooLong = planBet(bet("@daotao23 bet? by Oct 20 in 9d"), mention("x"), cfg, now);
+  const tooLong = planBet(bet("@oraclexbot bet? by Oct 20 in 9d"), mention("x"), cfg, now);
   assert.equal(tooLong.action, "reply");
-  const dflt = planBet(bet("@daotao23 bet? by Oct 20"), mention("x"), cfg, now);
+  const dflt = planBet(bet("@oraclexbot bet? by Oct 20"), mention("x"), cfg, now);
   assert.equal(dflt.action === "open" && dflt.windowSecs, 24 * 3600);
 });
 
 test("category: from the reply's hashtag, else the take's; stripped from the question", () => {
   const tagged = { ...take, text: "SOL flips ETH this month #crypto #wagmi" };
-  const p = planBet(bet("@daotao23 bet? by Oct 20"), mention("x", tagged), cfg, now);
+  const p = planBet(bet("@oraclexbot bet? by Oct 20"), mention("x", tagged), cfg, now);
   assert.equal(p.action === "open" && p.category, "crypto");
   assert.equal(p.action === "open" && p.question, "SOL flips ETH this month");
   const override = planBet(
-    bet("@daotao23 bet? by Oct 20 #finance"),
+    bet("@oraclexbot bet? by Oct 20 #finance"),
     mention("x", tagged),
     cfg,
     now,
   );
   assert.equal(override.action === "open" && override.category, "finance");
-  const none = planBet(bet("@daotao23 bet? by Oct 20"), mention("x"), cfg, now);
+  const none = planBet(bet("@oraclexbot bet? by Oct 20"), mention("x"), cfg, now);
   assert.equal(none.action === "open" && none.category, null);
 });

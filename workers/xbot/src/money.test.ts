@@ -65,7 +65,7 @@ test("money commands: unclear ones ask instead of guessing; other text isn't mon
 });
 
 test("stakeInBet: only a side next to a dollar amount", () => {
-  assert.deepEqual(stakeInBet("@x @daotao23 bet? by Oct 20, I'll take YES $10"), {
+  assert.deepEqual(stakeInBet("@x @oraclexbot bet? by Oct 20, I'll take YES $10"), {
     side: "yes",
     usd: 10,
   });

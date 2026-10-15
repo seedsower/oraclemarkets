@@ -37,7 +37,8 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: defaultTitle,
     description: BRAND.description,
-    ...(BRAND.xHandle ? { site: BRAND.xHandle, creator: BRAND.xHandle } : {}),
+    site: BRAND.xAt,
+    creator: BRAND.xAt,
   },
 };
 

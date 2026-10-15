@@ -65,7 +65,7 @@ export function Leaderboard() {
       (await fetch("/api/leaderboard")).json(),
     refetchInterval: 60_000,
   });
-  const bot = `@${BRAND.xHandle ?? "daotao23"}`;
+  const bot = BRAND.xAt;
   return (
     <>
       <header className="flex flex-col gap-[6px]">

@@ -81,7 +81,7 @@ The bot posts as the account that **owns the developer app**.
    settings*): permissions **Read and write**, type **Web App, Automated App or
    Bot**, callback URI `http://127.0.0.1:3333/callback`, and website
    `https://oraclemarkets.app`.
-2. **Authorize the bot account.** Log into **@daotao23** on x.com, then run on your machine:
+2. **Authorize the bot account.** Log into **@oraclexbot** on x.com, then run on your machine:
    ```bash
    X_CLIENT_ID=… X_CLIENT_SECRET=… pnpm --filter @oracle-markets/xbot auth
    ```

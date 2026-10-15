@@ -94,7 +94,7 @@ async function main() {
   const stamp = Date.now();
   const m = {
     id: `e2e-${stamp}`,
-    text: "@daotao23 bet? by Oct 20",
+    text: "@oraclexbot bet? by Oct 20",
     authorId: `e2e-${stamp}`,
     username: "e2e",
     parent: {

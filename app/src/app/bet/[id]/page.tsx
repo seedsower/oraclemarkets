@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       card: "summary_large_image",
       title,
       description,
-      ...(BRAND.xHandle ? { site: BRAND.xHandle } : {}),
+      site: BRAND.xAt,
     },
   };
 }

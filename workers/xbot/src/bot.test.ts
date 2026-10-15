@@ -86,7 +86,7 @@ test("the thread from X: a deadline answer to the bot opens the bet on the ORIGI
   });
   const first: Mention = {
     id: "m1",
-    text: `@bangerboard @daotao23 bet? by ${far}`,
+    text: `@bangerboard @oraclexbot bet? by ${far}`,
     authorId: "8",
     username: "seedcoin1",
     parent: take,
@@ -98,7 +98,7 @@ test("the thread from X: a deadline answer to the bot opens the bet on the ORIGI
   const botPost = {
     id: replies[0]!.id,
     text: replies[0]!.text,
-    username: "daotao23",
+    username: "oraclexbot",
     authorId: BOT,
   };
   const soon = new Date(Date.now() + 5 * 86_400_000).toLocaleDateString("en-US", {
@@ -109,7 +109,7 @@ test("the thread from X: a deadline answer to the bot opens the bet on the ORIGI
   // Same user, 3 minutes later: answers to the bot's question skip the cooldown.
   const answer: Mention = {
     id: "m2",
-    text: `@daotao23 @bangerboard ${soon}`,
+    text: `@oraclexbot @bangerboard ${soon}`,
     authorId: "8",
     username: "seedcoin1",
     parent: botPost,
@@ -131,10 +131,15 @@ test("the thread from X: a deadline answer to the bot opens the bet on the ORIGI
 
 test("a reply to a bot post with nothing pending never uses the bot's text as the take", async () => {
   const { ctx, replies, opened } = harness();
-  const botPost = { id: "old", text: "Bet's open: whatever", username: "daotao23", authorId: BOT };
+  const botPost = {
+    id: "old",
+    text: "Bet's open: whatever",
+    username: "oraclexbot",
+    authorId: BOT,
+  };
   await handleMention(ctx, {
     id: "m1",
-    text: "@daotao23 bet? by Oct 30",
+    text: "@oraclexbot bet? by Oct 30",
     authorId: "8",
     username: "x",
     parent: botPost,
@@ -146,14 +151,14 @@ test("a reply to a bot post with nothing pending never uses the bot's text as th
 test("followUpCommand: date, window and hashtag from the answer; question from the original", () => {
   const p: PendingBet = { take, question: null, windowSecs: 7200, category: "weather" };
   const now = new Date("2026-10-03T00:00:00Z");
-  const c = followUpCommand("@daotao23 @bangerboard Oct 4", p, now);
+  const c = followUpCommand("@oraclexbot @bangerboard Oct 4", p, now);
   assert.equal(c.deadline?.toISOString().slice(0, 10), "2026-10-04");
   assert.equal(c.question, null);
   assert.equal(c.windowSecs, 7200);
   assert.equal(c.category, "weather");
-  const d = followUpCommand("@daotao23 Oct 20 in 30m #sports", p, now);
+  const d = followUpCommand("@oraclexbot Oct 20 in 30m #sports", p, now);
   assert.equal(d.windowSecs, 1800);
   assert.equal(d.category, "sports");
-  assert.equal(followUpCommand("@daotao23", p, now).deadline, null);
-  assert.equal(followUpCommand("@daotao23 sometime", p, now).deadline, null);
+  assert.equal(followUpCommand("@oraclexbot", p, now).deadline, null);
+  assert.equal(followUpCommand("@oraclexbot sometime", p, now).deadline, null);
 });

@@ -98,7 +98,7 @@ async function cycle(ctx: BotCtx): Promise<void> {
       x: ctx.source,
       cfg: ctx.cfg.finder,
       model: ctx.cfg.claude.model,
-      botHandle: `@${process.env.XBOT_HANDLE || "daotao23"}`,
+      botHandle: `@${(process.env.XBOT_HANDLE || "oraclexbot").replace(/^@/, "")}`,
       botUserId: ctx.botUserId,
     }).catch((e) => log.warn("finder failed", { error: errMsg(e) }));
   }

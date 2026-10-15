@@ -9,7 +9,7 @@ import { betPath } from "@/lib/bets";
 import { useXHoldings, useXSession, useXStakes } from "./use-xwallet";
 import { ExportKey } from "./export-key";
 
-const bot = `@${BRAND.xHandle ?? "daotao23"}`;
+const bot = BRAND.xAt;
 const ERRORS: Record<string, string> = {
   denied: "Sign-in was cancelled on X.",
   expired: "That sign-in link expired. Try again.",
