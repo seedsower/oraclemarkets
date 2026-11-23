@@ -5,10 +5,17 @@
 Production implementation of the Paradigm pm-AMM paper (Moallemi & Robinson, Nov 2024).
 Live on devnet and mainnet. Building on it (hackathon, first contact)? Start with `HACKATHON.md`.
 
+> **Oracle Markets program (branch `oracle-program`, 2026-11-22): not deployed yet.**
+> This tree compiles to program ID `97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX`, fee wallet
+> `zzWmQZ1bn6QqTwPcf4pZrfhbTmJBmeimk1mieNRvUB6` (Squads vault) and a 1% swap fee. Until
+> `DEPLOY_ORACLE.md` has been run, live markets are on the **upstream deployment**
+> `GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y` (2% fee, DAO `4qXyczAr5DuBVaHUwmZT5Xt6hgQ6RwqBYcFGtrv8QEph`);
+> facts below about what is "deployed", upgrade authorities and slots describe that upstream deployment.
+
 ## Devnet
 
 ### Current deployment (Sprint 24 — fresh program ID for a clean market base)
-- **Program ID**: `GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y`
+- **Program ID**: `97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX`
 - **USDC mock mint**: `3WQ8hCqTNwjrh8WzE2XyoZoUrd1miPcwWfMkmFPUMEWZ` (6 decimals) — unchanged across redeploys (the mint is independent of the program ID). Mint authority = dedicated key `EftrgEw3B744jSihxjrWcX7pW7Y6WTxBJw7RhrGbU2vi` (`~/.config/solana/pm-amm-devnet-mint.json`, since 2026-09-28 — was `6NG87…`); it is the faucet's `MINT_AUTHORITY_KEY` and is NOT the upgrade key. Full devnet guide: `DEVNET.md`.
 - **Upgrade authority**: `ETGKSFc7KMu32foPegEGiqFiDX3B2bPXhiFhvm8K7R6Y` (`~/.config/solana/pm-amm-devnet-upgrade.json`, since 2026-09-28 — rotated away from `6NG87…`, whose secret sat in the env of a Vercel project we lost access to). Single-key.
 - **TS SDK**: `@pm-amm/sdk` (`packages/sdk`) — wraps all 34 instructions + PDAs + reads + math; the front consumes it.
@@ -17,7 +24,7 @@ Live on devnet and mainnet. Building on it (hackathon, first contact)? Start wit
 ## Mainnet (LIVE)
 
 Full guide: `MAINNET.md`. Key facts:
-- **Program deployed** at `GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y` (same ID as devnet — `declare_id!` compiled in, clusters isolated).
+- **Program deployed** at `97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX` (same ID as devnet — `declare_id!` compiled in, clusters isolated).
 - **Upgrade authority**: `2TBg1fasPKnBczbtJpvD6LmEUxNnCoigTDQHB3VnUpv7` (dedicated mainnet key — NOT any devnet key). Single-key.
 - **Real USDC**: `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v` (Circle, 6 decimals).
 - **Protocol DAO** (50% of the swap fee): `4qXyczAr5DuBVaHUwmZT5Xt6hgQ6RwqBYcFGtrv8QEph`, compiled into `swap.rs` (was `HKLj…` before the Sprint 25 upgrade).

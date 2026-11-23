@@ -18,7 +18,7 @@ const { getAssociatedTokenAddressSync } = require("@solana/spl-token");
 const BASE = (process.env.BLINK_BASE_URL || "http://localhost:3000").replace(/\/$/, "");
 const RPC = process.env.E2E_RPC_URL || "https://api.devnet.solana.com";
 const PROGRAM_ID = new PublicKey(
-  process.env.PROGRAM_ID || "GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y",
+  process.env.PROGRAM_ID || "97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX",
 );
 const AMOUNT = Number(process.env.AMOUNT || 5);
 const ALLOWED = new Set([

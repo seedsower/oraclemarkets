@@ -32,3 +32,6 @@ packages/*/dist
 workers/*/dist
 packages/*/*.tgz
 .vercel
+
+# Solana keypairs (program / wallet secrets): never commit
+*-keypair.json

@@ -29,7 +29,7 @@ Outcomes are resolved by each market's authority (admin-signed) — there is no 
 ## Deployments (same PROGRAM_ID on both clusters)
 
 ```
-PROGRAM_ID = GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y    // devnet + mainnet-beta
+PROGRAM_ID = 97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX    // devnet + mainnet-beta
 
 // devnet
 USDC_MINT  = 3WQ8hCqTNwjrh8WzE2XyoZoUrd1miPcwWfMkmFPUMEWZ    // mock USDC, 6 decimals

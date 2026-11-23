@@ -1,5 +1,13 @@
 # Devnet guide
 
+> **Oracle Markets program (branch `oracle-program`, 2026-11-22): not deployed yet.**
+> This tree compiles to program ID `97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX`, fee wallet
+> `zzWmQZ1bn6QqTwPcf4pZrfhbTmJBmeimk1mieNRvUB6` (Squads vault) and a 1% swap fee. Until
+> `DEPLOY_ORACLE.md` has been run, live markets are on the **upstream deployment**
+> `GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y` (2% fee, DAO `4qXyczAr5DuBVaHUwmZT5Xt6hgQ6RwqBYcFGtrv8QEph`);
+> facts below about what is "deployed", upgrade authorities and slots describe that upstream deployment.
+
+
 Devnet is the **free test environment** for pm-AMM: the program's bytecode is
 identical to mainnet's, but the collateral is a **mock USDC (mUSDC)** that
 anyone can get from the in-app faucet. Nothing on devnet has real value.
@@ -13,13 +21,13 @@ real validator before an upgrade goes to mainnet.
 
 | | Devnet | Mainnet (see [`MAINNET.md`](MAINNET.md)) |
 |---|---|---|
-| Program ID | `GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y` | same (`declare_id!` is compiled in; clusters are isolated) |
+| Program ID | `97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX` | same (`declare_id!` is compiled in; clusters are isolated) |
 | Upgrade authority | `ETGKSFc7KMu32foPegEGiqFiDX3B2bPXhiFhvm8K7R6Y` (`~/.config/solana/pm-amm-devnet-upgrade.json`, since 2026-09-28 — was `6NG87…`) | `2TBg1fas…UpV7` (dedicated key) |
 | Collateral | mock USDC `3WQ8hCqTNwjrh8WzE2XyoZoUrd1miPcwWfMkmFPUMEWZ` (6 decimals, symbol `mUSDC`) | real USDC `EPjFWdd5…Dt1v` |
 | mUSDC mint authority | `EftrgEw3B744jSihxjrWcX7pW7Y6WTxBJw7RhrGbU2vi` (`~/.config/solana/pm-amm-devnet-mint.json`, dedicated — cannot upgrade the program) | none — real USDC is not mintable |
 | Faucet | ✅ 1,000 mUSDC per claim (1 / wallet / hour, 5 / IP / day) | ❌ hard-disabled (UI hidden + API 503) |
 | RPC | `https://api.devnet.solana.com` (public is fine) | dedicated provider required |
-| Explorer | [Solscan (devnet)](https://solscan.io/account/GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y?cluster=devnet) | Solscan (no `?cluster=`) |
+| Explorer | [Solscan (devnet)](https://solscan.io/account/97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX?cluster=devnet) | Solscan (no `?cluster=`) |
 
 The program is **collateral-agnostic**: it only mints YES/NO tokens and never
 touches the USDC mint, so the same `.so` runs against mUSDC on devnet and real
@@ -166,7 +174,7 @@ wallet; `429` rate limited (`Retry-After` header, message says how long);
 ```bash
 NEXT_PUBLIC_SOLANA_CLUSTER=devnet
 NEXT_PUBLIC_RPC_URL=https://api.devnet.solana.com
-NEXT_PUBLIC_PROGRAM_ID=GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y
+NEXT_PUBLIC_PROGRAM_ID=97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX
 NEXT_PUBLIC_USDC_MINT=3WQ8hCqTNwjrh8WzE2XyoZoUrd1miPcwWfMkmFPUMEWZ
 
 # Faucet (server-only). Base64 of the DEDICATED mint authority's secret key:

@@ -5,7 +5,7 @@ files (`app/vercel.json`, `.vercelignore`) are still in the repo and still work,
 but new deployments should follow this guide.
 
 The on-chain program is **not** deployed from here. Oracle Markets runs against
-the existing pm-AMM program (`GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y`, the
+the existing pm-AMM program (`97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX`, the
 same ID on devnet and mainnet). No Railway service holds an upgrade key, a
 resolution key, or a mainnet mint authority.
 

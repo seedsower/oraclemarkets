@@ -14,7 +14,7 @@ Read `CLAUDE.md` first for the canonical project state (deployments, sprint hist
 - [doc/api-reference.md](doc/api-reference.md): per-instruction + per-SDK-function reference, including the collateralization & fee model.
 
 ## On-chain program (Anchor / Rust, `anchor/programs/pm_amm/src/`)
-34 instructions (10 binary + 5 group + 11 commitment vault + 8 bet vault). Program ID `GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y` (same on devnet + mainnet; `declare_id!` compiled in, clusters isolated). Fixed-point math uses `fixed::I80F48` (Q64.64).
+34 instructions (10 binary + 5 group + 11 commitment vault + 8 bet vault). Program ID `97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX` (same on devnet + mainnet; `declare_id!` compiled in, clusters isolated). Fixed-point math uses `fixed::I80F48` (Q64.64).
 - [lib.rs](anchor/programs/pm_amm/src/lib.rs): program entrypoint + `declare_id!`; wires all 34 handlers.
 - [pm_math.rs](anchor/programs/pm_amm/src/pm_math.rs): φ, Φ, Φ⁻¹, reserves (eq. 5/6), pool value `V(P)`, swap output, and `suggest_l_zero_for_max_reserve` (the audit-#1 solvency calibration so `max(x,y)=deposit`).
 - [accrual.rs](anchor/programs/pm_amm/src/accrual.rs): the `dC_t` mechanism — per-share accumulators (`cum_yes_per_share`/`cum_no_per_share`) that continuously release reserves to LPs as `L_eff` shrinks.
@@ -59,7 +59,7 @@ Landing `/` + live feed `/markets` + create flows + `/docs` (Simple/Detailed tab
 
 ## Deployment
 - [MAINNET.md](MAINNET.md): mainnet-beta runbook (build → fund a dedicated authority key → `pnpm run deploy:mainnet` with a **dedicated RPC + priority fee** → Vercel env → smoke-test). Documents the knowingly-accepted risks.
-- **Mainnet (LIVE)**: program `GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y`, upgrade authority `2TBg1fasPKnBczbtJpvD6LmEUxNnCoigTDQHB3VnUpv7`, real USDC `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`.
+- **Mainnet (LIVE)**: program `97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX`, upgrade authority `2TBg1fasPKnBczbtJpvD6LmEUxNnCoigTDQHB3VnUpv7`, real USDC `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`.
 - **Devnet**: same program ID; mock USDC `3WQ8hCqTNwjrh8WzE2XyoZoUrd1miPcwWfMkmFPUMEWZ` (mint authority `EftrgEw3B744jSihxjrWcX7pW7Y6WTxBJw7RhrGbU2vi`, a dedicated key separate from the upgrade authority `ETGKSFc7KMu32foPegEGiqFiDX3B2bPXhiFhvm8K7R6Y`); guide in [DEVNET.md](DEVNET.md); `pnpm run deploy`, `pnpm run musdc`, `pnpm run seed`.
 - [anchor/scripts/deploy-mainnet.sh](anchor/scripts/deploy-mainnet.sh): the mainnet deploy/upgrade script (`--use-rpc` + `--with-compute-unit-price` + `--max-len`).
 

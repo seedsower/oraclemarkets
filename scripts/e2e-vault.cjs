@@ -17,7 +17,7 @@ const { getAssociatedTokenAddress, getAccount, getMint } = require("@solana/spl-
 const anchor = require("@anchor-lang/core");
 const { PmAmmClient } = require("../packages/sdk/dist/index.cjs");
 
-const PROGRAM = new PublicKey("GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y");
+const PROGRAM = new PublicKey("97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX");
 const USDC = new PublicKey("3WQ8hCqTNwjrh8WzE2XyoZoUrd1miPcwWfMkmFPUMEWZ");
 const Q48 = 2 ** 48; // I80F48 fractional scale
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

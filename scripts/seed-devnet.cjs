@@ -22,7 +22,7 @@ const { getOrCreateAssociatedTokenAccount, mintTo } = require("@solana/spl-token
 const anchor = require("@anchor-lang/core");
 const { PmAmmClient, decodeName } = require("../packages/sdk/dist/index.cjs");
 
-const PROGRAM = new PublicKey("GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y");
+const PROGRAM = new PublicKey("97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX");
 const USDC = new PublicKey("3WQ8hCqTNwjrh8WzE2XyoZoUrd1miPcwWfMkmFPUMEWZ");
 const RPC = process.env.NEXT_PUBLIC_RPC_URL || "https://api.devnet.solana.com";
 const DRY_RUN = process.env.DRY_RUN === "1";

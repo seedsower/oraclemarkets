@@ -4,7 +4,7 @@ import type { ParsedTransactionWithMeta } from "@solana/web3.js";
 import { aggregate, rankRows, stakeValue, type LeaderRow } from "./leaderboard";
 import { toRecord } from "./trades-index";
 
-const PROGRAM = "GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y";
+const PROGRAM = "97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX";
 const USDC = "3WQ8hCqTNwjrh8WzE2XyoZoUrd1miPcwWfMkmFPUMEWZ";
 const BOT = "Bot1111111111111111111111111111111111111111";
 const ctx = { programId: PROGRAM, collateral: USDC, bot: BOT };

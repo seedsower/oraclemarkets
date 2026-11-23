@@ -27,7 +27,7 @@ import bs58 from "bs58";
 
 export const DEVNET = {
   rpc: "https://api.devnet.solana.com",
-  programId: new PublicKey("GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y"),
+  programId: new PublicKey("97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX"),
   usdcMint: new PublicKey("3WQ8hCqTNwjrh8WzE2XyoZoUrd1miPcwWfMkmFPUMEWZ"), // mUSDC, 6 dp
   faucetUrl: "https://pm-amm-devnet.vercel.app/api/faucet",
 };

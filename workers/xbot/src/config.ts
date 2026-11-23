@@ -54,7 +54,7 @@ function betsConfig(e: NodeJS.ProcessEnv): BetsConfig | null {
     wallet: Keypair.fromSecretKey(secret),
     resolver: new PublicKey(e.XBOT_BET_RESOLVER),
     rpcUrl: e.XBOT_RPC_URL || "https://api.devnet.solana.com",
-    programId: new PublicKey(e.PROGRAM_ID || "GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y"),
+    programId: new PublicKey(e.PROGRAM_ID || "97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX"),
     collateralMint: new PublicKey(e.USDC_MINT || "3WQ8hCqTNwjrh8WzE2XyoZoUrd1miPcwWfMkmFPUMEWZ"),
     // Default staking window; a bet can override it with "in 30m" / "in 2h".
     stakeWindowSecs: num("XBOT_BET_STAKE_HOURS", 1) * 3600,

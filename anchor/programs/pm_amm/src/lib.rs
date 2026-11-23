@@ -33,7 +33,7 @@ use anchor_lang::prelude::*;
 pub use instructions::*;
 pub use state::*;
 
-declare_id!("GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y");
+declare_id!("97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX");
 
 #[program]
 pub mod pm_amm {

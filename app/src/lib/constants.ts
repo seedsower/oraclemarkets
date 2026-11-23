@@ -3,7 +3,7 @@ import { PublicKey } from "@solana/web3.js";
 // Program ID: the same across clusters (declare_id! is compiled into the .so).
 // Override via NEXT_PUBLIC_PROGRAM_ID when running against another deploy.
 export const PROGRAM_ID = new PublicKey(
-  process.env.NEXT_PUBLIC_PROGRAM_ID || "GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y",
+  process.env.NEXT_PUBLIC_PROGRAM_ID || "97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX",
 );
 
 // Canonical mainnet USDC (Circle, 6 decimals). Set NEXT_PUBLIC_USDC_MINT to this

@@ -8,23 +8,19 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-pm_amm = "GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y"
+pm_amm = "97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX"
 
 [programs.localnet]
-pm_amm = "GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y"
+pm_amm = "97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX"
 
-# Same program ID as devnet — declare_id! is compiled in and clusters are
-# isolated. Deploy with anchor/scripts/deploy-mainnet.sh (real SOL).
 [programs.mainnet]
-pm_amm = "GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y"
+pm_amm = "97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX"
 
 [provider]
 cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
-# Unit-ish suites first, then the long real-time lifecycle suites (they wait
-# for the validator clock and would otherwise skew the others' wall-clock math).
 test = "pnpm exec ts-mocha -p ./tsconfig.json -t 3000000 tests/*.ts tests/lifecycle/*.ts"
 
 [hooks]

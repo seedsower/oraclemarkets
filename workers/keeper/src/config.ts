@@ -44,7 +44,7 @@ export function loadConfig(): KeeperConfig {
   return {
     rpcUrl: process.env.KEEPER_RPC_URL || "https://api.devnet.solana.com",
     redisUrl,
-    programId: pubkey("PROGRAM_ID", "GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y"),
+    programId: pubkey("PROGRAM_ID", "97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX"),
     // Only used to construct the SDK client; list reads don't depend on it.
     collateralMint: pubkey("USDC_MINT", "3WQ8hCqTNwjrh8WzE2XyoZoUrd1miPcwWfMkmFPUMEWZ"),
     intervalMs: num("KEEPER_INTERVAL_SECS", 20) * 1000,

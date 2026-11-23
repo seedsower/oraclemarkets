@@ -5,7 +5,7 @@ This complements the quickstart in [`packages/sdk/README.md`](../packages/sdk/RE
 (get-started-in-5-minutes) — here every on-chain instruction and every SDK
 function is documented individually.
 
-- **Program (devnet):** `GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y`
+- **Program (devnet):** `97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX`
 - **Mock USDC (devnet):** `3WQ8hCqTNwjrh8WzE2XyoZoUrd1miPcwWfMkmFPUMEWZ` (6 decimals)
 - **Math source of truth:** [`doc/wp-para.md`](./wp-para.md) (Paradigm pm-AMM, Moallemi & Robinson 2024)
 
@@ -67,7 +67,7 @@ The SDK exposes pure derivations: `derive*(programId, …)` (see §7), plus `cli
 import { PmAmmClient } from "@pm-amm/sdk";
 import { Connection, PublicKey } from "@solana/web3.js";
 
-const PROGRAM = new PublicKey("GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y");
+const PROGRAM = new PublicKey("97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX");
 const USDC    = new PublicKey("3WQ8hCqTNwjrh8WzE2XyoZoUrd1miPcwWfMkmFPUMEWZ");
 ```
 

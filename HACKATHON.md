@@ -13,7 +13,7 @@ write Rust: you build an app, a bot or a tool on top of the SDK.
 
 | | |
 |---|---|
-| Program ID | `GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y` |
+| Program ID | `97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX` |
 | Collateral | mock USDC (`mUSDC`) `3WQ8hCqTNwjrh8WzE2XyoZoUrd1miPcwWfMkmFPUMEWZ`, 6 decimals |
 | RPC | `https://api.devnet.solana.com` |
 | Reference app (devnet) | <https://pm-amm-devnet.vercel.app> |

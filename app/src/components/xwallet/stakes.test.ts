@@ -8,7 +8,7 @@ import { stakeStatus } from "./use-xwallet";
 test("BetPosition decodes with the name the X-wallet page uses", async () => {
   const client = PmAmmClient.readOnly(
     new Connection("http://127.0.0.1:1"),
-    new PublicKey("GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y"),
+    new PublicKey("97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX"),
     new PublicKey("3WQ8hCqTNwjrh8WzE2XyoZoUrd1miPcwWfMkmFPUMEWZ"),
   );
   const owner = Keypair.generate().publicKey;

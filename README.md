@@ -1,5 +1,13 @@
 # Oracle Markets
 
+> **Oracle Markets program (branch `oracle-program`, 2026-11-22): not deployed yet.**
+> This tree compiles to program ID `97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX`, fee wallet
+> `zzWmQZ1bn6QqTwPcf4pZrfhbTmJBmeimk1mieNRvUB6` (Squads vault) and a 1% swap fee. Until
+> `DEPLOY_ORACLE.md` has been run, live markets are on the **upstream deployment**
+> `GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y` (2% fee, DAO `4qXyczAr5DuBVaHUwmZT5Xt6hgQ6RwqBYcFGtrv8QEph`);
+> facts below about what is "deployed", upgrade authorities and slots describe that upstream deployment.
+
+
 **Prediction markets on Solana.** Trade on real-world outcomes with an AMM built for prediction markets. Oracle Markets runs on Paradigm's pm-AMM, live on Solana.
 
 - **Deploy**: [RAILWAY.md](RAILWAY.md) covers `web` + `keeper` + Redis on Railway (primary host; the Vercel config still works).
@@ -14,14 +22,14 @@ The rest of this README documents the pm-AMM engine (program, SDK, math). Code i
 
 [![CI](https://github.com/mattdgn/pm-amm/actions/workflows/test.yml/badge.svg)](https://github.com/mattdgn/pm-amm/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Solana](https://img.shields.io/badge/Solana-Devnet-9945FF)](https://explorer.solana.com/address/GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y?cluster=devnet)
+[![Solana](https://img.shields.io/badge/Solana-Devnet-9945FF)](https://explorer.solana.com/address/97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX?cluster=devnet)
 [![Anchor](https://img.shields.io/badge/Anchor-1.0-blueviolet)](https://www.anchor-lang.com/)
 
 **First production implementation of the Paradigm pm-AMM on Solana. 100% fidelity to the paper. Uniform LVR in price and time.**
 
 > Based on [*pm-AMM: A Prediction Market AMM*](https://www.paradigm.xyz/2024/11/pm-amm) by Ciamac Moallemi & Dan Robinson (Paradigm, Nov 2024).
 
-**Program ID**: `GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y` ([Devnet Explorer](https://explorer.solana.com/address/GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y?cluster=devnet))
+**Program ID**: `97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX` ([Devnet Explorer](https://explorer.solana.com/address/97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX?cluster=devnet))
 
 **Build on it**: [HACKATHON.md](HACKATHON.md) (devnet funds + quickstart, agent-ready) · **Docs**: [SDK quickstart](packages/sdk/README.md) · [full API reference](doc/api-reference.md) (every instruction + SDK function) · [the paper](doc/wp-para.md)
 

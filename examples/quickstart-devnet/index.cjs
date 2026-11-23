@@ -23,7 +23,7 @@ const { i80f48ToNumber, priceFromReserves, estimateSwapOutput } = require("@pm-a
 
 const RPC = process.env.RPC_URL || "https://api.devnet.solana.com";
 const APP = "https://pm-amm-devnet.vercel.app";
-const PROGRAM_ID = new PublicKey("GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y");
+const PROGRAM_ID = new PublicKey("97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX");
 const USDC_MINT = new PublicKey("3WQ8hCqTNwjrh8WzE2XyoZoUrd1miPcwWfMkmFPUMEWZ"); // devnet mock USDC (mUSDC), 6 dp
 const WALLET_FILE = process.env.WALLET || "./devnet-wallet.json";
 

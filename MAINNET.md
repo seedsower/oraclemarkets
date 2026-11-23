@@ -1,5 +1,13 @@
 # Mainnet-beta deployment guide
 
+> **Oracle Markets program (branch `oracle-program`, 2026-11-22): not deployed yet.**
+> This tree compiles to program ID `97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX`, fee wallet
+> `zzWmQZ1bn6QqTwPcf4pZrfhbTmJBmeimk1mieNRvUB6` (Squads vault) and a 1% swap fee. Until
+> `DEPLOY_ORACLE.md` has been run, live markets are on the **upstream deployment**
+> `GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y` (2% fee, DAO `4qXyczAr5DuBVaHUwmZT5Xt6hgQ6RwqBYcFGtrv8QEph`);
+> facts below about what is "deployed", upgrade authorities and slots describe that upstream deployment.
+
+
 This is a **trust-based POC going live with real money**. The following risks are
 **knowingly accepted** by the operator (they are NOT fixed):
 
@@ -20,7 +28,7 @@ change** — only configuration + a deploy.
 
 | | |
 |---|---|
-| Program ID | `GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y` |
+| Program ID | `97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX` |
 | Upgrade authority | `2TBg1fasPKnBczbtJpvD6LmEUxNnCoigTDQHB3VnUpv7` (dedicated mainnet key) |
 | Collateral | real USDC `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v` |
 | Protocol DAO (50% of the swap fee) | `4qXyczAr5DuBVaHUwmZT5Xt6hgQ6RwqBYcFGtrv8QEph` (since the Sprint 25 upgrade; was `HKLj…3ZeL`) |
@@ -92,7 +100,7 @@ The script prints the program ID, authority, balance, max-len, and priority fee,
 then asks you to type `DEPLOY MAINNET` to confirm. Afterwards, verify the authority:
 
 ```bash
-solana program show GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y --url "$MAINNET_RPC_URL"
+solana program show 97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX --url "$MAINNET_RPC_URL"
 ```
 
 **Why these flags matter (learned the hard way on the first deploy):**
@@ -116,7 +124,7 @@ Set these in the Vercel project (see `app/.env.mainnet.example`):
 | Var | Value |
 |---|---|
 | `NEXT_PUBLIC_SOLANA_CLUSTER` | `mainnet-beta` |
-| `NEXT_PUBLIC_PROGRAM_ID` | `GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y` |
+| `NEXT_PUBLIC_PROGRAM_ID` | `97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX` |
 | `NEXT_PUBLIC_USDC_MINT` | `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v` |
 | `NEXT_PUBLIC_RPC_URL` | your dedicated mainnet RPC |
 

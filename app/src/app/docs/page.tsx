@@ -187,7 +187,7 @@ function DetailedTab() {
         <Code>{`import { Connection, PublicKey } from "@solana/web3.js";
 import { PmAmmClient } from "@pm-amm/sdk";
 
-const PROGRAM_ID = new PublicKey("GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y");
+const PROGRAM_ID = new PublicKey("97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX");
 const USDC_MINT  = new PublicKey("3WQ8hCqTNwjrh8WzE2XyoZoUrd1miPcwWfMkmFPUMEWZ");
 
 const client = PmAmmClient.readOnly(new Connection(RPC), PROGRAM_ID, USDC_MINT);   // queries

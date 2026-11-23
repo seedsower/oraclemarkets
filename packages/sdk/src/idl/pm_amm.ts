@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/pm_amm.json`.
  */
 export type PmAmm = {
-  "address": "GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y",
+  "address": "97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX",
   "metadata": {
     "name": "pmAmm",
     "version": "0.1.0",
@@ -2447,7 +2447,8 @@ export type PmAmm = {
         {
           "name": "payer",
           "docs": [
-            "Permissionless caller — pays the rent for the new Market/mints/vault."
+            "Permissionless caller — pays the rent for the new Market/mints/vault.",
+            "Gets no authority over the market (see `market.authority` below)."
           ],
           "writable": true,
           "signer": true
