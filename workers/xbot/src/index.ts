@@ -71,9 +71,17 @@ async function tick(ctx: BotCtx): Promise<void> {
   if (mentions.length) log.info("tick", { mentions: mentions.length });
 }
 
-/** One poll: mentions, the bot's bets, usage, and market art. */
+/**
+ * One poll: mentions, the bot's bets, payouts, leaderboard, finder and art.
+ * A failed mention check (X rate limit, credits depleted, outage) must not stop
+ * the jobs that don't need X — bets still launch and settle, X wallets still
+ * get paid — so it's rethrown only after they've run.
+ */
 async function cycle(ctx: BotCtx): Promise<void> {
-  await tick(ctx);
+  let tickError: unknown = null;
+  await tick(ctx).catch((e: unknown) => {
+    tickError = e;
+  });
   // Launch / settle the bot's bets (cache-driven; no-op in dry run).
   await advanceBets(ctx).catch((e) => log.warn("advanceBets failed", { error: errMsg(e) }));
   await logUsage(ctx.store, ctx.cfg);
@@ -108,6 +116,7 @@ async function cycle(ctx: BotCtx): Promise<void> {
       log.warn("art pass failed", { error: errMsg(e) }),
     );
   }
+  if (tickError) throw tickError;
 }
 
 /** Custodial trading from X (devnet), when XBOT_WALLET_MASTER_KEY and bets are configured. */
