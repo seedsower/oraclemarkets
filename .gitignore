@@ -35,3 +35,6 @@ packages/*/*.tgz
 
 # Solana keypairs (program / wallet secrets): never commit
 *-keypair.json
+
+# Local Redis snapshots from test runs
+dump.rdb
