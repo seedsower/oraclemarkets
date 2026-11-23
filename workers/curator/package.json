@@ -1,0 +1,22 @@
+{
+  "name": "@oracle-markets/curator",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Curator: creates Oracle Markets from oraclemarkets.io's top AI-forecast questions per category (MCP). Phase 0: partner discovery.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "login": "tsx scripts/partner-mcp-login.ts",
+    "discover": "tsx scripts/partner-mcp-discover.ts",
+    "test": "node --import tsx --test 'src/**/*.test.ts' 'scripts/**/*.test.ts'",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.4",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3"
+  }
+}

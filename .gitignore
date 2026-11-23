@@ -38,3 +38,6 @@ packages/*/*.tgz
 
 # Local Redis snapshots from test runs
 dump.rdb
+
+# Curator Phase 0 discovery samples (raw partner responses)
+workers/curator/scripts/partner-mcp-samples/
