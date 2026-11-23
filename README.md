@@ -1,11 +1,13 @@
 # Oracle Markets
 
-> **Oracle Markets program (branch `oracle-program`, 2026-11-22): not deployed yet.**
-> This tree compiles to program ID `97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX`, fee wallet
-> `zzWmQZ1bn6QqTwPcf4pZrfhbTmJBmeimk1mieNRvUB6` (Squads vault) and a 1% swap fee. Until
-> `DEPLOY_ORACLE.md` has been run, live markets are on the **upstream deployment**
-> `GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y` (2% fee, DAO `4qXyczAr5DuBVaHUwmZT5Xt6hgQ6RwqBYcFGtrv8QEph`);
-> facts below about what is "deployed", upgrade authorities and slots describe that upstream deployment.
+> **Oracle Markets program — live on devnet since 2026-11-23** at
+> `97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX` (slot 525460470, program data 1,700,000 B,
+> rent 8.637 SOL, upgrade authority `8tqh285fwb59ffRbfSS3Wg5aEneewRAGhveHvVRHtm5t`). Fee wallet
+> `zzWmQZ1bn6QqTwPcf4pZrfhbTmJBmeimk1mieNRvUB6` (Squads vault; devnet USDC account
+> `E18oYiZv1V4Yr2WR6TunpxP2hJtqTcSUs2rTPHt3BNCi`), 1% swap fee. **Not on mainnet yet**
+> (`DEPLOY_ORACLE.md` §6). The upstream deployment `GV1FMGHRYBjQLaghE5fnGuYCuCcpdt3GD5xEX3TwN16y`
+> (2% fee, DAO `4qXyczAr5DuBVaHUwmZT5Xt6hgQ6RwqBYcFGtrv8QEph`) still exists; mainnet facts below
+> describe that upstream deployment.
 
 
 **Prediction markets on Solana.** Trade on real-world outcomes with an AMM built for prediction markets. Oracle Markets runs on Paradigm's pm-AMM, live on Solana.

@@ -1,7 +1,15 @@
 # Deploying the Oracle Markets program — runbook
 
-For a **human** to run, top to bottom. Nothing here has been run yet. Every
-step that spends SOL or changes who controls the program is marked.
+For a **human** to run, top to bottom. Every step that spends SOL or changes
+who controls the program is marked.
+
+**Status (2026-11-23): devnet done** — steps 1–4 run: deployed at slot
+525460470 by `8tqh285fwb59ffRbfSS3Wg5aEneewRAGhveHvVRHtm5t` (program data
+1,700,000 B, rent 8.637 SOL, on-chain bytes = this build), fee account
+`E18oYiZv1V4Yr2WR6TunpxP2hJtqTcSUs2rTPHt3BNCi`, smoke test
+(`workers/xbot/scripts/smoke-oracle-program.ts`) passed, six seed markets
+(`workers/xbot/scripts/seed-oracle-program.ts`). Step 5 deliberately **not**
+done on devnet (see the note there). Mainnet: not started.
 
 | | |
 |---|---|
@@ -136,6 +144,12 @@ Expected per USDC→YES/NO swap of `A` (raw): fee = ⌊A × 100 / 10 000⌋, DAO
 ⌊fee / 2⌋, creator the rest.
 
 ## 5. Hand the upgrade authority to the Squads vault  (irreversible from the old key)
+
+> **Mainnet only for this multisig.** The Squads multisig behind `zzWm…` exists
+> on mainnet. On devnet nobody can sign for that address, so handing it the
+> devnet upgrade authority would lock the devnet program forever. Keep the
+> deployer as the devnet authority (or create a separate devnet Squads
+> multisig and use *its* vault).
 
 > ┌──────────────────────────────────────────────────────────────────────┐
 > │ ⚠️  After this, ONLY the Squads multisig can upgrade or close the    │
