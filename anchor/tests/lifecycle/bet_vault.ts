@@ -80,6 +80,10 @@ describe("bet_vault v2 + entry-side surplus fix", () => {
   let usdcMint: PublicKey;
   let daoUsdc: PublicKey;
   let alice: User, bob: User, carol: User, mallory: User, dave: User;
+  // Floor test: two NO bettors (575 between them) against a 50 YES favourite-underdog split.
+  let noA: User, noB: User;
+  // Winners-paid-in-full test: a plain market traded lopsidedly before it resolves YES.
+  const plain: { market?: PublicKey; yesHeld: Map<string, number> } = { yesHeld: new Map() };
   let nextId = Math.floor(Math.random() * 1e9) + 7_000_000_000;
   const bets: Record<string, Bet> = {};
   let commitEnd = 0; // latest commit deadline across every vault
@@ -554,6 +558,47 @@ describe("bet_vault v2 + entry-side surplus fix", () => {
     lastEnd = Math.max(lastEnd, (await accs.market.fetch(market)).endTs.toNumber());
   }
 
+  /** A plain (non-vault) market at 50%, seeded by the payer, ending with the bets. */
+  async function openPlainMarket(): Promise<PublicKey> {
+    const id = nextId++;
+    const market = pda([Buffer.from("market"), u64(id)], pid);
+    const p = marketPdas(market);
+    const payerUsdc = await ata(usdcMint, payer.publicKey);
+    await mintTo(conn, payer, usdcMint, payerUsdc, payer, 200 * ONE);
+    await m
+      .initializeMarket(new anchor.BN(id), new anchor.BN(marketEnd), "Plain 50%", 5000)
+      .accountsPartial({
+        authority: payer.publicKey,
+        market,
+        collateralMint: usdcMint,
+        yesMint: p.yesMint,
+        noMint: p.noMint,
+        vault: p.vault,
+        yesMetadata: p.yesMetadata,
+        noMetadata: p.noMetadata,
+        tokenMetadataProgram: METAPLEX,
+        systemProgram: SystemProgram.programId,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+      })
+      .rpc();
+    await m
+      .depositLiquidity(new anchor.BN(200 * ONE))
+      .accountsPartial({
+        signer: payer.publicKey,
+        market,
+        collateralMint: usdcMint,
+        vault: p.vault,
+        userCollateral: payerUsdc,
+        lpPosition: lpPda(market, payer.publicKey),
+        systemProgram: SystemProgram.programId,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .preInstructions([CU])
+      .rpc();
+    return market;
+  }
+
   // ------------------------------------------------------------------ setup
 
   before(async () => {
@@ -602,6 +647,23 @@ describe("bet_vault v2 + entry-side surplus fix", () => {
     marketEnd = (await accs.betVault.fetch(bets.A.vault)).marketEndTs.toNumber();
     commitEnd = (await accs.betVault.fetch(bets.G.vault)).commitEndTs.toNumber();
     lastEnd = (await accs.betVault.fetch(bets.D.vault)).marketEndTs.toNumber();
+
+    // Floor: J / K / L at lp 10% / 30% / 50%, 50 YES (Alice) vs 300 + 275 NO.
+    [noA, noB] = await Promise.all([mkUser(), mkUser()]);
+    for (const [k, lpBps] of [
+      ["J", 1000],
+      ["K", 3000],
+      ["L", 5000],
+    ] as const) {
+      bets[k] = { vault: await openBet({ lpBps }) };
+      await commit(alice, bets[k].vault, "yes", 50);
+      await commit(noA, bets[k].vault, "no", 300);
+      await commit(noB, bets[k].vault, "no", 275);
+      const v = await accs.betVault.fetch(bets[k].vault);
+      commitEnd = Math.max(commitEnd, v.commitEndTs.toNumber());
+      lastEnd = Math.max(lastEnd, v.marketEndTs.toNumber());
+    }
+    plain.market = await openPlainMarket();
 
     await openRegularMarketAt70();
     await openLegacyVaultAt70();
@@ -692,6 +754,24 @@ describe("bet_vault v2 + entry-side surplus fix", () => {
     );
   });
 
+  it("floor setup: launch J/K/L, then an outside trader buys NO", async () => {
+    for (const k of ["J", "K", "L"]) {
+      bets[k].market = await launch(alice, bets[k].vault);
+      await buy(carol, bets[k].market!, "no", 20, betCollateral(bets[k].vault));
+    }
+  });
+
+  it("plain market: lopsided trading (two big YES buyers, a small NO buyer)", async () => {
+    const payerUsdc = await ata(usdcMint, payer.publicKey); // creator fee → market authority
+    await buy(carol, plain.market!, "yes", 150, payerUsdc);
+    await buy(dave, plain.market!, "yes", 100, payerUsdc);
+    await buy(noA, plain.market!, "no", 5, payerUsdc);
+    const yesMint = marketPdas(plain.market!).yesMint;
+    for (const u of [carol, dave]) {
+      plain.yesHeld.set(u.kp.publicKey.toBase58(), await bal(await ata(yesMint, u.kp.publicKey)));
+    }
+  });
+
   it("legacy vault: a stranger may launch, but the vault creator stays market.authority", async () => {
     // launch_vault_market is permissionless: Mallory pays the rent, but must
     // not become the market's resolver / fee recipient.
@@ -759,6 +839,34 @@ describe("bet_vault v2 + entry-side surplus fix", () => {
     }
     for (const k of ["A", "B", "C", "D", "F", "I"]) await settle(bets[k]);
     await expectErr(settle(bets.A), "BetVaultAlreadySettled");
+  });
+
+  it("floor: NO wins; each NO bettor gets at least their stake at lp 10% / 30% / 50%", async () => {
+    for (const k of ["J", "K", "L"]) {
+      await resolveBet(alice, bets[k], "no");
+      await settle(bets[k]);
+      const a = await claimBet(noA, bets[k].vault);
+      const b = await claimBet(noB, bets[k].vault);
+      console.log(
+        `      ${k}: NO bettors got ${(a / (300 * ONE)).toFixed(4)}× / ${(b / (275 * ONE)).toFixed(4)}× their stake`,
+      );
+      assert.isAtLeast(a, 300 * ONE, `${k}: 300 NO stake returned in full`);
+      assert.isAtLeast(b, 275 * ONE, `${k}: 275 NO stake returned in full`);
+      assert.equal(await claimBet(alice, bets[k].vault), 0, `${k}: YES lost`);
+    }
+  });
+
+  it("winners are paid in full: 1 USDC per winning share on a lopsided plain market", async () => {
+    await m
+      .resolveMarket({ yes: {} })
+      .accountsPartial({ signer: payer.publicKey, market: plain.market! })
+      .rpc();
+    for (const u of [carol, dave]) {
+      const held = plain.yesHeld.get(u.kp.publicKey.toBase58())!;
+      assert.isAbove(held, 0);
+      assert.equal(await claimWinnings(u, plain.market!), held, "exactly 1 USDC (raw) per YES");
+    }
+    assert.equal(await claimWinnings(noA, plain.market!), 0, "NO is worthless");
   });
 
   it("lp 0: Alice takes the whole pot, Bob 0, nothing left", async () => {

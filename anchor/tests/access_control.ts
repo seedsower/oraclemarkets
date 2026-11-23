@@ -360,6 +360,45 @@ describe("access_control", () => {
   // redeem_pair — permissionless for token holders
   // ================================================================
 
+  it("rejects a swap whose fee account isn't owned by PROTOCOL_DAO", async () => {
+    const { pdas, userUsdc: authorityUsdc } = await freshMarket();
+    const [authorityYes, authorityNo] = await Promise.all(
+      [pdas.yesMint, pdas.noMint].map((mint) =>
+        createTokenAccount(provider.connection, payer, mint, authority),
+      ),
+    );
+    // A USDC account owned by someone else: the fee must not be redirectable.
+    const fakeDao = await createTokenAccount(
+      provider.connection,
+      payer,
+      collateralMint,
+      Keypair.generate().publicKey,
+    );
+    try {
+      await m
+        .swap({ usdcToYes: {} }, new anchor.BN(10_000_000), new anchor.BN(0))
+        .accountsPartial({
+          signer: authority,
+          market: pdas.marketPda,
+          collateralMint,
+          yesMint: pdas.yesMint,
+          noMint: pdas.noMint,
+          vault: pdas.vault,
+          userCollateral: authorityUsdc,
+          userYes: authorityYes,
+          userNo: authorityNo,
+          daoUsdc: fakeDao,
+          creatorUsdc: null,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .preInstructions([ComputeBudgetProgram.setComputeUnitLimit({ units: 1_400_000 })])
+        .rpc();
+      assert.fail("swap with a non-DAO fee account should fail");
+    } catch (err) {
+      assert.include(String(err), "Unauthorized");
+    }
+  });
+
   it("redeem_pair is callable by a stranger holding YES + NO", async () => {
     const { pdas, userUsdc: authorityUsdc } = await freshMarket();
 
