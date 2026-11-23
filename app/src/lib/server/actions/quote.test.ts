@@ -17,16 +17,19 @@ const m = {
   lastAccrualTs,
 } as MarketView;
 const ON_CHAIN = 9_590_546;
+// That swap ran on the upstream program, whose fee was 2% (200 bps). Quote at
+// the fee it was measured with, not today's SWAP_FEE_BPS.
+const MEASURED_FEE_BPS = 200;
 
 test("quoteReserves pairs reserves with L_eff at the last accrual", () => {
-  const { output } = quoteSwap(quoteReserves(m), "buy", "yes", 5_000_000, SWAP_FEE_BPS);
+  const { output } = quoteSwap(quoteReserves(m), "buy", "yes", 5_000_000, MEASURED_FEE_BPS);
   const err = Math.abs(output - ON_CHAIN) / ON_CHAIN;
   assert.ok(err < 0.01, `quote ${output} vs on-chain ${ON_CHAIN} (${(err * 100).toFixed(2)}%)`);
 });
 
 test("regression: L_eff(now) with stale reserves overstates the output", () => {
   const stale = { reserveYes: m.reserveYes, reserveNo: m.reserveNo, lEff: m.lEff };
-  const { output } = quoteSwap(stale, "buy", "yes", 5_000_000, SWAP_FEE_BPS);
+  const { output } = quoteSwap(stale, "buy", "yes", 5_000_000, MEASURED_FEE_BPS);
   assert.ok(output > ON_CHAIN * 5, "the old pairing was ~11x off");
 });
 

@@ -123,7 +123,7 @@ Pricing math with no chain dependency: `@pm-amm/sdk/math`
 - **Units:** `send.*` takes USDC in **human** units (`50` = 50 mUSDC), **except**
   `send.swap` and `send.redeemPair`, which take **raw** 6-dp units (`5_000_000` = 5).
   `ix.*` builders always take raw units.
-- **Fee:** 2% on the USDC leg of every buy/sell (YES↔NO is free).
+- **Fee:** 1% on the USDC leg of every buy/sell (YES↔NO is free).
   `estimateSwapOutput` ignores it: quote on `0.98 × amountIn` to size `minOutput`.
 - **Current price:** `L_eff = i80f48ToNumber(market.lZero) × √(endTs − now)`, then
   `priceFromReserves(i80f48ToNumber(reserveYes), i80f48ToNumber(reserveNo), L_eff)`.

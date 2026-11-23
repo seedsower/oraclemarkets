@@ -2,7 +2,7 @@ import type { ActionGetResponse } from "@solana/actions";
 import type { GroupView, MarketView } from "@pm-amm/sdk";
 import { FEATURED_AUTHORITIES } from "@/lib/featured-list";
 import { cents, closesIn, legLabel } from "@/lib/share";
-import { disabledReason } from "./market-action";
+import { disabledReason, FEE_LABEL } from "./market-action";
 
 export const GROUP_BUTTON_USDC = 10;
 const MAX_LEG_BUTTONS = 6;
@@ -48,7 +48,7 @@ export function groupActionGet(
     type: "action",
     icon: o.iconUrl,
     title: g.name,
-    description: `${odds}${odds ? " · " : ""}${closesIn(g.endTs, o.now)}. Resolved by the market creator (${g.authority.slice(0, 4)}…${g.authority.slice(-4)}). 2% fee on buys.`,
+    description: `${odds}${odds ? " · " : ""}${closesIn(g.endTs, o.now)}. Resolved by the market creator (${g.authority.slice(0, 4)}…${g.authority.slice(-4)}). ${FEE_LABEL} fee on buys.`,
     label: "Predict",
     ...(o.disabled ? { disabled: true, error: { message: o.disabled } } : {}),
     links: {

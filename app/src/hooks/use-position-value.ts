@@ -71,7 +71,7 @@ export function usePositionValue(marketPda: string | undefined, tokens: UserToke
           }
         }
         // DAO fee ATA (off-curve) — required by `swap`; include if missing so the
-        // sell sim doesn't fail. The 2% fee is reflected in the simulated payout,
+        // sell sim doesn't fail. The swap fee is reflected in the simulated payout,
         // so the value is the true realizable USDC.
         const daoUsdc = await getAssociatedTokenAddress(collatMint, PROTOCOL_DAO, true);
         if (!(await connection.getAccountInfo(daoUsdc))) {

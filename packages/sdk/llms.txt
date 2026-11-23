@@ -15,7 +15,7 @@ continuous LP yield (dC_t), and permissionless Commitment Vaults (binary + multi
   EXCEPTIONS that take RAW 6dp micro-units: `send.swap(amountInMicro, minOutputMicro)`, `send.redeemPair(amountMicro)`.
   `ix.*` builders take raw `BN | number | bigint` for all amounts (no human conversion).
 - **Side** = `"yes" | "no"`. **SwapDirection** = `"usdcToYes" | "usdcToNo" | "yesToUsdc" | "noToUsdc" | "yesToNo" | "noToYes"`.
-- **Swap fee (2%)**: every USDC↔YES/NO swap charges a 2% protocol fee on the USDC leg (off the input on a buy, off the curve output on a sell); pure YES↔NO is free. Split 50% protocol DAO / 50% market creator. The SDK handles the fee accounts for you — `ix.swap`/`send.swap` derive `daoUsdc` + (optional) `creatorUsdc` automatically. Consequence: a buy of N USDC trades ~`0.98·N` on the curve. `math.estimateSwapOutput` is **fee-unaware** → apply the 2% yourself when sizing `minOutput`.
+- **Swap fee (1%)**: every USDC↔YES/NO swap charges a 1% protocol fee on the USDC leg (off the input on a buy, off the curve output on a sell); pure YES↔NO is free. Split 50% protocol DAO / 50% market creator. The SDK handles the fee accounts for you — `ix.swap`/`send.swap` derive `daoUsdc` + (optional) `creatorUsdc` automatically. Consequence: a buy of N USDC trades ~`0.98·N` on the curve. `math.estimateSwapOutput` is **fee-unaware** → apply the 2% yourself when sizing `minOutput`.
 - **PDAs**: pure `derive*(programId, ...)` functions take programId FIRST. The client exposes bound versions without programId (`client.yesMint(market)`).
 - **Address override**: the client overrides the bundled IDL `address` with your `programId` once; the bundled value is irrelevant.
 - **Compute budget + ATAs**: `send.*` auto-prepends the correct CU budget and creates missing associated token accounts. `ix.*` does NEITHER — you compose those yourself.
@@ -318,7 +318,7 @@ mapAnchorError(err: unknown): { code: number; name: string; msg?: string } | nul
 
 import { METAPLEX_PROGRAM_ID, SYSVAR_RENT_PUBKEY, CU, SEEDS, PROTOCOL_DAO, SWAP_FEE_BPS, solscanTxUrl, solscanAccountUrl } from "@pm-amm/sdk";
 // CU = { DEFAULT: 400000, HEAVY: 1400000 }
-// SWAP_FEE_BPS = 200 (2%); PROTOCOL_DAO = 4qXyczAr5DuBVaHUwmZT5Xt6hgQ6RwqBYcFGtrv8QEph (50% of the fee; creator gets the other 50%)
+// SWAP_FEE_BPS = 100 (1%); PROTOCOL_DAO = zzWmQZ1bn6QqTwPcf4pZrfhbTmJBmeimk1mieNRvUB6 (50% of the fee; creator gets the other 50%)
 // solscanTxUrl(sig, cluster?) / solscanAccountUrl(addr, cluster?)  cluster default "devnet"
 ```
 

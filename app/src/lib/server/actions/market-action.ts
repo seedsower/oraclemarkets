@@ -1,11 +1,14 @@
 import type { ActionGetResponse, LinkedAction } from "@solana/actions";
-import type { MarketView, VaultView } from "@pm-amm/sdk";
+import { SWAP_FEE_BPS, type MarketView, type VaultView } from "@pm-amm/sdk";
 import { USDC_MINT } from "@/lib/constants";
 import { FEATURED_AUTHORITIES } from "@/lib/featured-list";
 import { LIST_CACHE } from "@/lib/list-cache";
 import { redis } from "@/lib/redis";
 import { cents, marketSummary } from "@/lib/share";
 import { ACTIONS_CONFIG } from "./common";
+
+/** "1%" — the swap fee as people read it (from the SDK, which must match the program). */
+export const FEE_LABEL = `${SWAP_FEE_BPS / 100}%`;
 
 export const QUICK_AMOUNTS = [5, 25] as const;
 
@@ -83,7 +86,7 @@ export function marketActionGet(
     type: "action",
     icon: o.iconUrl,
     title: m.name,
-    description: `${marketSummary(m)}. ${resolverLine(m)} 2% fee on buys.`,
+    description: `${marketSummary(m)}. ${resolverLine(m)} ${FEE_LABEL} fee on buys.`,
     label: "Predict",
     ...(o.disabled ? { disabled: true, error: { message: o.disabled } } : {}),
     links: {
@@ -97,5 +100,5 @@ export function marketActionGet(
 export function buyMessage(side: "yes" | "no", tokens: number, avgPrice: number): string {
   const p = cents(avgPrice);
   const n = tokens >= 100 ? Math.round(tokens) : Math.round(tokens * 100) / 100;
-  return `Buying ~${n} ${side.toUpperCase()} at ≈${p}. 2% fee included.`;
+  return `Buying ~${n} ${side.toUpperCase()} at ≈${p}. ${FEE_LABEL} fee included.`;
 }

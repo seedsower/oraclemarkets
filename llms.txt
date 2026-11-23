@@ -25,11 +25,11 @@ Read `CLAUDE.md` first for the canonical project state (deployments, sprint hist
 - Binary commitment-vault ix (5): `initialize_vault`, `vault_commit`, `launch_vault_market`, `claim_committer`, `refund_commit` — `instructions/vault/`. Crowd-bootstraps a market's liquidity; committers become its LPs.
 - Multi-outcome commitment-vault ix (6): `initialize_vault_group`, `vault_commit_group`, `launch_vault_group_market`, `launch_vault_group_leg`, `claim_committer_group`, `refund_commit_group` — `instructions/vault/`.
 - Bet Vault v2 ix (8): `initialize_bet_vault`, `bet_commit`, `launch_bet_vault`, `resolve_bet_vault`, `settle_bet_vault`, `void_bet_vault`, `claim_bet`, `refund_bet` — `instructions/bet/`. Stakes set the odds, winner takes the pot, part of the pot seeds the AMM; spec in [doc/bet-vault-v2.md](doc/bet-vault-v2.md).
-- [instructions/swap.rs](anchor/programs/pm_amm/src/instructions/swap.rs): 6-direction swap (USDC↔YES, USDC↔NO, YES↔NO) + the **2% protocol fee** (see below).
+- [instructions/swap.rs](anchor/programs/pm_amm/src/instructions/swap.rs): 6-direction swap (USDC↔YES, USDC↔NO, YES↔NO) + the **1% protocol fee** (see below).
 
-## Swap fee (2%, 50% DAO / 50% creator)
-- `SWAP_FEE_BPS = 200` on the **USDC leg** of a swap: skimmed off the **input** on a buy (only the net backs the vault) and off the **curve output** on a sell. Pure YES↔NO swaps are fee-free.
-- Split 50% to the protocol DAO `4qXyczAr5DuBVaHUwmZT5Xt6hgQ6RwqBYcFGtrv8QEph` and 50% to the market creator (`market.authority`).
+## Swap fee (1%, 50% DAO / 50% creator)
+- `SWAP_FEE_BPS = 100` on the **USDC leg** of a swap: skimmed off the **input** on a buy (only the net backs the vault) and off the **curve output** on a sell. Pure YES↔NO swaps are fee-free.
+- Split 50% to the protocol DAO `zzWmQZ1bn6QqTwPcf4pZrfhbTmJBmeimk1mieNRvUB6` (Oracle Markets Squads vault) and 50% to the market creator (`market.authority`).
 - `creator_usdc` is an **optional** account: when the swapper IS the creator it is passed as `null` (they keep their share), which also avoids an Anchor `ConstraintDuplicateMutableAccount` error. The DAO key is off-curve → ATA derivation uses `allowOwnerOffCurve`.
 - The fee does **not** accrue to LPs; the post-trade solvency guard still holds (checked against the real vault balance).
 
@@ -65,7 +65,7 @@ Landing `/` + live feed `/markets` + create flows + `/docs` (Simple/Detailed tab
 
 ## Tests (must stay green)
 - Rust unit (73): `pnpm run test:rust` — `pm_math`, `accrual`, `state`, `group`, `vault`, `vault_group`.
-- TS integration (65, localnet): `pnpm run test` — `pm_amm.ts`, `group_market.ts`, `access_control.ts`, `vault.ts`, `vault_group.ts` (incl. the 2% fee split assertion).
+- TS integration (65, localnet): `pnpm run test` — `pm_amm.ts`, `group_market.ts`, `access_control.ts`, `vault.ts`, `vault_group.ts` (incl. the fee split assertion).
 - Python oracle (112) + properties (18): `python3 oracle/test_oracle.py`, `python3 oracle/test_properties.py` — scipy reference + paper properties A–G.
 - [scripts/check_idl_coherence.py](scripts/check_idl_coherence.py): CI guard that the IDL matches the on-chain struct sizes.
 

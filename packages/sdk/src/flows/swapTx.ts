@@ -50,7 +50,7 @@ export async function buildSwapIxs(
     [signer, client.yesMint(market), false],
     [signer, client.noMint(market), false],
     [signer, collateralMint, false],
-    // 2% fee → 50% DAO (off-curve), 50% creator; the creator keeps their own
+    // Swap fee (SWAP_FEE_BPS) → 50% DAO (off-curve), 50% creator; the creator keeps their own
     // share when they trade (then `creatorUsdc` is null on-chain).
     [PROTOCOL_DAO, collateralMint, true],
   ];

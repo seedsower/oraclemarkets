@@ -9,13 +9,15 @@ import { PublicKey } from "@solana/web3.js";
 /** Metaplex Token Metadata program — fixed across clusters. */
 export const METAPLEX_PROGRAM_ID = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
 
-/** Protocol DAO (Combinator Predict) — receives 50% of the swap fee. The other
- *  50% goes to the market creator (`market.authority`). Must match `PROTOCOL_DAO`
- *  in the program. */
-export const PROTOCOL_DAO = new PublicKey("4qXyczAr5DuBVaHUwmZT5Xt6hgQ6RwqBYcFGtrv8QEph");
+/** Protocol fee wallet: the Oracle Markets Squads multisig vault (a PDA, so its
+ *  USDC account is an off-curve ATA). Receives 50% of the swap fee; the other 50%
+ *  goes to the market creator (`market.authority`). Must match `PROTOCOL_DAO` in
+ *  the program (`swap.rs` checks `dao_usdc.owner == PROTOCOL_DAO`). */
+export const PROTOCOL_DAO = new PublicKey("zzWmQZ1bn6QqTwPcf4pZrfhbTmJBmeimk1mieNRvUB6");
 
-/** Swap fee in basis points (2%). Must match `SWAP_FEE_BPS` in the program. */
-export const SWAP_FEE_BPS = 200;
+/** Swap fee in basis points (1%: 0.5% DAO + 0.5% creator). Must match
+ *  `SWAP_FEE_BPS` in the program. */
+export const SWAP_FEE_BPS = 100;
 
 /** Rent sysvar (still required by a few `init` instructions). */
 export const SYSVAR_RENT_PUBKEY = new PublicKey("SysvarRent111111111111111111111111111111111");

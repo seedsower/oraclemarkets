@@ -5474,5 +5474,26 @@
         ]
       }
     }
+  ],
+  "constants": [
+    {
+      "name": "PROTOCOL_DAO",
+      "docs": [
+        "Protocol DAO — receives 50% of the swap fee: the Oracle Markets Squads",
+        "multisig **vault** (a PDA; its USDC account is an off-curve ATA). `swap`",
+        "checks `dao_usdc.owner == PROTOCOL_DAO`. Exposed in the IDL (see above)."
+      ],
+      "type": "pubkey",
+      "value": "zzWmQZ1bn6QqTwPcf4pZrfhbTmJBmeimk1mieNRvUB6"
+    },
+    {
+      "name": "SWAP_FEE_BPS",
+      "docs": [
+        "Protocol trading fee in basis points (1%). Split 50/50 DAO / creator.",
+        "Exposed in the IDL so the SDK's copy can be checked against it."
+      ],
+      "type": "u64",
+      "value": "100"
+    }
   ]
 }

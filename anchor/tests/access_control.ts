@@ -25,6 +25,7 @@ import {
 } from "@solana/web3.js";
 import { TOKEN_PROGRAM_ID, createMint, createAccount, mintTo, getAccount } from "@solana/spl-token";
 import { assert } from "chai";
+import { PROTOCOL_DAO as SDK_PROTOCOL_DAO } from "../../packages/sdk/src/constants";
 
 /**
  * Create a regular SPL token account (NOT an Associated Token Account).
@@ -52,7 +53,8 @@ const MARKET_SEED = Buffer.from("market");
 
 /** Metaplex Token Metadata Program — required by initialize_market. */
 const METAPLEX_PROGRAM_ID = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
-const PROTOCOL_DAO = new PublicKey("4qXyczAr5DuBVaHUwmZT5Xt6hgQ6RwqBYcFGtrv8QEph");
+// Single source of truth: the SDK (must match swap.rs; see sdk-constants test).
+const PROTOCOL_DAO = new PublicKey(SDK_PROTOCOL_DAO.toBase58());
 
 function deriveMetadataPda(mint: PublicKey): PublicKey {
   return PublicKey.findProgramAddressSync(

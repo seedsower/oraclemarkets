@@ -31,7 +31,7 @@ change** — only configuration + a deploy.
 | Program ID | `97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX` |
 | Upgrade authority | `2TBg1fasPKnBczbtJpvD6LmEUxNnCoigTDQHB3VnUpv7` (dedicated mainnet key) |
 | Collateral | real USDC `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v` |
-| Protocol DAO (50% of the swap fee) | `4qXyczAr5DuBVaHUwmZT5Xt6hgQ6RwqBYcFGtrv8QEph` (since the Sprint 25 upgrade; was `HKLj…3ZeL`) |
+| Protocol DAO (50% of the swap fee) | Oracle Markets program: `zzWmQZ1bn6QqTwPcf4pZrfhbTmJBmeimk1mieNRvUB6` (Squads vault), 1% fee. Upstream `GV1F…`: `4qXyczAr5DuBVaHUwmZT5Xt6hgQ6RwqBYcFGtrv8QEph` (since the Sprint 25 upgrade; was `HKLj…3ZeL`), 2% fee |
 | Program data | 1,550,000 bytes (first deploy `--max-len 1400000`, extended +150,000 on 2026-09-23) |
 | On-chain IDL | deferred (optional — `anchor idl` lacks priority fees, congestion-blocked) |
 
@@ -145,7 +145,7 @@ create the protocol-DAO and creator fee ATAs automatically.
 ## 5. Smoke-test with tiny amounts first
 
 Before announcing: create one market, deposit a few real USDC, do a small swap
-(check the 2% fee lands at the DAO + creator), resolve, and claim — all with
+(check the swap fee lands at the DAO + creator), resolve, and claim — all with
 amounts you can afford to lose. Then verify vault solvency on-chain.
 
 ---

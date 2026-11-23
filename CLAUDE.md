@@ -27,7 +27,7 @@ Full guide: `MAINNET.md`. Key facts:
 - **Program deployed** at `97ySR6vWkxCC1oPbB2ytRSmKos4mExanuTu2e9VmoXcX` (same ID as devnet — `declare_id!` compiled in, clusters isolated).
 - **Upgrade authority**: `2TBg1fasPKnBczbtJpvD6LmEUxNnCoigTDQHB3VnUpv7` (dedicated mainnet key — NOT any devnet key). Single-key.
 - **Real USDC**: `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v` (Circle, 6 decimals).
-- **Protocol DAO** (50% of the swap fee): `4qXyczAr5DuBVaHUwmZT5Xt6hgQ6RwqBYcFGtrv8QEph`, compiled into `swap.rs` (was `HKLj…` before the Sprint 25 upgrade).
+- **Protocol DAO** (50% of the swap fee): Oracle Markets program → `zzWmQZ1bn6QqTwPcf4pZrfhbTmJBmeimk1mieNRvUB6` (Squads vault), `SWAP_FEE_BPS = 100` (1%), compiled into `swap.rs`. Upstream `GV1F…` deployment → `4qXyczAr5DuBVaHUwmZT5Xt6hgQ6RwqBYcFGtrv8QEph`, 2% (was `HKLj…` before its Sprint 25 upgrade).
 - **Sprint 25 upgrade LIVE** (2026-09-23, slot 449755892): surplus fix + Bet Vault v2 + swap creator-fee fix + LP shares ∝ L_0 + new DAO. Same `.so` as devnet (SHA-256 `5106fe71…`).
 - **Vault launch authority fix LIVE** (2026-10-15, slot 457158853, `sparkfun-labs/pm-amm#9`): a vault-launched market's authority is the vault creator, not the launch payer. Same `.so` as devnet (SHA-256 `cd12a8a7…`).
 - First deployed with `MAINNET_MAX_LEN=1400000`; program data extended to **1,550,000 bytes** for Sprint 25 (an upgrade needs `solana program extend` whenever the `.so` outgrows it, plus ~7.7 SOL free on the authority for the buffer, refunded). On-chain IDL deferred (account `E4Fm…` partial, ~0.064 SOL parked; `anchor idl` lacks priority fees → congestion-blocked).

@@ -21,7 +21,8 @@ released to the vault by resolution anyway), static L_eff.
 from scipy.optimize import brentq
 from scipy.stats import norm
 
-FEE = 0.02
+SWAP_FEE_BPS = 100  # must match swap.rs SWAP_FEE_BPS (1%)
+FEE = SWAP_FEE_BPS / 10_000
 
 
 def simulate(yes_total, no_total, lp_share, buy):

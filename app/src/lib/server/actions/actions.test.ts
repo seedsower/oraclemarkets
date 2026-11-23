@@ -23,7 +23,7 @@ import {
   parseAmount,
   parseSide,
 } from "./common";
-import { buyMessage, disabledReason, marketActionGet } from "./market-action";
+import { buyMessage, disabledReason, FEE_LABEL, marketActionGet } from "./market-action";
 
 const now = 1_800_000_000;
 const market: MarketView = {
@@ -182,6 +182,9 @@ test("security: a bare SPL token transfer is refused (its only use here would be
 });
 
 test("buyMessage", () => {
-  assert.equal(buyMessage("yes", 14.71, 0.34), "Buying ~14.71 YES at ≈34¢. 2% fee included.");
-  assert.equal(buyMessage("no", 250.4, 0.66), "Buying ~250 NO at ≈66¢. 2% fee included.");
+  assert.equal(
+    buyMessage("yes", 14.71, 0.34),
+    `Buying ~14.71 YES at ≈34¢. ${FEE_LABEL} fee included.`,
+  );
+  assert.equal(buyMessage("no", 250.4, 0.66), `Buying ~250 NO at ≈66¢. ${FEE_LABEL} fee included.`);
 });

@@ -98,6 +98,15 @@ const eq = (a, b, msg) => {
   assert.strictEqual(expectedLegSeedBps(4), 2500, "expectedLegSeedBps(4)");
   passed += 6;
 
+  // 5. single source of truth: the SDK's fee constants === the program's
+  //    (#[constant] in swap.rs → the IDL). A mismatch would make every swap the
+  //    app builds fail the DAO check or misquote the fee.
+  const idl = require("../src/idl/pm_amm.json");
+  const idlConst = (name) => (idl.constants ?? []).find((c) => c.name === name)?.value;
+  assert.strictEqual(idlConst("PROTOCOL_DAO"), sdk.PROTOCOL_DAO.toBase58(), "PROTOCOL_DAO: SDK === program");
+  assert.strictEqual(Number(idlConst("SWAP_FEE_BPS")), sdk.SWAP_FEE_BPS, "SWAP_FEE_BPS: SDK === program");
+  passed += 2;
+
   console.log(`✓ SDK test suite passed — ${passed} assertions`);
   console.log("  programId :", programId.toBase58());
 })().catch((e) => {

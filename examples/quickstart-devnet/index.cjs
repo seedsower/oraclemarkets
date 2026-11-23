@@ -123,7 +123,7 @@ async function main() {
   const before = marketState(m);
   console.log(`YES     ${(before.price * 100).toFixed(2)}%`);
 
-  // Buy YES with 5 mUSDC. swap() takes RAW 6-dp units. The 2% fee comes off the
+  // Buy YES with 5 mUSDC. swap() takes RAW 6-dp units. The swap fee (1%) comes off the
   // USDC leg and estimateSwapOutput is fee-unaware, so quote on 98% of the input
   // and accept 1% slippage on top.
   const amountIn = 5_000_000;

@@ -174,7 +174,7 @@ export type SwapMode = "buy" | "sell";
 
 /**
  * Fee-aware swap quote in RAW base units (collateral, YES and NO share
- * decimals). The 2% protocol fee is skimmed off the INPUT on a buy (only the
+ * decimals). The protocol fee (SWAP_FEE_BPS) is skimmed off the INPUT on a buy (only the
  * net trades the curve) and off the OUTPUT on a sell — matching the program,
  * so a `minOutput` derived from this isn't over-stated. Pass `SWAP_FEE_BPS`.
  */

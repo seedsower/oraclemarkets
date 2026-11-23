@@ -41,9 +41,14 @@ import {
   mintTo,
 } from "@solana/spl-token";
 import { assert } from "chai";
+import {
+  PROTOCOL_DAO as SDK_PROTOCOL_DAO,
+  SWAP_FEE_BPS,
+} from "../../../packages/sdk/src/constants";
 
 const METAPLEX = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
-const PROTOCOL_DAO = new PublicKey("4qXyczAr5DuBVaHUwmZT5Xt6hgQ6RwqBYcFGtrv8QEph");
+// Single source of truth: the SDK (must match swap.rs; see sdk-constants test).
+const PROTOCOL_DAO = new PublicKey(SDK_PROTOCOL_DAO.toBase58());
 const COMMIT_SECS = 60;
 const MARKET_SECS = 345; // launch needs market_end > now + 300
 const ONE = 1_000_000; // 1 USDC (6 dp)
@@ -678,7 +683,13 @@ describe("bet_vault v2 + entry-side surplus fix", () => {
     const before = await bal(betCollateral(bets.C.vault));
     await buy(carol, bets.C.market!, "yes", 20, betCollateral(bets.C.vault));
     await buy(carol, bets.D.market!, "yes", 20, betCollateral(bets.D.vault));
-    assert.equal((await bal(betCollateral(bets.C.vault))) - before, 0.2 * ONE, "1% creator fee");
+    // Creator half of the fee on a 20 USDC buy (fee floored like fee_of(); the creator gets the odd unit).
+    const fee = Math.floor((20 * ONE * SWAP_FEE_BPS) / 10_000);
+    assert.equal(
+      (await bal(betCollateral(bets.C.vault))) - before,
+      fee - Math.floor(fee / 2),
+      "creator half of the fee",
+    );
   });
 
   it("legacy vault: a stranger may launch, but the vault creator stays market.authority", async () => {

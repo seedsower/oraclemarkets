@@ -1,7 +1,8 @@
 //! Swap between USDC, YES, and NO tokens — with a protocol trading fee.
 //!
-//! A 2% fee (`SWAP_FEE_BPS`) is taken on the USDC leg of every swap and split
-//! 50/50 between the protocol DAO (`PROTOCOL_DAO`) and the market creator
+//! A 1% fee (`SWAP_FEE_BPS`) is taken on the USDC leg of every swap and split
+//! 50/50 between the protocol DAO (`PROTOCOL_DAO`, the Oracle Markets Squads
+//! multisig vault) and the market creator
 //! (`market.authority`):
 //!   - USDC-in  (UsdcToYes/UsdcToNo): fee is skimmed off the input; only the net
 //!     trades on the curve and backs the vault.
@@ -19,11 +20,19 @@ use crate::errors::PmAmmError;
 use crate::pm_math::{self, SwapSide};
 use crate::state::Market;
 
-/// Protocol trading fee in basis points (2%). Split 50/50 DAO / creator.
-pub const SWAP_FEE_BPS: u64 = 200;
+/// Protocol trading fee in basis points (1%). Split 50/50 DAO / creator.
+/// Exposed in the IDL so the SDK's copy can be checked against it.
+#[constant]
+pub const SWAP_FEE_BPS: u64 = 100;
 
-/// Protocol DAO (Combinator Predict) — receives 50% of the swap fee.
-pub const PROTOCOL_DAO: Pubkey = pubkey!("4qXyczAr5DuBVaHUwmZT5Xt6hgQ6RwqBYcFGtrv8QEph");
+// Never more than 10%: a typo here would otherwise ship a confiscatory fee.
+const _: () = assert!(SWAP_FEE_BPS <= 1_000);
+
+/// Protocol DAO — receives 50% of the swap fee: the Oracle Markets Squads
+/// multisig **vault** (a PDA; its USDC account is an off-curve ATA). `swap`
+/// checks `dao_usdc.owner == PROTOCOL_DAO`. Exposed in the IDL (see above).
+#[constant]
+pub const PROTOCOL_DAO: Pubkey = pubkey!("zzWmQZ1bn6QqTwPcf4pZrfhbTmJBmeimk1mieNRvUB6");
 
 /// `amount * SWAP_FEE_BPS / 10_000` in u128 to avoid overflow.
 #[inline(always)]
@@ -113,7 +122,7 @@ pub struct Swap<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-/// Swap between USDC, YES, and NO tokens (6 directions), with a 2% USDC-leg fee.
+/// Swap between USDC, YES, and NO tokens (6 directions), with a 1% USDC-leg fee (`SWAP_FEE_BPS`).
 pub fn handler(
     ctx: Context<Swap>,
     direction: SwapDirection,

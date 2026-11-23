@@ -11,6 +11,7 @@ import {
   getMint,
 } from "@solana/spl-token";
 import { assert } from "chai";
+import { PROTOCOL_DAO as SDK_PROTOCOL_DAO, SWAP_FEE_BPS } from "../../packages/sdk/src/constants";
 
 const YES_MINT_SEED = Buffer.from("yes_mint");
 const NO_MINT_SEED = Buffer.from("no_mint");
@@ -20,7 +21,8 @@ const LP_SEED = Buffer.from("lp");
 /** Metaplex Token Metadata Program — required by initialize_market for the
  *  YES/NO mint metadata CPI. */
 const METAPLEX_PROGRAM_ID = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
-const PROTOCOL_DAO = new PublicKey("4qXyczAr5DuBVaHUwmZT5Xt6hgQ6RwqBYcFGtrv8QEph");
+// Single source of truth: the SDK (must match swap.rs; see sdk-constants test).
+const PROTOCOL_DAO = new PublicKey(SDK_PROTOCOL_DAO.toBase58());
 
 /** Metaplex metadata PDA: [b"metadata", program, mint]. */
 function deriveMetadataPda(mint: PublicKey): PublicKey {
@@ -241,11 +243,11 @@ describe("pm_amm", () => {
   });
 
   // ================================================================
-  // Swap fee: a DISTINCT trader (not the creator) pays 2% → 50% DAO + 50%
+  // Swap fee: a DISTINCT trader (not the creator) pays SWAP_FEE_BPS → 50% DAO + 50%
   // creator. Exercises the `creator_present` path (the other tests use the
   // swapper-is-creator path with creatorUsdc = null).
   // ================================================================
-  it("swap fee — distinct trader pays 2% split 50/50 DAO/creator", async () => {
+  it("swap fee — distinct trader pays the swap fee, split 50/50 DAO/creator", async () => {
     const trader = Keypair.generate();
     const sig = await provider.connection.requestAirdrop(trader.publicKey, 2_000_000_000);
     await provider.connection.confirmTransaction(sig, "confirmed");
@@ -269,7 +271,7 @@ describe("pm_amm", () => {
     const daoBefore = Number((await getAccount(provider.connection, daoUsdc)).amount);
     const creatorBefore = Number((await getAccount(provider.connection, userUsdc)).amount);
 
-    const amountIn = 100_000_000; // 100 USDC → fee = 2 USDC (1 DAO + 1 creator)
+    const amountIn = 100_000_000; // 100 USDC → fee = amount × SWAP_FEE_BPS / 10_000
     await program.methods
       .swap({ usdcToYes: {} } as any, new anchor.BN(amountIn), new anchor.BN(0))
       .accountsPartial({
@@ -292,7 +294,7 @@ describe("pm_amm", () => {
 
     const daoAfter = Number((await getAccount(provider.connection, daoUsdc)).amount);
     const creatorAfter = Number((await getAccount(provider.connection, userUsdc)).amount);
-    const fee = Math.floor((amountIn * 200) / 10_000); // 2%
+    const fee = Math.floor((amountIn * SWAP_FEE_BPS) / 10_000); // floor, like fee_of()
     assert.equal(daoAfter - daoBefore, Math.floor(fee / 2), "DAO gets 50% of the fee");
     assert.equal(creatorAfter - creatorBefore, fee - Math.floor(fee / 2), "creator gets 50%");
     assert.ok(
@@ -389,10 +391,10 @@ describe("pm_amm", () => {
       Number((await getAccount(provider.connection, user9Yes)).amount) > 0,
       "received YES in a 9-decimal market",
     );
-    // 2% fee on 100 tokens = 2 tokens; DAO gets half = 1 token (1e9 raw) in the 9dp token.
+    // Fee on 100 tokens = 100 × SWAP_FEE_BPS / 10_000; the DAO gets the floor of half, in the 9dp token.
     assert.equal(
       Number((await getAccount(provider.connection, dao9)).amount),
-      Math.floor((100 * ONE * 200) / 10_000 / 2),
+      Math.floor(Math.floor((100 * ONE * SWAP_FEE_BPS) / 10_000) / 2),
       "DAO fee paid in the 9-decimal collateral",
     );
   });
