@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { CategoryFilterValue } from "@/components/category-filter";
 import { useVaults } from "@/hooks/use-vaults";
 import { useVaultGroups } from "@/hooks/use-vault-groups";
 import { Countdown } from "@/components/ui/countdown";
@@ -8,7 +9,6 @@ import { formatUsdc } from "@pm-amm/sdk/math";
 import { CommunityBadge } from "@/components/ui/community-badge";
 import type { Curation } from "@/lib/featured";
 import { useCategoryOf } from "@/hooks/use-categories";
-import type { CategorySlug } from "@/lib/categories";
 
 /** Lightweight section on the home page listing every open vault.
  *  Hidden when nothing is open. */
@@ -17,7 +17,7 @@ export function VaultsSection({
   category = "all",
 }: {
   curation?: Curation;
-  category?: CategorySlug | "all";
+  category?: CategoryFilterValue;
 }) {
   const categoryOf = useCategoryOf();
   const inCategory = (pk: string) => category === "all" || categoryOf(pk) === category;

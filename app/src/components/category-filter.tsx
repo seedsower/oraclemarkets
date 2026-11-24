@@ -3,14 +3,17 @@
 import { useCallback, useEffect, useState } from "react";
 import { CATEGORIES, isCategory, type CategorySlug } from "@/lib/categories";
 
-export type CategoryFilterValue = CategorySlug | "all";
+/** "oracle" = markets the curator opened from oraclemarkets.io (still in their top N). */
+export type CategoryFilterValue = CategorySlug | "all" | "oracle";
 
 /** Selected category, synced to `?category=` so filtered views can be shared. */
 export function useCategoryFilter(): [CategoryFilterValue, (v: CategoryFilterValue) => void] {
   const [value, setValue] = useState<CategoryFilterValue>("all");
   useEffect(() => {
-    const q = new URLSearchParams(window.location.search).get("category");
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get("category");
     if (isCategory(q)) setValue(q);
+    else if (q === "oracle" || params.get("source") === "oracle") setValue("oracle");
   }, []);
   const set = useCallback((v: CategoryFilterValue) => {
     setValue(v);
@@ -31,6 +34,7 @@ export function CategoryFilter({
 }) {
   const options: { slug: CategoryFilterValue; label: string }[] = [
     { slug: "all", label: "All" },
+    { slug: "oracle", label: "From the Oracle" },
     ...CATEGORIES,
   ];
   return (

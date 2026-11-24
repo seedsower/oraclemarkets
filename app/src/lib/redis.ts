@@ -28,6 +28,7 @@ export interface KvStore {
   hset(key: string, field: string, value: string): Promise<void>;
   hgetall(key: string): Promise<Record<string, string>>;
   hget(key: string, field: string): Promise<string | null>;
+  smembers(key: string): Promise<string[]>;
 }
 
 export type RedisKind = "tcp" | "upstash" | "none";
@@ -114,6 +115,7 @@ function ioredisStore(): KvStore {
     hset: async (k, f, v) => void (await (await ready()).hset(k, f, v)),
     hgetall: async (k) => (await ready()).hgetall(k),
     hget: async (k, f) => (await ready()).hget(k, f),
+    smembers: async (k) => (await ready()).smembers(k),
   };
 }
 
@@ -146,6 +148,7 @@ function upstashStore(url: string, token: string): KvStore {
       const v = await r.hget(k, f);
       return v === null || v === undefined ? null : memberToString(v);
     },
+    smembers: async (k) => ((await r.smembers(k)) ?? []).map(memberToString),
   };
 }
 

@@ -298,6 +298,14 @@ export class XApi implements MentionSource {
     };
   }
 
+  /** A standalone post (curator announcements). */
+  async tweet(text: string): Promise<string> {
+    const r = await this.post({ text });
+    if (!r.id) throw new Error(`post ${r.status}: ${r.detail || "failed"}`);
+    await this.store.usage(/https?:\/\//.test(text) ? "posts_with_url" : "posts");
+    return r.id;
+  }
+
   /**
    * Reply to a mention. In threads limited to mentioned accounts ("Only
    * accounts you mention can reply") X refuses replies from the bot, so fall

@@ -24,12 +24,12 @@ function useRequestRun() {
   const { publicKey, signMessage } = useWallet();
   const qc = useQueryClient();
   const [busy, setBusy] = useState(false);
-  const run = async () => {
+  const run = async (dryRun: boolean) => {
     if (!publicKey || !signMessage) return toast.error("Connect a wallet that can sign messages");
     setBusy(true);
     try {
       const ts = Math.floor(Date.now() / 1000);
-      const sig = await signMessage(new TextEncoder().encode(curatorRunMessage(ts)));
+      const sig = await signMessage(new TextEncoder().encode(curatorRunMessage(ts, dryRun)));
       const res = await fetch("/api/admin/curator/run", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -37,11 +37,14 @@ function useRequestRun() {
           signer: publicKey.toBase58(),
           ts,
           signature: Buffer.from(sig).toString("base64"),
+          dryRun,
         }),
       });
       const body = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`);
-      toast.success("Curator run queued", { description: "It starts within a minute." });
+      toast.success(dryRun ? "Dry-run preview queued" : "Curator run queued", {
+        description: "It starts within a minute and takes about 10.",
+      });
       await qc.invalidateQueries({ queryKey: KEY });
     } catch (e) {
       const msg = errorMessage(e);
@@ -68,12 +71,17 @@ export function CuratorRun() {
   const last = data?.last;
   return (
     <div className="space-y-[8px]">
-      <Button onClick={run} disabled={busy || !!data?.pending}>
-        {data?.pending ? "Run queued…" : busy ? "Signing…" : "Run curator now"}
-      </Button>
+      <div className="flex gap-[8px] flex-wrap">
+        <Button variant="primary" onClick={() => run(false)} disabled={busy || !!data?.pending}>
+          {data?.pending ? "Run queued…" : busy ? "Signing…" : "Run curator now"}
+        </Button>
+        <Button variant="secondary" onClick={() => run(true)} disabled={busy || !!data?.pending}>
+          Dry-run preview
+        </Button>
+      </div>
       {last && (
         <p className={`text-[11px] font-mono ${last.error ? "text-no" : "text-muted"}`}>
-          Last request {at(last.requestedAt)}
+          Last {last.preview ? "preview" : "run"} request {at(last.requestedAt)}
           {last.triggeredAt ? ` → started ${at(last.triggeredAt)}` : ""}
           {last.error ? ` → failed: ${last.error}` : ""}
         </p>

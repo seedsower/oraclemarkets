@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { CategoryFilterValue } from "@/components/category-filter";
 import { betPhase, type BetVaultView } from "@pm-amm/sdk";
 import { formatUsdc } from "@pm-amm/sdk/math";
 import { CardShell, CardArt } from "@/components/market-cards";
@@ -9,7 +10,6 @@ import { useBetVaults } from "@/hooks/use-bet-vaults";
 import { betPath, betStakePath } from "@/lib/bets";
 import { CategoryChip } from "@/components/category-picker";
 import { useCategoryOf } from "@/hooks/use-categories";
-import type { CategorySlug } from "@/lib/categories";
 
 function BetCard({ v, category }: { v: BetVaultView; category: string | null }) {
   const yes = Math.round(v.impliedYes * 100);
@@ -60,7 +60,7 @@ function BetCard({ v, category }: { v: BetVaultView; category: string | null }) 
 }
 
 /** Bets still taking stakes (e.g. opened from X with "bet?"), soonest-closing first. */
-export function OpenBets({ category = "all" }: { category?: CategorySlug | "all" }) {
+export function OpenBets({ category = "all" }: { category?: CategoryFilterValue }) {
   const { data } = useBetVaults();
   const categoryOf = useCategoryOf();
   const now = Math.floor(Date.now() / 1000);

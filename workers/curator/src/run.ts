@@ -33,6 +33,15 @@ import type { PmAmmClient } from "@pm-amm/sdk";
 import type { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { refreshCurated, type LifecycleKv, type Lookup } from "./lifecycle";
 import { fromPrediction } from "./question";
+import {
+  announcementFor,
+  ANNOUNCE_KEY,
+  groupSkips,
+  PREVIEW_KEY,
+  saveReport,
+  summarize,
+  type RunReport,
+} from "./report";
 
 const log = (m: string) => console.log(m);
 
@@ -150,21 +159,58 @@ async function main() {
   if (!claude) log("(no ANTHROPIC_API_KEY: content policy and short titles not checked)");
   // A client whenever there's a key: dry runs read balances too; only live runs send.
   const client = kp ? await makeCuratorClient(loadChainConfig(), kp) : null;
-  const deps: Deps | null = !c.dryRun && client && kv ? { kv, chain: client } : null;
   const token = randomUUID();
   if (kv && !(await acquireLock(kv, token))) {
     log("another curator run holds curator:lock — exiting");
     kv.disconnect();
     return;
   }
+  const started = Date.now();
   try {
-    await runLocked(cfg, c, kv, claude, client, deps);
+    // A dry-run preview requested from /admin (the keeper sets the flag before triggering).
+    const preview = kv ? (await kv.getdel(PREVIEW_KEY)) === "1" : false;
+    const run = preview ? { ...c, dryRun: true } : c;
+    if (preview) log("preview requested from /admin: dry run");
+    const deps: Deps | null = !run.dryRun && client && kv ? { kv, chain: client } : null;
+    await runLocked(
+      cfg,
+      run,
+      kv,
+      claude,
+      client,
+      deps,
+      preview ? "preview" : "schedule",
+      started,
+    ).catch(async (e: unknown) => {
+      if (kv) await saveFailure(kv, started, run, e).catch(() => {});
+      throw e;
+    });
   } finally {
     if (kv) {
       await releaseLock(kv, token).catch(() => {});
       kv.disconnect();
     }
   }
+}
+
+/** A run that died still leaves a report, so /admin shows why. */
+async function saveFailure(kv: IORedis, started: number, c: CreateConfig, e: unknown) {
+  const now = new Date().toISOString();
+  await saveReport(kv, started, {
+    at: new Date(started).toISOString(),
+    finishedAt: now,
+    dryRun: c.dryRun,
+    trigger: "failed",
+    budget: null,
+    seedUsdc: c.seedUsdc,
+    selected: {},
+    rows: [],
+    skips: {},
+    lifecycle: null,
+    mcpCalls: 0,
+    errors: [e instanceof Error ? e.message : String(e)],
+    summary: summarize([]),
+  });
 }
 
 /** Budget for this run, from balances and open curated markets (no wallet → per-run cap only). */
@@ -197,6 +243,8 @@ async function runLocked(
   claude: MessagesClient | null,
   client: PmAmmClient | null,
   deps: Deps | null,
+  trigger: string,
+  started: number,
 ) {
   if (deps) log(`reconcile: ${JSON.stringify(await reconcile(deps))}`);
   const budget = await budgetFor(c, kv, client);
@@ -211,8 +259,37 @@ async function runLocked(
   const rows = await create(sel, c, kv, deps, budget);
   report(rows, sel, c, pool);
   const callsLeft = Number(process.env.CURATOR_MAX_MCP_CALLS ?? 500) - pool.calls;
-  await lifecycle(c, kv, client, partner.client, sel, pool, callsLeft);
+  const life = await lifecycle(c, kv, client, partner.client, sel, pool, callsLeft);
   await partner.client.close();
+  if (!kv) return;
+  const rep: RunReport = {
+    at: new Date(started).toISOString(),
+    finishedAt: new Date().toISOString(),
+    dryRun: c.dryRun,
+    trigger,
+    budget,
+    seedUsdc: c.seedUsdc,
+    selected: Object.fromEntries(
+      Object.entries(sel.byCategory).map(([cat, list]) => [
+        cat,
+        list.map((x) => ({
+          questionId: x.question.id,
+          title: x.title,
+          p: x.question.p,
+          score: x.score,
+        })),
+      ]),
+    ),
+    rows,
+    skips: groupSkips(sel.skipped),
+    lifecycle: life,
+    mcpCalls: pool.calls,
+    errors: pool.errors.slice(0, 50),
+    summary: summarize(rows),
+  };
+  log(`report: ${await saveReport(kv, started, rep)}`);
+  const ann = process.env.CURATOR_ANNOUNCE_ON_X === "true" ? announcementFor(rep) : null;
+  if (ann) await kv.rpush(ANNOUNCE_KEY, JSON.stringify(ann));
 }
 
 /** Reads pass through; writes are skipped (a dry run reports what would change). */
@@ -240,7 +317,10 @@ async function lifecycle(
   pool: Pool,
   callsLeft: number,
 ) {
-  if (!kv || !client) return log("lifecycle: skipped (needs REDIS_URL and CURATOR_KEYPAIR)");
+  if (!kv || !client) {
+    log("lifecycle: skipped (needs REDIS_URL and CURATOR_KEYPAIR)");
+    return null;
+  }
   let left = callsLeft;
   const interval = Number(process.env.PARTNER_MCP_MIN_INTERVAL_MS ?? 500);
   const lookup = async (id: string): Promise<Lookup | null> => {
@@ -279,6 +359,7 @@ async function lifecycle(
       `${r.featured} featured, ${r.unfeatured} unfeatured, ${r.resolved} resolved on-chain, ${r.review.length} for review`,
   );
   for (const i of r.review) log(`  review ${i.market}: ${i.note} ${i.url}`);
+  return { ...r, review: r.review.length };
 }
 
 main().then(

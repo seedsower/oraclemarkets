@@ -15,6 +15,7 @@ import { OpenBets } from "@/components/bet/open-bets";
 import { ViewToggle, useFeedView } from "@/components/view-toggle";
 import { groupTvl, marketTvl } from "@/lib/feed";
 import { CategoryFilter, useCategoryFilter } from "@/components/category-filter";
+import { useCurated } from "@/hooks/use-curated";
 import { useCategoryOf } from "@/hooks/use-categories";
 import { useUserPositions } from "@/hooks/use-user-positions";
 import { usePriceHistories } from "@/hooks/use-price-histories";
@@ -47,6 +48,8 @@ export default function Markets() {
   const [view, setView] = useFeedView();
   const [category, setCategory] = useCategoryFilter();
   const categoryOf = useCategoryOf();
+  const { data: curatedData } = useCurated();
+  const featured = useMemo(() => new Set(curatedData?.featured ?? []), [curatedData]);
   const [sort, setSort] = useState<Sort>("tvl");
 
   /** Build the unified feed: standalone markets (drop legs) + group rows
@@ -66,7 +69,10 @@ export default function Markets() {
 
     let result: FeedItem[] = [...standalone, ...groupRows];
 
-    if (category !== "all") {
+    if (category === "oracle") {
+      // "From the Oracle": curated markets still in their category's top N
+      result = result.filter((it) => it.kind === "market" && featured.has(it.market.publicKey));
+    } else if (category !== "all") {
       result = result.filter(
         (it) =>
           categoryOf(it.kind === "market" ? it.market.publicKey : it.group.publicKey) === category,
@@ -126,7 +132,7 @@ export default function Markets() {
     const active = result.filter(isItemActive).sort(cmp);
     const inactive = result.filter((it) => !isItemActive(it)).sort(cmp);
     return [...active, ...inactive];
-  }, [markets, groups, filter, sort, userPositions, category, categoryOf]);
+  }, [markets, groups, filter, sort, userPositions, category, categoryOf, featured]);
 
   const selectedMarket =
     selectedId === null ? null : (allMarkets?.find((m) => m.publicKey === selectedId) ?? null);

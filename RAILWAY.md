@@ -132,6 +132,14 @@ still running, so a process that never exits would block every later run.
   `curator:run-request`, and the keeper calls Railway's `deploymentInstanceExecutionCreate`.
   The keeper needs `CURATOR_TRIGGER_TOKEN` (a _project_ token for this project)
   and `CURATOR_SERVICE_ID`. Locally: `pnpm --filter @oracle-markets/curator once`.
+  _Dry-run preview_ does the same for one run with nothing sent, whatever
+  `CURATOR_DRY_RUN` says (the keeper sets `curator:next-run-dry`).
+- Reports: every run (live, dry, preview, failed) is saved to `curator:runs:<ms>`
+  (last 30) and listed in `/admin` under _Recent curator runs_. Curated markets
+  still in their category's top N appear on `/markets?category=oracle`
+  ("From the Oracle").
+- `CURATOR_ANNOUNCE_ON_X=true` (curator) queues one summary post per live run
+  that created markets; the xbot posts it (`curator:announcements`).
 
 ### Build-time vs runtime variables
 

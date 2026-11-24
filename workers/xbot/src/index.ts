@@ -29,6 +29,7 @@ import { payoutPass } from "./payouts";
 import { leaderboardPass } from "./leaderboard";
 import { indexTrades } from "./trades-index";
 import { finderPass } from "./finder";
+import { announcePass } from "./announce";
 import { Wallets } from "./wallets";
 
 const maxId = (a: string | null, b: string | null) =>
@@ -109,6 +110,12 @@ async function cycle(ctx: BotCtx): Promise<void> {
       botHandle: `@${(process.env.XBOT_HANDLE || "oraclexbot").replace(/^@/, "")}`,
       botUserId: ctx.botUserId,
     }).catch((e) => log.warn("finder failed", { error: errMsg(e) }));
+  }
+  // Curator announcements (queued by the curator only with CURATOR_ANNOUNCE_ON_X=true).
+  if (!ctx.cfg.dryRun && ctx.source instanceof XApi) {
+    await announcePass(ctx.store, ctx.source, ctx.cfg.siteUrl).catch((e) =>
+      log.warn("curator announcement failed", { error: errMsg(e) }),
+    );
   }
   // Market art for new markets (site + bot), a few per pass.
   if (ctx.claude && ctx.cfg.art) {

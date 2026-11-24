@@ -7,13 +7,16 @@
  * Needs CURATOR_TRIGGER_TOKEN (a Railway *project* token for this project only)
  * and CURATOR_SERVICE_ID; RAILWAY_ENVIRONMENT_ID is set by Railway. Unset → off.
  *
- *   curator:run-request  JSON {by, at}   (set by the web, NX + 1 h expiry; consumed here)
+ *   curator:run-request  JSON {by, at, dryRun?}  (set by the web, 1 h expiry; consumed here)
+ *   curator:next-run-dry "1" for a preview: the curator forces a dry run (2 h expiry)
  *   curator:run-status   JSON {by, requestedAt, triggeredAt?, error?}  (read by /admin)
  */
 import type IORedis from "ioredis";
 
 export const REQUEST_KEY = "curator:run-request";
 export const STATUS_KEY = "curator:run-status";
+/** Read (and deleted) by the curator at start: "1" = run as a dry-run preview. */
+export const PREVIEW_KEY = "curator:next-run-dry";
 const API = "https://backboard.railway.com/graphql/v2";
 
 export interface TriggerConfig {
@@ -67,24 +70,27 @@ export async function runCuratorNow(cfg: TriggerConfig, f: Fetch = fetch): Promi
 
 /** Consume a pending request (if any) and trigger the run; the outcome goes to STATUS_KEY. */
 export async function maybeTriggerCurator(
-  redis: Pick<IORedis, "getdel" | "set">,
+  redis: Pick<IORedis, "getdel" | "set" | "del">,
   cfg: TriggerConfig | null,
   f: Fetch = fetch,
 ): Promise<"none" | "triggered" | "failed" | "disabled"> {
   const raw = await redis.getdel(REQUEST_KEY);
   if (!raw) return "none";
-  let req: { by?: string; at?: string } = {};
+  let req: { by?: string; at?: string; dryRun?: boolean } = {};
   try {
     req = JSON.parse(raw) as typeof req;
   } catch {
     // malformed request: still answer it
   }
-  const status = { by: req.by ?? "", requestedAt: req.at ?? "" };
+  const preview = req.dryRun === true;
+  const status = { by: req.by ?? "", requestedAt: req.at ?? "", preview };
   if (!cfg) {
     await redis.set(STATUS_KEY, JSON.stringify({ ...status, error: "trigger not configured" }));
     return "disabled";
   }
   try {
+    if (preview) await redis.set(PREVIEW_KEY, "1", "EX", 7200);
+    else await redis.del(PREVIEW_KEY);
     await runCuratorNow(cfg, f);
     await redis.set(
       STATUS_KEY,

@@ -30,13 +30,14 @@
   --radius-xl: var(--r-xl);
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
 body {
   background:
     radial-gradient(1100px 620px at 8% -12%, var(--glow-1), transparent 62%),
-    radial-gradient(900px 520px at 100% -8%, var(--glow-2), transparent 60%),
-    var(--bg);
+    radial-gradient(900px 520px at 100% -8%, var(--glow-2), transparent 60%), var(--bg);
   background-attachment: fixed;
   color: var(--text);
   font-family: var(--font-sans);
@@ -107,7 +108,9 @@ body {
 }
 
 /* Tabular nums helper */
-.tnum { font-variant-numeric: tabular-nums; }
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
 
 /* Mono helper */
 .mono {
@@ -116,16 +119,31 @@ body {
 }
 
 /* Scrollbar */
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--line); border-radius: 8px; }
-::-webkit-scrollbar-thumb:hover { background: var(--line-2); }
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--line-2);
+}
 
 /* Selection */
-::selection { background: var(--accent-soft); color: var(--text-hi); }
+::selection {
+  background: var(--accent-soft);
+  color: var(--text-hi);
+}
 
 /* Transition default */
-.transition-brand { transition: all 120ms ease; }
+.transition-brand {
+  transition: all 120ms ease;
+}
 
 /* ============================================
    Wallet Adapter overrides — match brand system
@@ -225,6 +243,11 @@ body {
 
 /* Blink animation for live indicator */
 @keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
 }

@@ -54,13 +54,15 @@ export async function GET() {
 }
 
 /**
- * POST { signer, ts, signature } — an admin wallet signs curatorRunMessage(ts).
+ * POST { signer, ts, signature, dryRun? } — an admin wallet signs curatorRunMessage(ts, dryRun).
+ * dryRun = a preview: that one run sends nothing, whatever CURATOR_DRY_RUN says.
  * Only enqueues: the keeper asks Railway to run the curator's cron job. The web
  * process never runs the curator itself.
  */
 export async function POST(req: Request) {
   const b = (await req.json().catch(() => null)) as Record<string, unknown> | null;
-  const { signer, ts, signature } = b ?? {};
+  const { signer, ts, signature, dryRun } = b ?? {};
+  const preview = dryRun === true;
   const now = Math.floor(Date.now() / 1000);
   const signerOk = isPubkey(signer);
   if (!signerOk || typeof ts !== "number" || typeof signature !== "string")
@@ -70,7 +72,7 @@ export async function POST(req: Request) {
   const limit = await rateLimit(`curator-run:${clientIp(req)}`, 5, 3600);
   if (!limit.ok) return NextResponse.json({ error: "Too many requests." }, { status: 429 });
   const who = signer as string;
-  if (!verifyWalletSignature(curatorRunMessage(ts), signature, who))
+  if (!verifyWalletSignature(curatorRunMessage(ts, preview), signature, who))
     return NextResponse.json({ error: "Bad signature." }, { status: 401 });
   if (!admins().has(who))
     return NextResponse.json(
@@ -81,7 +83,7 @@ export async function POST(req: Request) {
   try {
     if (await redis.get(REQUEST_KEY))
       return NextResponse.json({ error: "A run is already queued." }, { status: 409 });
-    const pending = { by: who, at: new Date().toISOString() };
+    const pending = { by: who, at: new Date().toISOString(), dryRun: preview };
     await redis.set(REQUEST_KEY, JSON.stringify(pending), { ex: REQUEST_TTL_SECS });
     return NextResponse.json({ ok: true, pending });
   } catch {

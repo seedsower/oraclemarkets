@@ -18,6 +18,7 @@ import { XProposals } from "@/components/x-proposals";
 import { BetsToResolve } from "@/components/bet/bets-to-resolve";
 import { CuratorReview } from "@/components/curator-review";
 import { CuratorRun } from "@/components/curator-run";
+import { CuratorRuns } from "@/components/curator-runs";
 import { DebateFinder } from "@/components/debate-finder";
 import { seriesColor } from "@/components/multi-line-chart";
 
@@ -365,6 +366,8 @@ export default function AdminPage() {
           UTC). Admin wallets can start a run now.
         </p>
         <CuratorRun />
+        <div className="text-caption mt-[20px] mb-[8px]">RECENT CURATOR RUNS</div>
+        <CuratorRuns />
 
         <div className="text-caption mt-[32px] mb-[12px]">CURATED MARKETS TO REVIEW</div>
         <p className="text-[11px] text-muted font-mono mb-[12px]">

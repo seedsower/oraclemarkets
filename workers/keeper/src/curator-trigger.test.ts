@@ -1,6 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { loadTriggerConfig, maybeTriggerCurator, REQUEST_KEY, STATUS_KEY } from "./curator-trigger";
+import {
+  loadTriggerConfig,
+  maybeTriggerCurator,
+  PREVIEW_KEY,
+  REQUEST_KEY,
+  STATUS_KEY,
+} from "./curator-trigger";
 
 function fakeRedis(request: string | null) {
   const data = new Map<string, string>();
@@ -13,6 +19,7 @@ function fakeRedis(request: string | null) {
       return v;
     },
     set: async (k: string, v: string) => (data.set(k, v), "OK" as const),
+    del: async (k: string) => (data.delete(k) ? 1 : 0),
   };
 }
 const cfg = { token: "t", serviceId: "svc", environmentId: "env" };
@@ -69,4 +76,20 @@ test("Railway errors and a missing config are recorded, not thrown", async () =>
   const r2 = fakeRedis(JSON.stringify({ by: "x" }));
   assert.equal(await maybeTriggerCurator(r2 as never, null), "disabled");
   assert.equal(JSON.parse(r2.data.get(STATUS_KEY)!).error, "trigger not configured");
+});
+
+test("a preview request sets the one-run dry-run flag; a normal one clears it", async () => {
+  const ok = (async () => ({
+    ok: true,
+    json: async () => ({
+      data: { serviceInstance: { id: "si" }, deploymentInstanceExecutionCreate: true },
+    }),
+  })) as never;
+  const r = fakeRedis(JSON.stringify({ by: "a", dryRun: true }));
+  assert.equal(await maybeTriggerCurator(r as never, cfg, ok), "triggered");
+  assert.equal(r.data.get(PREVIEW_KEY), "1");
+  assert.equal(JSON.parse(r.data.get(STATUS_KEY)!).preview, true);
+  r.data.set(REQUEST_KEY, JSON.stringify({ by: "a" }));
+  assert.equal(await maybeTriggerCurator(r as never, cfg, ok), "triggered");
+  assert.equal(r.data.has(PREVIEW_KEY), false);
 });
