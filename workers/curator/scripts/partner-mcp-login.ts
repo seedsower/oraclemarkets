@@ -11,7 +11,7 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 import { UnauthorizedError } from "@modelcontextprotocol/sdk/client/auth.js";
 import { AUTH_FILE, CALLBACK_PORT, FileOAuthProvider, PARTNER_MCP_URL } from "../src/partner-feed";
 
-const TIMEOUT_MS = 10 * 60_000;
+const TIMEOUT_MS = Number(process.env.PARTNER_MCP_LOGIN_TIMEOUT_MIN ?? 30) * 60_000;
 
 /** Resolves with the `code` the authorization server sends back to /callback. */
 function waitForCode(): Promise<string> {
