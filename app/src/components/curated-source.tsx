@@ -17,7 +17,8 @@ export function CuratedSource({ account, name }: { account: string; name: string
     staleTime: 300_000,
   });
   if (!meta) return null;
-  const full = meta.question || meta.title;
+  // The partner appends sub-question options ("… [Yes: 26,000 or above]"); not needed here.
+  const full = (meta.question || meta.title).replace(/\s*\[[^\]]*\]\s*$/, "");
   const opened = meta.consensus === null ? null : Math.round(meta.consensus * 100);
   return (
     <div className="border border-line rounded-xl p-[16px] space-y-[10px] bg-surface/40">
@@ -28,6 +29,12 @@ export function CuratedSource({ account, name }: { account: string; name: string
       {opened !== null && (
         <p className="text-[12px] font-mono text-muted">
           Opened at the AI consensus: {opened}% YES
+          {meta.aiNow !== null && (
+            <>
+              {" · "}AI now: {Math.round(meta.aiNow * 100)}% YES
+              {meta.aiNowAt && ` (${meta.aiNowAt.slice(0, 10)})`}
+            </>
+          )}
         </p>
       )}
       {meta.criteria && (

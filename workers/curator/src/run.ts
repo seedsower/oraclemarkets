@@ -30,6 +30,9 @@ import {
 import { randomUUID } from "node:crypto";
 import { PublicKey } from "@solana/web3.js";
 import type { PmAmmClient } from "@pm-amm/sdk";
+import type { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { refreshCurated, type LifecycleKv, type Lookup } from "./lifecycle";
+import { fromPrediction } from "./question";
 
 const log = (m: string) => console.log(m);
 
@@ -203,11 +206,79 @@ async function runLocked(
     minIntervalMs: Number(process.env.PARTNER_MCP_MIN_INTERVAL_MS ?? 500),
     log,
   });
-  await partner.client.close();
   const { shortTitles, verdicts } = await vet(pool, cfg, kv, claude);
   const sel = selectTop(pool.questions, cfg, { shortTitles, verdicts, requireVerdict: !!claude });
   const rows = await create(sel, c, kv, deps, budget);
   report(rows, sel, c, pool);
+  const callsLeft = Number(process.env.CURATOR_MAX_MCP_CALLS ?? 500) - pool.calls;
+  await lifecycle(c, kv, client, partner.client, sel, pool, callsLeft);
+  await partner.client.close();
+}
+
+/** Reads pass through; writes are skipped (a dry run reports what would change). */
+function dryKv(kv: IORedis): LifecycleKv {
+  const skip = async () => 0;
+  return {
+    hkeys: (k) => kv.hkeys(k),
+    get: (k) => kv.get(k),
+    set: skip,
+    hset: skip,
+    hsetnx: skip,
+    hdel: skip,
+    sadd: skip,
+    srem: skip,
+  };
+}
+
+/** Phase 4 pass over every curated market (see lifecycle.ts). */
+async function lifecycle(
+  c: CreateConfig,
+  kv: IORedis | null,
+  client: PmAmmClient | null,
+  partner: Client,
+  sel: Selection,
+  pool: Pool,
+  callsLeft: number,
+) {
+  if (!kv || !client) return log("lifecycle: skipped (needs REDIS_URL and CURATOR_KEYPAIR)");
+  let left = callsLeft;
+  const interval = Number(process.env.PARTNER_MCP_MIN_INTERVAL_MS ?? 500);
+  const lookup = async (id: string): Promise<Lookup | null> => {
+    if (left-- <= 0) return null;
+    await new Promise((r) => setTimeout(r, interval));
+    try {
+      const res = (await partner.callTool({
+        name: "get_prediction",
+        arguments: { question_id: id },
+      })) as {
+        isError?: boolean;
+        content?: { type: string; text?: string }[];
+      };
+      if (res.isError)
+        return {
+          question: null,
+          error: res.content?.find((x) => x.type === "text")?.text ?? "error",
+        };
+      return { question: fromPrediction(res) };
+    } catch {
+      return null;
+    }
+  };
+  const r = await refreshCurated(
+    {
+      kv: c.dryRun ? dryKv(kv) : kv,
+      fetchMarket: (pk) => client.fetchMarket(pk),
+      toKey: (s) => new PublicKey(s),
+      lookup,
+    },
+    new Set(sel.selected.map((s) => s.question.id)),
+    new Map(pool.questions.map((q) => [q.id, q])),
+  );
+  log(
+    `lifecycle${c.dryRun ? " (dry run: no writes)" : ""}: ${r.refreshed} AI lines refreshed, ` +
+      `${r.featured} featured, ${r.unfeatured} unfeatured, ${r.resolved} resolved on-chain, ${r.review.length} for review`,
+  );
+  for (const i of r.review) log(`  review ${i.market}: ${i.note} ${i.url}`);
 }
 
 main().then(

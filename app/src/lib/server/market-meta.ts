@@ -17,6 +17,9 @@ export interface MarketMeta {
   partnerCategory: string;
   consensus: number | null;
   consensusAt: string | null;
+  /** Latest AI line (refreshed by the curator each run). */
+  aiNow: number | null;
+  aiNowAt: string | null;
 }
 
 const str = (v: unknown, max: number): string => (typeof v === "string" ? v.slice(0, max) : "");
@@ -42,8 +45,7 @@ export async function getMarketMeta(account: string): Promise<MarketMeta | null>
   if (!raw) return null;
   try {
     const m = JSON.parse(raw) as Record<string, unknown>;
-    const p =
-      typeof m.consensus === "number" && m.consensus >= 0 && m.consensus <= 1 ? m.consensus : null;
+    const prob = (v: unknown) => (typeof v === "number" && v >= 0 && v <= 1 ? v : null);
     return {
       source: str(m.source, 64),
       attribution: str(m.attribution, 120),
@@ -52,8 +54,10 @@ export async function getMarketMeta(account: string): Promise<MarketMeta | null>
       criteria: str(m.criteria, 4000),
       url: safeUrl(m.url),
       partnerCategory: str(m.partnerCategory, 40),
-      consensus: p,
+      consensus: prob(m.consensus),
       consensusAt: str(m.consensusAt, 40) || null,
+      aiNow: prob(m.aiNow),
+      aiNowAt: str(m.aiNowAt, 40) || null,
     };
   } catch {
     return null;

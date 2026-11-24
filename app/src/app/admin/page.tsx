@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import Link from "next/link";
 import { XProposals } from "@/components/x-proposals";
 import { BetsToResolve } from "@/components/bet/bets-to-resolve";
+import { CuratorReview } from "@/components/curator-review";
 import { DebateFinder } from "@/components/debate-finder";
 import { seriesColor } from "@/components/multi-line-chart";
 
@@ -356,6 +357,13 @@ export default function AdminPage() {
 
         <div className="text-caption mt-[32px] mb-[12px]">BETS TO RESOLVE</div>
         <BetsToResolve />
+
+        <div className="text-caption mt-[32px] mb-[12px]">CURATED MARKETS TO REVIEW</div>
+        <p className="text-[11px] text-muted font-mono mb-[12px]">
+          Markets opened from oraclemarkets.io questions that the partner resolved, voided or
+          stopped listing. Check the source, then resolve with the curator wallet.
+        </p>
+        <CuratorReview />
 
         <div className="text-caption mt-[32px] mb-[12px]">PROPOSALS FROM X</div>
         <p className="text-[11px] text-muted font-mono mb-[12px]">

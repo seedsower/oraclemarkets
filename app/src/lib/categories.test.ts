@@ -15,20 +15,26 @@ function wallet() {
   return { pubkey, signMessage };
 }
 
-test("the 8 categories, nothing else", () => {
+test("the 13 categories, nothing else", () => {
   for (const s of [
     "crypto",
     "sports",
     "politics",
-    "science",
-    "culture",
+    "geopolitics",
+    "economics",
     "finance",
+    "business",
+    "technology",
+    "science",
+    "climate",
     "weather",
-    "personal",
+    "culture",
+    "other",
   ]) {
     assert.ok(isCategory(s), s);
   }
   assert.equal(isCategory("memes"), false);
+  assert.equal(isCategory("personal"), false);
   assert.equal(isCategory(undefined), false);
 });
 

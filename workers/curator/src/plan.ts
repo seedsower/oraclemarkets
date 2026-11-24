@@ -33,20 +33,20 @@ export function loadCreateConfig(
   };
 }
 
-/** Partner category → the app's category slug (app/src/lib/categories.ts); null = none. */
+/** Partner category → the app's category slug (app/src/lib/categories.ts, same 12 + weather). */
 export const CATEGORY_SLUG: Record<string, string | null> = {
   Politics: "politics",
-  Geopolitics: "politics",
+  Geopolitics: "geopolitics",
   Finance: "finance",
-  Economics: "finance",
-  Business: "finance",
+  Economics: "economics",
+  Business: "business",
   Crypto: "crypto",
   Sports: "sports",
   Culture: "culture",
-  Climate: "weather",
+  Climate: "climate",
   Science: "science",
-  Technology: "science",
-  Other: null,
+  Technology: "technology",
+  Other: "other",
 };
 
 export const ATTRIBUTION = "Question and AI line by oraclemarkets.io";

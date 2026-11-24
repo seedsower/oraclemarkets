@@ -120,8 +120,9 @@ test("deadline = partner close − buffer; too close is skipped", () => {
   assert.equal(p.meta.title, question().title);
   const soon = planFor(sel({ closeAt: new Date(NOW.getTime() + 24.5 * 3_600_000) }), cfg, NOW);
   assert.deepEqual(soon, { skip: "deadline (close − buffer) too close" });
-  assert.equal(plan({ category: "Other" }).category, null);
-  assert.equal(plan({ category: "Climate" }).category, "weather");
+  assert.equal(plan({ category: "Other" }).category, "other");
+  assert.equal(plan({ category: "Climate" }).category, "climate");
+  assert.equal(plan({ category: "Economics" }).category, "economics");
 });
 
 test("round-robin across categories", () => {

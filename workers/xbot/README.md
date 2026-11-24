@@ -8,7 +8,7 @@ and never creates markets.
 ## Commands
 
 Commands are parsed by fixed rules first (Claude helps only when they fall
-short; see *Claude assist* below). Typos and synonyms work
+short; see _Claude assist_ below). Typos and synonyms work
 (`odd`, `price`, `chance` → odds; `market`, `top`, `hot` → markets; `suggest`,
 `idea` → propose), and so do **plain questions**:
 
@@ -24,11 +24,11 @@ page offers "Open in Phantom / Solflare", which reopens it inside the wallet
 app, already connected. The user still reviews and signs. Live markets are
 always preferred over resolved ones.
 
-| Post | Reply |
-|---|---|
-| `@bot odds <market id or words>` | Question, `YES 34¢ · NO 66¢ · closes in 3d`, and the market link. Groups show the top 3 outcomes. No match gets a link to the market list. |
-| `@bot markets` / `@bot trending` | Top 3 live featured markets with YES prices, plus one link to `/markets?ref=x` |
-| `@bot propose <question> by <date>` | "Noted — if we list it, we'll tag you." The proposal is stored and shown in `/admin` → **Proposals from X**. Listing it is your decision. |
+| Post                                                                            | Reply                                                                                                                                                                                                                                                                                         |
+| ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@bot odds <market id or words>`                                                | Question, `YES 34¢ · NO 66¢ · closes in 3d`, and the market link. Groups show the top 3 outcomes. No match gets a link to the market list.                                                                                                                                                    |
+| `@bot markets` / `@bot trending`                                                | Top 3 live featured markets with YES prices, plus one link to `/markets?ref=x`                                                                                                                                                                                                                |
+| `@bot propose <question> by <date>`                                             | "Noted — if we list it, we'll tag you." The proposal is stored and shown in `/admin` → **Proposals from X**. Listing it is your decision.                                                                                                                                                     |
 | `@bot bet? by <date>` (as a reply to a take) or `@bot bet <question> by <date>` | Opens a **Bet Vault** on the take: 1h to stake YES/NO (or choose: `… in 30m`, `… in 1d`; 15m–7d) (the pot sets the odds), then the bot launches a market anyone can trade until the deadline. You resolve it in `/admin`. Winners split the pot; unfilled or unresolved bets refund everyone. |
 
 "Trending" is ranked by pool depth, because the keeper doesn't track 24h volume yet.
@@ -62,9 +62,9 @@ There are two ways to connect the bot account. **Option A is simpler.**
 
 The bot posts as the account that **owns the developer app**.
 
-1. In the developer portal, open your app and set *User authentication settings* → permissions to **Read and write**.
+1. In the developer portal, open your app and set _User authentication settings_ → permissions to **Read and write**.
 2. Under **Keys and tokens**, copy the **API Key and Secret**, then
-   **generate the Access Token and Secret**. Generate them *after* step 1, because
+   **generate the Access Token and Secret**. Generate them _after_ step 1, because
    tokens keep the permissions they were created with.
 3. Check them locally. This only reads, nothing is posted:
    ```bash
@@ -76,9 +76,8 @@ The bot posts as the account that **owns the developer app**.
 
 ### Option B: OAuth 2.0 (any account)
 
-
-1. **X app settings** (developer portal → your app → *User authentication
-   settings*): permissions **Read and write**, type **Web App, Automated App or
+1. **X app settings** (developer portal → your app → _User authentication
+   settings_): permissions **Read and write**, type **Web App, Automated App or
    Bot**, callback URI `http://127.0.0.1:3333/callback`, and website
    `https://oraclemarkets.app`.
 2. **Authorize the bot account.** Log into **@oraclexbot** on x.com, then run on your machine:
@@ -95,7 +94,7 @@ The bot posts as the account that **owns the developer app**.
    `X_CLIENT_ID`, `X_CLIENT_SECRET`, `X_BOT_USER_ID`, `X_REFRESH_TOKEN`, and keep
    `XBOT_DRY_RUN=true`.
 4. Watch the logs while people mention the bot. When the `DRY RUN — would
-   reply` lines look right, set `XBOT_DRY_RUN=false`.
+reply` lines look right, set `XBOT_DRY_RUN=false`.
 
 The refresh token **rotates** on every use. The bot saves each new one to Redis
 (`xbot:refresh_token`) before using it, so the Railway variable only matters on
@@ -128,12 +127,13 @@ Someone posts a take; someone else replies "@bot bet? by Oct 20" (optionally
 3. Launches the market when staking closes (`advanceBets`, every poll). Launch
    requires stakes on both sides, odds between 1% and 99%, and the minimum total;
    otherwise stakers refund 1:1 on the bet page.
-4. After the deadline, **you** resolve in `/admin` → *Bets to resolve*. The bot
+4. After the deadline, **you** resolve in `/admin` → _Bets to resolve_. The bot
    (or anyone) settles, and winners claim on the bet page. If you never resolve,
    anyone can void it after 7 days and everyone is refunded.
 
 Add a category hashtag to file the bet (`#crypto`, `#sports`, `#politics`,
-`#science`, `#culture`, `#finance`, `#weather`, `#personal`), either in the `bet?`
+`#geopolitics`, `#economics`, `#finance`, `#business`, `#technology`, `#science`,
+`#climate`, `#weather`, `#culture`, `#other`), either in the `bet?`
 reply or in the take itself; the reply's tag wins. The launched market inherits
 it on the site.
 
@@ -145,7 +145,6 @@ unless both `XBOT_WALLET` and `XBOT_BET_RESOLVER` are set. **Devnet only**: on
 mainnet this is peer-to-peer wagering with real money, so get legal advice first.
 
 End-to-end test (devnet, about 8 minutes): `scripts/e2e-bets.ts` (see its header).
-
 
 ## Claude assist (optional)
 
@@ -161,7 +160,7 @@ the daily cap falls back to the rules):
   windows from the rules still win.
 - **Writing the market** (`XBOT_CLAUDE_REFINE_MODEL`, default `claude-sonnet-5-5`):
   before a bet opens, the take becomes a short yes/no question (the on-chain
-  name) plus *How it resolves* rules, shown on `/bet/<id>` with the original
+  name) plus _How it resolves_ rules, shown on `/bet/<id>` with the original
   take. It also picks a category when there's no hashtag, and refuses bets on
   death, injury or violence, sexual content, minors, crimes, or the private
   life of someone outside the conversation.
@@ -194,13 +193,13 @@ People trade by replying to the bot. Each X account gets its own Solana wallet o
 first use, funded with `XBOT_STARTER_USDC` (50) test USDC from the bot wallet's
 USDC float. Commands (fixed rules, never Claude):
 
-| Reply | Does |
-|---|---|
-| `buy YES $5` / `buy NO 10` | trade the market in the thread (link in the post, the bet on the take, or `#<id>`) |
-| `sell YES` / `sell YES $3` | sell all / about $3 worth |
-| `stake YES $10` | stake in a bet that's still taking stakes |
-| `balance` | cash + top positions |
-| `withdraw $20 to <address>` / `withdraw all to <address>` | send USDC out |
+| Reply                                                     | Does                                                                               |
+| --------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `buy YES $5` / `buy NO 10`                                | trade the market in the thread (link in the post, the bet on the take, or `#<id>`) |
+| `sell YES` / `sell YES $3`                                | sell all / about $3 worth                                                          |
+| `stake YES $10`                                           | stake in a bet that's still taking stakes                                          |
+| `balance`                                                 | cash + top positions                                                               |
+| `withdraw $20 to <address>` / `withdraw all to <address>` | send USDC out                                                                      |
 
 A `bet?` reply with a side and amount ("…I'll take YES $10") also stakes for the
 caller. Winnings, settled bets and refunds are paid out automatically each poll,
@@ -232,7 +231,7 @@ result, or `@bot dispute` to object. "People in it" = whoever called the bet, th
 take's author, and anyone who staked from their X wallet; others are told they
 can't. The bot only **records** calls (Redis hash `bet:calls`); it holds no
 resolution key. The bet's resolver (your admin wallet) sees the status in
-`/admin` → *Bets to resolve*, ready ones first, with the called side highlighted:
+`/admin` → _Bets to resolve_, ready ones first, with the called side highlighted:
 
 - **Ready**: two people in the bet agree, or one called it and nobody disputed
   within 24h → one click to confirm.
@@ -250,7 +249,7 @@ whose authors limit replies, posts with almost no engagement, and ones already
 seen; Claude keeps the settleable claims and drafts a question, a deadline 1–29
 days out (bets run ≤ 30 days) and a category. The top 100 from the last 3 days
 show in `/admin` → **Debate finder** (admin wallets only) with **Reply on X**,
-which opens X's composer as a reply from *your* account with
+which opens X's composer as a reply from _your_ account with
 `@bot bet? by <date>` filled in.
 
 The bot never replies to these people itself: X's automation rules forbid

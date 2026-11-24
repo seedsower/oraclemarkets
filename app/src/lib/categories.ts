@@ -8,11 +8,16 @@ export const CATEGORIES = [
   { slug: "crypto", label: "Crypto" },
   { slug: "sports", label: "Sports" },
   { slug: "politics", label: "Politics" },
-  { slug: "science", label: "Science" },
-  { slug: "culture", label: "Culture" },
+  { slug: "geopolitics", label: "Geopolitics" },
+  { slug: "economics", label: "Economics" },
   { slug: "finance", label: "Finance" },
+  { slug: "business", label: "Business" },
+  { slug: "technology", label: "Technology" },
+  { slug: "science", label: "Science" },
+  { slug: "climate", label: "Climate" },
   { slug: "weather", label: "Weather" },
-  { slug: "personal", label: "Personal" },
+  { slug: "culture", label: "Culture" },
+  { slug: "other", label: "Other" },
 ] as const;
 
 export type CategorySlug = (typeof CATEGORIES)[number]["slug"];

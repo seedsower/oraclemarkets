@@ -164,11 +164,16 @@ export const CATEGORY_SLUGS = new Set([
   "crypto",
   "sports",
   "politics",
-  "science",
-  "culture",
+  "geopolitics",
+  "economics",
   "finance",
+  "business",
+  "technology",
+  "science",
+  "climate",
   "weather",
-  "personal",
+  "culture",
+  "other",
 ]);
 
 /** First known category hashtag in `text` (e.g. "#Crypto" → "crypto"), and the text without hashtags. */
