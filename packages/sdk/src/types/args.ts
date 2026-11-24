@@ -41,6 +41,8 @@ export interface CreateMarketInput {
   depositUsdc?: number;
   /** Collateral mint for the market (any SPL token). Defaults to the client's collateral. */
   collateralMint?: PublicKey;
+  /** Market id (u48). Omit for a random one; pass one to know the PDA before sending. */
+  marketId?: number;
 }
 
 export interface CreateVaultInput {

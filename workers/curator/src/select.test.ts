@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { fromPrediction, type Question } from "./question";
 import { compareSelected, loadConfig, score, selectTop, skipReason } from "./select";
 import { fitsName, pickTitle, utf8Bytes } from "./title";
@@ -53,7 +54,7 @@ test("each filter gives a reason", () => {
   assert.match(why({ p: null })!, /consensus/);
   assert.match(why({ agentCount: 0 })!, /consensus/);
   assert.match(why({ updatedAt: null })!, /timestamp/);
-  assert.match(why({ updatedAt: new Date(NOW.getTime() - 48 * 3_600_000) })!, /old/);
+  assert.match(why({ updatedAt: new Date(NOW.getTime() - 96 * 3_600_000) })!, /old/);
   assert.match(why({ p: 0.04 })!, /outside/);
   assert.match(why({ p: 0.96 })!, /outside/);
   assert.match(why({ category: "Weather" })!, /not curated/);
@@ -162,9 +163,7 @@ test("keyword screen", () => {
 });
 
 test("get_prediction sample normalizes", () => {
-  const raw = JSON.parse(
-    readFileSync(new URL("./__fixtures__/get-prediction.json", import.meta.url), "utf8"),
-  );
+  const raw = JSON.parse(readFileSync(join(__dirname, "__fixtures__/get-prediction.json"), "utf8"));
   const n = fromPrediction({ content: [{ type: "text", text: JSON.stringify(raw) }] }, 4)!;
   assert.equal(n.id, "ai-tools-successfully-recover-access-lost-forgotten");
   assert.equal(n.category, "Technology");

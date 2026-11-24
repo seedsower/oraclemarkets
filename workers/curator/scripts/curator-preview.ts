@@ -8,13 +8,14 @@
  * top N per category and every skip reason. Report → partner-mcp-samples/preview.json.
  */
 import { mkdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
 import { connectPartner } from "../src/partner-feed";
 import { gatherPool } from "../src/pool";
 import { classifyAll } from "../src/policy";
 import { loadConfig, selectTop, type Selection } from "../src/select";
 
-const OUT = new URL("./partner-mcp-samples/", import.meta.url).pathname;
+const OUT = join(__dirname, "partner-mcp-samples/");
 
 function print(sel: Selection, checked: boolean) {
   for (const [cat, list] of Object.entries(sel.byCategory)) {

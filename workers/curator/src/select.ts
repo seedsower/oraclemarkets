@@ -42,6 +42,8 @@ export interface SelectOptions {
   verdicts?: Map<string, Verdict>;
   /** Skip questions without a verdict (on for real runs, off for pre-selection). */
   requireVerdict?: boolean;
+  /** Pre-selection: rank questions that still need a short title (Phase 2 writes one). */
+  deferTitle?: boolean;
 }
 
 export interface Selected {
@@ -77,7 +79,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
   return {
     minDays: num(env.CURATOR_MIN_DAYS, 3),
     maxDays: num(env.CURATOR_MAX_DAYS, 120),
-    maxAgeHours: num(env.CURATOR_MAX_FORECAST_AGE_HOURS, 48),
+    maxAgeHours: num(env.CURATOR_MAX_FORECAST_AGE_HOURS, 96),
     minProb: num(env.CURATOR_MIN_PROB, 0.05),
     maxProb: num(env.CURATOR_MAX_PROB, 0.95),
     categories: cats.length
@@ -114,7 +116,7 @@ export function skipReason(
   if (ageH >= cfg.maxAgeHours) return `forecast ${Math.round(ageH)} h old (≥ ${cfg.maxAgeHours})`;
   if (q.p < cfg.minProb || q.p > cfg.maxProb)
     return `consensus ${Math.round(q.p * 100)}% outside ${cfg.minProb * 100}–${cfg.maxProb * 100}%`;
-  if (!pickTitle([opts.shortTitles?.get(q.id), q.title, q.text]))
+  if (!opts.deferTitle && !pickTitle([opts.shortTitles?.get(q.id), q.text]))
     return "no title fits 64 bytes (needs a short title)";
   const kw = keywordScreen(q);
   if (kw) return `content policy (keyword): ${kw}`;
@@ -168,7 +170,7 @@ export function selectTop(
       skipped.push({ id: q.id, category: q.category, reason });
       continue;
     }
-    const title = pickTitle([opts.shortTitles?.get(q.id), q.title, q.text])!;
+    const title = pickTitle([opts.shortTitles?.get(q.id), q.text]) ?? q.title;
     eligible.get(q.category)!.push({ question: q, title, score: score(q, cfg.weights, now) });
   }
   const byCategory: Record<string, Selected[]> = {};

@@ -24,7 +24,9 @@ export function fitsName(s: string, max = NAME_MAX_BYTES): boolean {
 
 /**
  * The first candidate that fits: a vetted short title (Phase 2 asks Claude for
- * one), then the partner's display title, then the full question text.
+ * one), then the full question text. The partner's display title is NOT used
+ * as-is: for multiple-choice sub-questions it is often garbled
+ * ("…on Dec: 26,000 or above?").
  */
 export function pickTitle(candidates: (string | undefined)[]): string | null {
   for (const c of candidates) if (c && fitsName(c)) return cleanTitle(c);

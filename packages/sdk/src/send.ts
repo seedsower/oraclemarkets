@@ -52,7 +52,7 @@ export function makeSend(client: PmAmmClient) {
     // ---- binary market ----
     async createMarket(input: CreateMarketInput) {
       const authority = client.walletPubkey();
-      const marketId = randomU48();
+      const marketId = input.marketId ?? randomU48();
       const market = client.marketPda(marketId);
       const endTs = Math.floor(Date.now() / 1000) + input.durationSecs;
       const collateralMint = input.collateralMint ?? client.collateralMint;

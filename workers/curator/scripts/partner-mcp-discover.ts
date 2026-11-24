@@ -14,6 +14,7 @@
  * question and uses the daily quota): see isReadOnly().
  */
 import { mkdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import type { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { connectPartner } from "../src/partner-feed";
@@ -32,7 +33,7 @@ export const CATEGORIES = [
   "Crypto",
   "Other",
 ];
-const OUT = new URL("./partner-mcp-samples/", import.meta.url).pathname;
+const OUT = join(__dirname, "partner-mcp-samples/");
 const WRITE_WORDS =
   /\b(ask|create|add|publish|submit|post|delete|remove|update|edit|set|watch|subscribe|vote)\b/i;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -167,7 +168,7 @@ async function main() {
   process.exit(0);
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (require.main === module) {
   main().catch((e) => {
     console.error("✗", e instanceof Error ? e.message : e);
     process.exit(1);

@@ -27,6 +27,7 @@ import { marketPath, marketSummary, parseBuyIntent, type BuySide } from "@/lib/s
 import { OpenInWallet } from "@/components/open-in-wallet";
 import { CategoryEditor } from "@/components/category-editor";
 import { MarketArt } from "@/components/market-art";
+import { CuratedSource } from "@/components/curated-source";
 import { needsWalletApp } from "@/lib/wallet-links";
 import { useEffect, useRef, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
@@ -144,6 +145,7 @@ export function MarketPage({ id }: { id: string }) {
                     path={marketPath(market.marketId)}
                   />
                 </div>
+                <CuratedSource account={market.publicKey} name={name} />
 
                 {isResolved ? (
                   /* ====== RESOLVED ====== */
