@@ -9,6 +9,8 @@
     "discover": "tsx scripts/partner-mcp-discover.ts",
     "preview": "tsx scripts/curator-preview.ts",
     "once": "tsx src/run.ts",
+    "build": "tsup",
+    "start": "node dist/run.js",
     "test": "node --import tsx --test 'src/**/*.test.ts' 'scripts/**/*.test.ts'",
     "type-check": "tsc --noEmit"
   },
@@ -22,6 +24,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.20.4",
+    "tsup": "^8.5.1",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3"
   }

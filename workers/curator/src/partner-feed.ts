@@ -84,6 +84,65 @@ export class FileOAuthProvider implements OAuthClientProvider {
   }
 }
 
+/** The Redis commands the Redis-backed provider needs (ioredis-compatible). */
+export interface AuthKv {
+  get(key: string): Promise<string | null>;
+  set(key: string, value: string): Promise<unknown>;
+}
+
+export const AUTH_KEY = "curator:partner-auth";
+
+/**
+ * OAuth state in Redis, for the Railway service (its filesystem doesn't survive
+ * a run, and refresh tokens rotate on every use). Seeded once from
+ * PARTNER_MCP_AUTH_JSON (base64 of the auth file written by the login script);
+ * after that Redis is the only copy. Don't keep using the local file once it is
+ * seeded: its refresh token is spent at the next refresh.
+ */
+export class KvOAuthProvider implements OAuthClientProvider {
+  constructor(
+    private readonly kv: AuthKv,
+    private readonly seed = process.env.PARTNER_MCP_AUTH_JSON,
+  ) {}
+
+  private async read(): Promise<Stored> {
+    const raw = await this.kv.get(AUTH_KEY);
+    if (raw) return JSON.parse(raw) as Stored;
+    if (!this.seed) return {};
+    const seeded = Buffer.from(this.seed, "base64").toString("utf8");
+    await this.kv.set(AUTH_KEY, seeded);
+    return JSON.parse(seeded) as Stored;
+  }
+
+  private async write(patch: Stored): Promise<void> {
+    await this.kv.set(AUTH_KEY, JSON.stringify({ ...(await this.read()), ...patch }));
+  }
+
+  get redirectUrl(): string {
+    return `http://127.0.0.1:${CALLBACK_PORT}/callback`;
+  }
+
+  get clientMetadata(): OAuthClientMetadata {
+    return new FileOAuthProvider().clientMetadata;
+  }
+
+  clientInformation = async () => (await this.read()).client;
+  saveClientInformation = (client: OAuthClientInformationMixed) => this.write({ client });
+  tokens = async () => (await this.read()).tokens;
+  saveTokens = (tokens: OAuthTokens) => this.write({ tokens });
+  saveCodeVerifier = (verifier: string) => this.write({ verifier });
+
+  async codeVerifier(): Promise<string> {
+    const v = (await this.read()).verifier;
+    if (!v) throw new Error("no PKCE verifier saved — run the login script");
+    return v;
+  }
+
+  redirectToAuthorization(): void {
+    throw new Error("partner sign-in expired — run the login script locally and re-seed");
+  }
+}
+
 /** Bearer header when a static PARTNER_MCP_TOKEN is set; otherwise OAuth via `provider`. */
 function transportOptions(provider: OAuthClientProvider) {
   const token = process.env.PARTNER_MCP_TOKEN;

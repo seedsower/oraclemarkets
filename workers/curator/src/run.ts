@@ -9,7 +9,7 @@
  */
 import Anthropic from "@anthropic-ai/sdk";
 import IORedis from "ioredis";
-import { connectPartner } from "./partner-feed";
+import { connectPartner, KvOAuthProvider } from "./partner-feed";
 import { gatherPool, type Pool } from "./pool";
 import { classifyAll, type MessagesClient } from "./policy";
 import { loadConfig, selectTop, type CuratorConfig, type Selection, type Verdict } from "./select";
@@ -131,7 +131,7 @@ async function main() {
   const client = !c.dryRun && kp ? await makeCuratorClient(loadChainConfig(), kp) : null;
   const deps: Deps | null = client && kv ? { kv, chain: client } : null;
   if (deps) log(`reconcile: ${JSON.stringify(await reconcile(deps))}`);
-  const partner = await connectPartner();
+  const partner = await connectPartner(kv ? new KvOAuthProvider(kv) : undefined);
   const pool = await gatherPool(partner.client, cfg, {
     maxCalls: Number(process.env.CURATOR_MAX_MCP_CALLS ?? 500),
     minIntervalMs: Number(process.env.PARTNER_MCP_MIN_INTERVAL_MS ?? 500),
