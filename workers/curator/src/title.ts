@@ -17,9 +17,12 @@ export const cleanTitle = (s: string): string =>
 /** The partner shortens some display titles itself ("…Oyo State…"): not a usable name. */
 export const isTruncated = (s: string): boolean => /(…|\.\.\.)$/.test(cleanTitle(s));
 
+/** Partner sub-question suffixes ("…nominations? [Yes: Obsession]") need a rewrite. */
+export const hasOptionSuffix = (s: string): boolean => /\[[^\]]*\]/.test(s);
+
 export function fitsName(s: string, max = NAME_MAX_BYTES): boolean {
   const t = cleanTitle(s);
-  return t.length > 0 && utf8Bytes(t) <= max && !isTruncated(t);
+  return t.length > 0 && utf8Bytes(t) <= max && !isTruncated(t) && !hasOptionSuffix(t);
 }
 
 /**

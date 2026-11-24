@@ -93,6 +93,7 @@ test("64-byte names: ASCII and multibyte boundaries, never cut", () => {
   assert.equal(pickTitle(["x".repeat(70), "  Short   one  "]), "Short one");
   assert.equal(pickTitle(["x".repeat(70)]), null);
   assert.equal(fitsName("Will Alli win the 2027 Oyo State…"), false);
+  assert.equal(fitsName("2027 Best Picture nominations? [Yes: Obsession]"), false);
   assert.equal(pickTitle(["Cut short...", "Full question?"]), "Full question?");
 });
 
