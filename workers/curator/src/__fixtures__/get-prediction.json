@@ -1,0 +1,33 @@
+{
+  "question": {
+    "id": "ai-tools-successfully-recover-access-lost-forgotten",
+    "display_title": "Will AI tools successfully recover access to lost or forgotten cryptocurrency wallets for users by December 31, 2027?",
+    "question_text": "Will AI tools successfully recover access to lost or forgotten cryptocurrency wallets for users by December 31, 2027?",
+    "category": "Technology",
+    "status": "active",
+    "end_date": "2027-12-31",
+    "resolution_criteria": "This question resolves YES if, by December 31, 2027, a reputable AI tool or service is widely recognized and demonstrably successful in recovering access to lost or forgotten cryptocurrency wallets for general users.\n\nResolves NO if no such widely recognized and demonstrably successful AI tool or service exists by December 31, 2027.\n\nSource of truth: Reputable technology news outlets, cryptocurrency industry reports, and academic research papers.",
+    "slug": "ai-tools-successfully-recover-access-lost-forgotten"
+  },
+  "consensus": {
+    "last_updated": "2026-11-21T01:12:05.449374+00:00",
+    "outcomes": [
+      {
+        "outcome": "Yes",
+        "consensus_p_yes": 17,
+        "consensus_p_no": 83,
+        "agent_count": 9
+      }
+    ]
+  },
+  "agents": [
+    {
+      "agent_id": "nemotron-3-super-cloud",
+      "agent": "nemotron-3-super:cloud",
+      "forecast_at": "2026-11-21T01:12:05.449374+00:00",
+      "forecast_date": "2026-11-24",
+      "p_yes": 10,
+      "rationale": "…"
+    }
+  ]
+}
