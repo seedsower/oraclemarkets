@@ -17,6 +17,7 @@ import Link from "next/link";
 import { XProposals } from "@/components/x-proposals";
 import { BetsToResolve } from "@/components/bet/bets-to-resolve";
 import { CuratorReview } from "@/components/curator-review";
+import { CuratorRun } from "@/components/curator-run";
 import { DebateFinder } from "@/components/debate-finder";
 import { seriesColor } from "@/components/multi-line-chart";
 
@@ -357,6 +358,13 @@ export default function AdminPage() {
 
         <div className="text-caption mt-[32px] mb-[12px]">BETS TO RESOLVE</div>
         <BetsToResolve />
+
+        <div className="text-caption mt-[32px] mb-[12px]">CURATOR</div>
+        <p className="text-[11px] text-muted font-mono mb-[12px]">
+          Opens markets from oraclemarkets.io&apos;s top questions per category every 3 days (14:00
+          UTC). Admin wallets can start a run now.
+        </p>
+        <CuratorRun />
 
         <div className="text-caption mt-[32px] mb-[12px]">CURATED MARKETS TO REVIEW</div>
         <p className="text-[11px] text-muted font-mono mb-[12px]">

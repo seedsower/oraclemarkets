@@ -50,32 +50,33 @@ resolution key, or a mainnet mint authority.
 Railway no longer accepts a `railway.json` config-file path on new services
 (config-as-code is deprecated in favour of `.railway/railway.ts`). The files in
 `railway/*.json` remain as a reference for the values below, which you set
-directly in each service's *Settings*.
+directly in each service's _Settings_.
 
-1. **Create the project.** In Railway, choose *New Project → Deploy from GitHub
-   repo* and pick your fork. Railway detects the pnpm workspace and may create
+1. **Create the project.** In Railway, choose _New Project → Deploy from GitHub
+   repo_ and pick your fork. Railway detects the pnpm workspace and may create
    one service per package (`app`, `@pm-amm/sdk`, `@oracle-markets/keeper`), each
    with a `pnpm --filter … start` start command. **Those start commands fail**:
    the Docker images contain no pnpm. Keep `app` (the web service) and
    `@oracle-markets/keeper`, and delete `@pm-amm/sdk` (it's a library, not a
    service).
-2. **Configure the web service** (`app`) under *Settings*:
-   - *Root Directory*: empty (repo root)
-   - *Dockerfile path*: `Dockerfile`
-   - *Custom Start Command*: `node app/server.js`
-   - *Healthcheck Path*: `/api/health` (timeout 60 s)
-   - *Watch Paths*: `app/**`, `packages/sdk/**`, `pnpm-lock.yaml`, `Dockerfile`
-3. **Configure the keeper** (`@oracle-markets/keeper`) under *Settings*:
-   - *Dockerfile path*: `workers/keeper/Dockerfile`
-   - *Custom Start Command*: `node dist/index.js`
-   - *Restart Policy*: Always; no healthcheck and no domain (it serves no HTTP)
-   - *Watch Paths*: `workers/keeper/**`, `packages/sdk/**`, `pnpm-lock.yaml`
+2. **Configure the web service** (`app`) under _Settings_:
+   - _Root Directory_: empty (repo root)
+   - _Dockerfile path_: `Dockerfile`
+   - _Custom Start Command_: `node app/server.js`
+   - _Healthcheck Path_: `/api/health` (timeout 60 s)
+   - _Watch Paths_: `app/**`, `packages/sdk/**`, `pnpm-lock.yaml`, `Dockerfile`
+3. **Configure the keeper** (`@oracle-markets/keeper`) under _Settings_:
+   - _Dockerfile path_: `workers/keeper/Dockerfile`
+   - _Custom Start Command_: `node dist/index.js`
+   - _Restart Policy_: Always; no healthcheck and no domain (it serves no HTTP)
+   - _Watch Paths_: `workers/keeper/**`, `packages/sdk/**`, `pnpm-lock.yaml`
 
    Without the Dockerfile path, the keeper builds the root (web) Dockerfile and
    crashes on start.
-4. **Add Redis.** Choose *+ New → Database → Redis*. Keep the service name
+
+4. **Add Redis.** Choose _+ New → Database → Redis_. Keep the service name
    `Redis`, so the `${{Redis.REDIS_URL}}` references below resolve.
-5. **Variables.** Paste a template into each service's *Variables → Raw Editor*
+5. **Variables.** Paste a template into each service's _Variables → Raw Editor_
    and fill in the blanks:
    - web: [`railway/.env.web.devnet.example`](railway/.env.web.devnet.example)
      or [`railway/.env.web.mainnet.example`](railway/.env.web.mainnet.example)
@@ -83,11 +84,12 @@ directly in each service's *Settings*.
 
    Railway resolves `REDIS_URL=${{Redis.REDIS_URL}}` to Redis's private URL
    (`*.railway.internal`, reachable over IPv6; both Redis clients set `family: 0`).
-6. **Domain.** Go to *web → Settings → Networking → Generate Domain*. Once a
-   custom domain is attached (*+ Custom Domain*, then add the CNAME record Railway
+
+6. **Domain.** Go to _web → Settings → Networking → Generate Domain_. Once a
+   custom domain is attached (_+ Custom Domain_, then add the CNAME record Railway
    shows at your DNS provider), set `NEXT_PUBLIC_SITE_URL` to it and **redeploy**.
-7. **Deploy from the latest commit** (*Deploy → Deploy latest commit*, or push).
-   *Redeploy* on an old failed deployment reuses that deployment's settings,
+7. **Deploy from the latest commit** (_Deploy → Deploy latest commit_, or push).
+   _Redeploy_ on an old failed deployment reuses that deployment's settings,
    including the broken start command.
 
 ### Optional: the `xbot` mention bot
@@ -95,11 +97,41 @@ directly in each service's *Settings*.
 A third worker answers `@mentions` on X with market links (see
 [`workers/xbot/README.md`](workers/xbot/README.md)). It's a separate service from
 the same repo, set up like the keeper:
-*Dockerfile path* `workers/xbot/Dockerfile`, *Custom Start Command*
-`node dist/index.js`, *Restart Policy* Always, no domain, and *Watch Paths*
+_Dockerfile path_ `workers/xbot/Dockerfile`, _Custom Start Command_
+`node dist/index.js`, _Restart Policy_ Always, no domain, and _Watch Paths_
 `workers/xbot/**`, `packages/sdk/**`, `pnpm-lock.yaml`. Variables:
 [`railway/.env.xbot.example`](railway/.env.xbot.example). It idles until the X
 credentials are set, and stays in dry run until `XBOT_DRY_RUN=false`.
+
+### Optional: the `curator` (markets from oraclemarkets.io)
+
+A cron job that opens markets from the partner's top AI-forecast questions per
+category (spec: [`doc/ORACLE_CURATOR_PROMPT.md`](doc/ORACLE_CURATOR_PROMPT.md)).
+It runs once and **exits**: Railway cron skips a run while the previous one is
+still running, so a process that never exits would block every later run.
+
+- _Dockerfile path_ `workers/curator/Dockerfile`, _Custom Start Command_
+  `node dist/run.js`, _Restart Policy_ **Never**, no domain, _Watch Paths_
+  `workers/curator/**`, `packages/sdk/**`, `pnpm-lock.yaml`, `railway/curator.json`.
+- _Cron Schedule_ `0 14 */3 * *` (UTC: 14:00 = 7 a.m. Mountain in winter, 8 a.m.
+  in summer). `*/3` restarts each month, so two runs are sometimes 1–2 days
+  apart. **Check the schedule in the service's Settings after the first deploy**:
+  config-as-code `cronSchedule` has sometimes not been applied. With a schedule
+  set, a deploy does not start a run; the schedule (or _Run now_) does.
+- Variables: [`railway/.env.curator.example`](railway/.env.curator.example).
+  `CURATOR_DRY_RUN=true` until you've checked a scheduled dry run's log.
+- Partner sign-in: run `pnpm --filter @oracle-markets/curator login` locally, then
+  set `PARTNER_MCP_AUTH_JSON` to the base64 of `~/.config/oracle-markets/partner-mcp-auth.json`.
+  The first run copies it to Redis (`curator:partner-auth`), which keeps the
+  rotating tokens from then on. To re-seed, delete that key and set the variable again.
+- `CURATOR_KEYPAIR` (base64 of the solana-keygen file) is the authority, so the
+  resolver, of every curated market. Resolve them in `/admin` with that wallet;
+  the curator never resolves.
+- **Run now** from `/admin` (admin wallets: `NEXT_PUBLIC_CATEGORY_ADMINS`, featured
+  authorities, or server-only `CURATOR_ADMINS` on `app`): the web stores
+  `curator:run-request`, and the keeper calls Railway's `deploymentInstanceExecutionCreate`.
+  The keeper needs `CURATOR_TRIGGER_TOKEN` (a _project_ token for this project)
+  and `CURATOR_SERVICE_ID`. Locally: `pnpm --filter @oracle-markets/curator once`.
 
 ### Build-time vs runtime variables
 
@@ -118,37 +150,37 @@ Server-only secrets (`MINT_AUTHORITY_KEY`, `KEEPER_SHARED_SECRET`,
 
 ### `web`
 
-| Variable | Devnet | Mainnet | Notes |
-|---|---|---|---|
-| `NEXT_PUBLIC_SOLANA_CLUSTER` | `devnet` | `mainnet-beta` | build-time |
-| `NEXT_PUBLIC_PROGRAM_ID` | `GV1F…N16y` | `GV1F…N16y` | build-time; same ID on both |
-| `NEXT_PUBLIC_USDC_MINT` | `3WQ8…MEWZ` (mock) | `EPjF…Dt1v` (Circle) | build-time |
-| `NEXT_PUBLIC_RPC_URL` | public devnet or provider | **dedicated provider** | build-time; visible to browsers, so restrict by domain |
-| `NEXT_PUBLIC_SITE_URL` | `https://${{RAILWAY_PUBLIC_DOMAIN}}` | your custom domain | build-time; metadata, OG, canonical URLs |
-| `NEXT_PUBLIC_X_HANDLE` | optional | optional | build-time; Twitter card |
-| `NEXT_PUBLIC_FEATURED_AUTHORITIES` | optional | recommended | build-time; comma-separated pubkeys |
-| `REDIS_URL` | `${{Redis.REDIS_URL}}` | `${{Redis.REDIS_URL}}` | runtime |
-| `SERVER_RPC_URL` | provider or empty | **dedicated provider** | runtime; server reads for share cards / metadata / Blinks, never sent to browsers |
-| `ACTIONS_MAX_USDC` / `ACTIONS_SLIPPAGE_BPS` / `ACTIONS_FEATURED_ONLY` | `250` / `200` / `false` | same / same / `true` recommended | runtime; Blinks, see [BLINKS.md](BLINKS.md) |
-| `KEEPER_SHARED_SECRET` | `openssl rand -hex 32` | `openssl rand -hex 32` | runtime; guards `POST /api/price-snap` |
-| `NEXT_PUBLIC_FAUCET_URL` | empty (own faucet) or `https://pm-amm-devnet.vercel.app/api/faucet` | n/a | build-time; the browser calls it directly so per-IP limits apply per visitor |
-| `MINT_AUTHORITY_KEY` | base64 mint key (`EftrgEw3…`) | **never set** | runtime; faucet only, see [DEVNET.md](DEVNET.md) |
-| `FAUCET_*` | optional | n/a | runtime; see [DEVNET.md](DEVNET.md) |
+| Variable                                                              | Devnet                                                              | Mainnet                          | Notes                                                                             |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------- | -------------------------------- | --------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SOLANA_CLUSTER`                                          | `devnet`                                                            | `mainnet-beta`                   | build-time                                                                        |
+| `NEXT_PUBLIC_PROGRAM_ID`                                              | `GV1F…N16y`                                                         | `GV1F…N16y`                      | build-time; same ID on both                                                       |
+| `NEXT_PUBLIC_USDC_MINT`                                               | `3WQ8…MEWZ` (mock)                                                  | `EPjF…Dt1v` (Circle)             | build-time                                                                        |
+| `NEXT_PUBLIC_RPC_URL`                                                 | public devnet or provider                                           | **dedicated provider**           | build-time; visible to browsers, so restrict by domain                            |
+| `NEXT_PUBLIC_SITE_URL`                                                | `https://${{RAILWAY_PUBLIC_DOMAIN}}`                                | your custom domain               | build-time; metadata, OG, canonical URLs                                          |
+| `NEXT_PUBLIC_X_HANDLE`                                                | optional                                                            | optional                         | build-time; Twitter card                                                          |
+| `NEXT_PUBLIC_FEATURED_AUTHORITIES`                                    | optional                                                            | recommended                      | build-time; comma-separated pubkeys                                               |
+| `REDIS_URL`                                                           | `${{Redis.REDIS_URL}}`                                              | `${{Redis.REDIS_URL}}`           | runtime                                                                           |
+| `SERVER_RPC_URL`                                                      | provider or empty                                                   | **dedicated provider**           | runtime; server reads for share cards / metadata / Blinks, never sent to browsers |
+| `ACTIONS_MAX_USDC` / `ACTIONS_SLIPPAGE_BPS` / `ACTIONS_FEATURED_ONLY` | `250` / `200` / `false`                                             | same / same / `true` recommended | runtime; Blinks, see [BLINKS.md](BLINKS.md)                                       |
+| `KEEPER_SHARED_SECRET`                                                | `openssl rand -hex 32`                                              | `openssl rand -hex 32`           | runtime; guards `POST /api/price-snap`                                            |
+| `NEXT_PUBLIC_FAUCET_URL`                                              | empty (own faucet) or `https://pm-amm-devnet.vercel.app/api/faucet` | n/a                              | build-time; the browser calls it directly so per-IP limits apply per visitor      |
+| `MINT_AUTHORITY_KEY`                                                  | base64 mint key (`EftrgEw3…`)                                       | **never set**                    | runtime; faucet only, see [DEVNET.md](DEVNET.md)                                  |
+| `FAUCET_*`                                                            | optional                                                            | n/a                              | runtime; see [DEVNET.md](DEVNET.md)                                               |
 
 ### `keeper`
 
-| Variable | Devnet | Mainnet | Notes |
-|---|---|---|---|
-| `REDIS_URL` | `${{Redis.REDIS_URL}}` | `${{Redis.REDIS_URL}}` | required |
-| `KEEPER_RPC_URL` | provider or public devnet | **dedicated provider** | server key, separate from the browser's; must allow `getProgramAccounts` |
-| `PROGRAM_ID` | `GV1F…N16y` | `GV1F…N16y` | |
-| `USDC_MINT` | `3WQ8…MEWZ` | `EPjF…Dt1v` | |
-| `KEEPER_INTERVAL_SECS` | `20` | `20` | |
-| `KEEPER_ACCRUE_ENABLED` | `false` | `false` / `true` | accrue runs only if this is `true` **and** `KEEPER_KEYPAIR` is set |
-| `KEEPER_KEYPAIR` | — | fresh hot wallet | base64 64-byte secret; **no authority over anything**; fund with ~0.1 SOL |
-| `KEEPER_ACCRUE_EVERY_SECS` | `3600` | `3600` | |
-| `KEEPER_PRIORITY_MICROLAMPORTS` | `5000` | `5000` | |
-| `KEEPER_MIN_SOL` | `0.05` | `0.05` | accrue stops below this balance |
+| Variable                        | Devnet                    | Mainnet                | Notes                                                                     |
+| ------------------------------- | ------------------------- | ---------------------- | ------------------------------------------------------------------------- |
+| `REDIS_URL`                     | `${{Redis.REDIS_URL}}`    | `${{Redis.REDIS_URL}}` | required                                                                  |
+| `KEEPER_RPC_URL`                | provider or public devnet | **dedicated provider** | server key, separate from the browser's; must allow `getProgramAccounts`  |
+| `PROGRAM_ID`                    | `GV1F…N16y`               | `GV1F…N16y`            |                                                                           |
+| `USDC_MINT`                     | `3WQ8…MEWZ`               | `EPjF…Dt1v`            |                                                                           |
+| `KEEPER_INTERVAL_SECS`          | `20`                      | `20`                   |                                                                           |
+| `KEEPER_ACCRUE_ENABLED`         | `false`                   | `false` / `true`       | accrue runs only if this is `true` **and** `KEEPER_KEYPAIR` is set        |
+| `KEEPER_KEYPAIR`                | —                         | fresh hot wallet       | base64 64-byte secret; **no authority over anything**; fund with ~0.1 SOL |
+| `KEEPER_ACCRUE_EVERY_SECS`      | `3600`                    | `3600`                 |                                                                           |
+| `KEEPER_PRIORITY_MICROLAMPORTS` | `5000`                    | `5000`                 |                                                                           |
+| `KEEPER_MIN_SOL`                | `0.05`                    | `0.05`                 | accrue stops below this balance                                           |
 
 `accrue` is permissionless and only rebases LP residuals, so the keeper wallet
 can lose at most its own SOL in fees.
@@ -156,7 +188,7 @@ can lose at most its own SOL in fees.
 ### Curated list
 
 When `NEXT_PUBLIC_FEATURED_AUTHORITIES` is set, `/markets` and the
-commitment-vault strip show only rows created by those keys. An *All markets*
+commitment-vault strip show only rows created by those keys. An _All markets_
 toggle shows everything, with a "community" badge on non-featured rows.
 Markets launched from a featured creator's binary vault count as featured.
 Bet Vault markets are owned by the vault PDA, so to feature one, add that PDA to
@@ -172,7 +204,7 @@ the list. The landing page (`/`) is static and lists no markets.
 - [ ] A market page shows its chart (keeper points) and a "Resolved by" row
 - [ ] Devnet only: the faucet button funds a fresh wallet. Mainnet: the faucet is hidden and `POST /api/faucet` returns 503
 - [ ] Make a small trade; the new price shows immediately (direct RPC refresh), and a chart point appears within one keeper interval
-- [ ] With featured authorities set: the *Featured / All markets* toggle works, and the community badge appears only in *All*
+- [ ] With featured authorities set: the _Featured / All markets_ toggle works, and the community badge appears only in _All_
 
 ## Local run (same images)
 

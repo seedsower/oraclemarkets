@@ -26,6 +26,7 @@ import { connectRedis, isChartable, recordPrice, writeList, LIST_KEYS } from "./
 import { loadConfig, type KeeperConfig } from "./config";
 import { log, errMsg } from "./log";
 import { isRateLimited, withBackoff } from "./rpc";
+import { loadTriggerConfig, maybeTriggerCurator } from "./curator-trigger";
 
 const MAX_IDLE_MS = 5 * 60_000;
 
@@ -169,7 +170,12 @@ async function main(): Promise<void> {
   process.on("SIGINT", () => stop("SIGINT"));
 
   let idleMs = ctx.cfg.intervalMs;
+  const trigger = loadTriggerConfig();
   while (!stopping) {
+    // Independent of the RPC: a failed tick must not swallow a manual curator run.
+    await maybeTriggerCurator(ctx.redis, trigger)
+      .then((r) => r !== "none" && log.info("curator run request", { result: r }))
+      .catch((e) => log.warn("curator trigger failed", { error: errMsg(e) }));
     try {
       await tick(ctx);
       idleMs = ctx.cfg.intervalMs;

@@ -11,6 +11,7 @@
     ]
   },
   "deploy": {
-    "restartPolicyType": "NEVER"
+    "restartPolicyType": "NEVER",
+    "cronSchedule": "0 14 */3 * *"
   }
 }
