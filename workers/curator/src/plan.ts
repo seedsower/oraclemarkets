@@ -66,6 +66,8 @@ export interface MarketMeta {
   consensus: number;
   consensusAt: string | null;
   partnerClose: string | null;
+  /** USDC deposited at creation (counted against CURATOR_MAX_OPEN_SEED_USDC). */
+  seedUsdc: number;
   curatedAt: string;
 }
 
@@ -114,6 +116,7 @@ export function planFor(s: Selected, cfg: CreateConfig, now = new Date()): Plan 
       consensus: q.p,
       consensusAt: q.updatedAt?.toISOString() ?? null,
       partnerClose: q.closeAt.toISOString(),
+      seedUsdc: cfg.seedUsdc,
       curatedAt: now.toISOString(),
     },
   };

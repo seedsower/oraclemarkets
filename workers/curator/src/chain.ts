@@ -69,3 +69,21 @@ export async function makeCuratorClient(cfg: ChainConfig, kp: Keypair): Promise<
   const provider = new AnchorProvider(connection, keypairWallet(kp), { commitment: "confirmed" });
   return PmAmmClient.fromProvider(provider, cfg.programId, cfg.collateralMint);
 }
+
+/** SOL and collateral (human units) on the curator wallet. */
+export async function balances(
+  connection: Connection,
+  owner: PublicKey,
+  mint: PublicKey,
+): Promise<{ sol: number; usdc: number }> {
+  const [lamports, tokens] = await Promise.all([
+    connection.getBalance(owner),
+    connection.getParsedTokenAccountsByOwner(owner, { mint }),
+  ]);
+  const usdc = tokens.value.reduce((sum, a) => {
+    const amt = (a.account.data as { parsed?: { info?: { tokenAmount?: { uiAmount?: number } } } })
+      .parsed?.info?.tokenAmount?.uiAmount;
+    return sum + (typeof amt === "number" ? amt : 0);
+  }, 0);
+  return { sol: lamports / 1e9, usdc };
+}

@@ -18,7 +18,18 @@ import { pickTitle } from "./title";
 import { K } from "./keys";
 import { loadCreateConfig, planFor, roundRobin, type CreateConfig } from "./plan";
 import { createOne, reconcile, type Deps, type Kv } from "./create";
-import { loadChainConfig, loadKeypair, makeCuratorClient } from "./chain";
+import { balances, loadChainConfig, loadKeypair, makeCuratorClient } from "./chain";
+import {
+  acquireLock,
+  allowance,
+  loadBudgetConfig,
+  openSeed,
+  releaseLock,
+  type Allowance,
+} from "./budget";
+import { randomUUID } from "node:crypto";
+import { PublicKey } from "@solana/web3.js";
+import type { PmAmmClient } from "@pm-amm/sdk";
 
 const log = (m: string) => console.log(m);
 
@@ -62,7 +73,13 @@ export interface RunRow {
 }
 
 /** Create (or, in a dry run, list) the selected markets, round-robin across categories. */
-async function create(sel: Selection, c: CreateConfig, kv: Kv | null, deps: Deps | null) {
+async function create(
+  sel: Selection,
+  c: CreateConfig,
+  kv: Kv | null,
+  deps: Deps | null,
+  budget: Allowance,
+) {
   const rows: RunRow[] = [];
   let made = 0;
   for (const s of roundRobin(sel.byCategory)) {
@@ -72,8 +89,8 @@ async function create(sel: Selection, c: CreateConfig, kv: Kv | null, deps: Deps
       rows.push({ ...base, result: "already linked", market: linked });
       continue;
     }
-    if (made >= c.maxNewPerRun) {
-      rows.push({ ...base, result: `over CURATOR_MAX_NEW_PER_RUN=${c.maxNewPerRun}` });
+    if (made >= budget.allowed) {
+      rows.push({ ...base, result: `over budget (${budget.limitedBy})` });
       continue;
     }
     const plan = planFor(s, c);
@@ -128,9 +145,58 @@ async function main() {
     throw new Error("a live run needs REDIS_URL, CURATOR_KEYPAIR and ANTHROPIC_API_KEY");
   if (!kv) log("(no REDIS_URL: existing links not checked)");
   if (!claude) log("(no ANTHROPIC_API_KEY: content policy and short titles not checked)");
-  const client = !c.dryRun && kp ? await makeCuratorClient(loadChainConfig(), kp) : null;
-  const deps: Deps | null = client && kv ? { kv, chain: client } : null;
+  // A client whenever there's a key: dry runs read balances too; only live runs send.
+  const client = kp ? await makeCuratorClient(loadChainConfig(), kp) : null;
+  const deps: Deps | null = !c.dryRun && client && kv ? { kv, chain: client } : null;
+  const token = randomUUID();
+  if (kv && !(await acquireLock(kv, token))) {
+    log("another curator run holds curator:lock — exiting");
+    kv.disconnect();
+    return;
+  }
+  try {
+    await runLocked(cfg, c, kv, claude, client, deps);
+  } finally {
+    if (kv) {
+      await releaseLock(kv, token).catch(() => {});
+      kv.disconnect();
+    }
+  }
+}
+
+/** Budget for this run, from balances and open curated markets (no wallet → per-run cap only). */
+async function budgetFor(c: CreateConfig, kv: IORedis | null, client: PmAmmClient | null) {
+  const b = loadBudgetConfig();
+  if (!client) {
+    const allowed = c.maxNewPerRun;
+    return { allowed, limitedBy: "CURATOR_MAX_NEW_PER_RUN", limits: {} } as Allowance;
+  }
+  const chainCfg = loadChainConfig();
+  const [bal, open] = await Promise.all([
+    balances(client.connection, client.walletPubkey(), chainCfg.collateralMint),
+    kv ? openSeed(kv, client, (s) => new PublicKey(s), c.seedUsdc) : Promise.resolve(0),
+  ]);
+  const a = allowance(
+    { maxNewPerRun: c.maxNewPerRun, seedUsdc: c.seedUsdc, openSeedUsdc: open, ...bal },
+    b,
+  );
+  log(
+    `budget: ${bal.usdc} USDC, ${bal.sol.toFixed(3)} SOL, ${open} USDC open in curated markets ` +
+      `(cap ${b.maxOpenSeedUsdc}) → up to ${a.allowed} new (limited by ${a.limitedBy})`,
+  );
+  return a;
+}
+
+async function runLocked(
+  cfg: CuratorConfig,
+  c: CreateConfig,
+  kv: IORedis | null,
+  claude: MessagesClient | null,
+  client: PmAmmClient | null,
+  deps: Deps | null,
+) {
   if (deps) log(`reconcile: ${JSON.stringify(await reconcile(deps))}`);
+  const budget = await budgetFor(c, kv, client);
   const partner = await connectPartner(kv ? new KvOAuthProvider(kv) : undefined);
   const pool = await gatherPool(partner.client, cfg, {
     maxCalls: Number(process.env.CURATOR_MAX_MCP_CALLS ?? 500),
@@ -140,9 +206,8 @@ async function main() {
   await partner.client.close();
   const { shortTitles, verdicts } = await vet(pool, cfg, kv, claude);
   const sel = selectTop(pool.questions, cfg, { shortTitles, verdicts, requireVerdict: !!claude });
-  const rows = await create(sel, c, kv, deps);
+  const rows = await create(sel, c, kv, deps, budget);
   report(rows, sel, c, pool);
-  kv?.disconnect();
 }
 
 main().then(
